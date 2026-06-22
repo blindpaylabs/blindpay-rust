@@ -37,8 +37,8 @@ async fn create_sends_body_and_parses_quote() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "qu_123",
             "expires_at": 1712958191_i64,
-            "commercial_quotation": 495,
-            "blindpay_quotation": 485,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 4.85,
             "receiver_amount": 5240,
             "sender_amount": 1010,
             "partner_fee_amount": 150,
@@ -108,8 +108,8 @@ async fn create_omits_optional_fields_when_absent() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "qu_456",
             "expires_at": 1712958191_i64,
-            "commercial_quotation": 495,
-            "blindpay_quotation": 485,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 4.85,
             "receiver_amount": 2480,
             "sender_amount": 500
         })))
@@ -152,8 +152,8 @@ async fn get_fx_rate_sends_body_and_parses_response() {
             "currency_type": "sender"
         })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "commercial_quotation": 495,
-            "blindpay_quotation": 485,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 4.85,
             "result_amount": 4850,
             "instance_flat_fee": 50,
             "instance_percentage_fee": 0
@@ -173,7 +173,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
         .await
         .unwrap();
 
-    assert_eq!(fx.commercial_quotation, 495);
+    assert!((fx.commercial_quotation - 4.95).abs() < 1e-9);
     assert_eq!(fx.result_amount, 4850);
     assert_eq!(fx.instance_flat_fee, Some(50));
     assert_eq!(fx.instance_percentage_fee, 0);
@@ -186,8 +186,8 @@ async fn get_fx_rate_allows_null_instance_flat_fee() {
     Mock::given(method("POST"))
         .and(path("/v1/instances/in_test/quotes/fx"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "commercial_quotation": 495,
-            "blindpay_quotation": 485,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 4.85,
             "result_amount": 4850,
             "instance_flat_fee": null,
             "instance_percentage_fee": 25

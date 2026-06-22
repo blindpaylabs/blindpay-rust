@@ -61,17 +61,17 @@ pub struct QuoteContract {
 /// A payout quote, returned by `Quotes::create`.
 ///
 /// Its `id` is the `quote_id` consumed when creating a payout.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Quote {
     /// The quote id (prefix `qu_`).
     pub id: String,
     /// Epoch (seconds) after which the quote is no longer valid.
     pub expires_at: i64,
-    /// Commercial FX quotation, e.g. `495` for `1 USD = 4.95 BRL`.
-    pub commercial_quotation: i64,
+    /// Commercial FX quotation, e.g. `4.95` for `1 USD = 4.95 BRL`.
+    pub commercial_quotation: f64,
     /// BlindPay FX quotation (commercial minus BlindPay's spread).
-    pub blindpay_quotation: i64,
+    pub blindpay_quotation: f64,
     /// Amount the receiver gets, in the smallest unit.
     pub receiver_amount: i64,
     /// Amount the sender must send, in the smallest unit.
@@ -110,13 +110,13 @@ pub struct GetFxRateInput {
 }
 
 /// An FX-rate quote, returned by `Quotes::get_fx_rate`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct QuoteFx {
-    /// Commercial FX quotation, e.g. `495` for `1 USD = 4.95 BRL`.
-    pub commercial_quotation: i64,
+    /// Commercial FX quotation, e.g. `4.95` for `1 USD = 4.95 BRL`.
+    pub commercial_quotation: f64,
     /// BlindPay FX quotation (commercial minus BlindPay's spread).
-    pub blindpay_quotation: i64,
+    pub blindpay_quotation: f64,
     /// The converted amount, in the smallest unit.
     pub result_amount: i64,
     /// The instance's flat fee, in the smallest unit.
@@ -171,8 +171,8 @@ mod tests {
         let json = serde_json::json!({
             "id": "qu_123",
             "expires_at": 1712958191_i64,
-            "commercial_quotation": 495,
-            "blindpay_quotation": 485,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 4.85,
             "receiver_amount": 5240,
             "sender_amount": 1010
         });

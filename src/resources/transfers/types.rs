@@ -225,7 +225,7 @@ impl CreateTransferQuoteInput {
 }
 
 /// A transfer quote, returned by `TransferQuotes::create`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct TransferQuote {
     /// The quote identifier, e.g. `qu_000000000000`.
@@ -235,10 +235,10 @@ pub struct TransferQuote {
     pub expires_at: Option<i64>,
     /// The commercial quotation, if set.
     #[serde(default)]
-    pub commercial_quotation: Option<i64>,
+    pub commercial_quotation: Option<f64>,
     /// The BlindPay quotation, if set.
     #[serde(default)]
-    pub blindpay_quotation: Option<i64>,
+    pub blindpay_quotation: Option<f64>,
     /// The amount the receiver gets, in the smallest unit (cents).
     pub receiver_amount: i64,
     /// The amount the sender pays, in the smallest unit (cents).

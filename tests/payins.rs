@@ -40,8 +40,8 @@ async fn create_quote_sends_body_and_parses_response() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "pq_000000000000",
             "expires_at": 1712958191,
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "receiver_amount": 1010,
             "sender_amount": 5240,
             "partner_fee_amount": 150,
@@ -94,8 +94,8 @@ async fn get_fx_rate_sends_body_and_parses_response() {
             "currency_type": "sender"
         })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "result_amount": 1010,
             "instance_flat_fee": 50,
             "instance_percentage_fee": 100
@@ -214,8 +214,8 @@ async fn list_sends_pagination_and_filters_and_parses_paginated() {
                     "sender_amount": 5240,
                     "receiver_amount": 1010,
                     "token": "USDC",
-                    "commercial_quotation": 495,
-                    "blindpay_quotation": 505,
+                    "commercial_quotation": 4.95,
+                    "blindpay_quotation": 5.05,
                     "currency": "BRL",
                     "network": "base"
                 }
@@ -277,8 +277,8 @@ async fn list_handles_bare_array_response() {
                 "sender_amount": 10000,
                 "receiver_amount": 9800,
                 "token": "USDC",
-                "commercial_quotation": 100,
-                "blindpay_quotation": 102,
+                "commercial_quotation": 1.0,
+                "blindpay_quotation": 1.02,
                 "currency": "USD"
             }
         ])))
@@ -332,8 +332,8 @@ async fn get_parses_full_payin() {
             "sender_amount": 5240,
             "receiver_amount": 1010,
             "token": "USDC",
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "currency": "COP",
             "pse_payment_link": "https://pse.example.com/payment/abc123",
             "pse_document_type": "CC"
@@ -393,8 +393,8 @@ async fn get_parses_transfers_instruction_and_null_tracking_fields() {
             "sender_amount": 5240,
             "receiver_amount": 1010,
             "token": "USDC",
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "currency": "ARS"
         })))
         .mount(&server)
@@ -440,8 +440,8 @@ async fn get_track_uses_unauthenticated_e_route() {
             "sender_amount": 5240,
             "receiver_amount": 1010,
             "token": "USDC",
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "currency": "BRL"
         })))
         .mount(&server)
@@ -480,8 +480,8 @@ async fn unknown_payment_method_does_not_break_decoding() {
             "sender_amount": 5240,
             "receiver_amount": 1010,
             "token": "USDC",
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "currency": "BRL"
         })))
         .mount(&server)

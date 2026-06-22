@@ -182,17 +182,17 @@ impl Default for CreatePayinQuoteInput {
 }
 
 /// A payin quote, returned by `PayinQuotes::create`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct PayinQuote {
     /// Quote id.
     pub id: String,
     /// Epoch (seconds) after which the quote expires.
     pub expires_at: i64,
-    /// Commercial quotation (e.g. `495` = 1 USD = 4.95 BRL).
-    pub commercial_quotation: i64,
+    /// Commercial quotation (e.g. `4.95` = 1 USD = 4.95 BRL).
+    pub commercial_quotation: f64,
     /// BlindPay quotation (commercial quotation plus BlindPay fees).
-    pub blindpay_quotation: i64,
+    pub blindpay_quotation: f64,
     /// Amount the receiver gets, in cents.
     pub receiver_amount: i64,
     /// Amount the sender must send, in cents.
@@ -225,13 +225,13 @@ pub struct PayinQuoteFxInput {
 }
 
 /// An FX-rate preview for a payin, returned by `PayinQuotes::get_fx_rate`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct PayinQuoteFx {
     /// Commercial quotation.
-    pub commercial_quotation: i64,
+    pub commercial_quotation: f64,
     /// BlindPay quotation.
-    pub blindpay_quotation: i64,
+    pub blindpay_quotation: f64,
     /// Resulting amount in cents.
     pub result_amount: i64,
     /// Instance flat fee in cents.
@@ -480,7 +480,7 @@ pub struct BlindpayBankDetails {
 }
 
 /// A payin, returned by `Payins::get`, `Payins::list`, and `Payins::get_track`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Payin {
     /// Payin id (`pi_…`).
@@ -548,9 +548,9 @@ pub struct Payin {
     #[serde(default)]
     pub total_fee_amount: Option<i64>,
     /// Commercial quotation.
-    pub commercial_quotation: i64,
+    pub commercial_quotation: f64,
     /// BlindPay quotation.
-    pub blindpay_quotation: i64,
+    pub blindpay_quotation: f64,
     /// Quote currency.
     pub currency: Currency,
     /// Billing fee amount in cents, if any.
@@ -881,8 +881,8 @@ mod tests {
             "sender_amount": 5240,
             "receiver_amount": 1010,
             "token": "USDC",
-            "commercial_quotation": 495,
-            "blindpay_quotation": 505,
+            "commercial_quotation": 4.95,
+            "blindpay_quotation": 5.05,
             "currency": "BRL"
         }))
         .unwrap();

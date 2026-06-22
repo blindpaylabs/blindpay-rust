@@ -89,8 +89,8 @@ async fn quotes_create_sends_body_and_parses_response() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "qu_000000000000",
             "expires_at": 1712958191,
-            "commercial_quotation": 100,
-            "blindpay_quotation": 100,
+            "commercial_quotation": 1.0,
+            "blindpay_quotation": 1.0,
             "receiver_amount": 1000,
             "sender_amount": 1000,
             "partner_fee_amount": null,
