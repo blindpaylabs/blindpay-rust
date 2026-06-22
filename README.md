@@ -1,170 +1,119 @@
-# blindpay-rust
+# BlindPay Rust SDK
 
-Official Rust SDK for the [BlindPay](https://www.blindpay.com) payments API.
+The official Rust SDK for [BlindPay](https://blindpay.com) — Stablecoin API for global payments.
 
 ## Installation
+
+```bash
+cargo add blindpay
+```
+
+Or add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 blindpay = "0.1"
+```
+
+The SDK is async and runtime-agnostic; the examples below use [Tokio](https://tokio.rs):
+
+```toml
+[dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
-The SDK is async and runtime-agnostic; the examples below use `tokio`.
+## Authentication
 
-## Quick start
+To get started, you will need both your API key and your instance id. You can obtain them from the BlindPay dashboard at [https://app.blindpay.com/instances/{instanceId}/api-keys](https://app.blindpay.com/instances/{instanceId}/api-keys).
 
 ```rust,no_run
-use blindpay::{BlindPay, Rail};
+use blindpay::BlindPay;
+
+let blindpay = BlindPay::new("your-api-key-here", "your-instance-id-here")?;
+# let _ = blindpay;
+# Ok::<(), blindpay::Error>(())
+```
+
+> **Note**
+> All API calls use the provided API key and instance id.
+
+## Quick Start
+
+### Check for available rails
+
+```rust,no_run
+use blindpay::BlindPay;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Get your API key and instance ID from the BlindPay dashboard.
-    let client = BlindPay::new("your-api-key", "your-instance-id")?;
+    let blindpay = BlindPay::new("your-api-key-here", "your-instance-id-here")?;
 
-    // List the available payment rails.
-    let rails = client.available.get_rails().await?;
+    let rails = blindpay.available.get_rails().await?;
     for rail in &rails {
-        println!("{} ({}) — {}", rail.label, rail.value, rail.country);
-    }
-
-    // Fetch the bank-detail fields required for a specific rail.
-    let fields = client.available.get_bank_details(Rail::Pix).await?;
-    for field in &fields {
-        println!("{}: required={:?}", field.label, field.required);
+        println!("{} ({}) in {}", rail.label, rail.value, rail.country);
     }
 
     Ok(())
 }
 ```
 
+## Response format
+
+Every method returns a [`Result`](https://doc.rust-lang.org/std/result/enum.Result.html), so you handle success and failure with ordinary Rust control flow — `?`, `match`, or the `Result` combinators.
+
+- **Success** resolves to the typed response (for example `Vec<RailEntry>` or `Customer`).
+- **Failure** is a `blindpay::Error`. API responses with a non-2xx status are `Error::Api`, which carries the HTTP `status`, the API `message`, and the raw response `body`. Other variants cover transport (`Error::Http`), response decoding (`Error::Decode`), and client configuration (`Error::Config`).
+
 ## Error handling
 
-Every method returns `blindpay::Result<T>`. API responses with a non-2xx status
-surface as `Error::Api`, carrying the HTTP status, the API's message, and the
-raw response body:
+Always handle the `Result`. Match on the error to react to specific cases:
 
 ```rust,no_run
 use blindpay::{BlindPay, Error};
 
 #[tokio::main]
 async fn main() {
-    let client = BlindPay::new("your-api-key", "your-instance-id").unwrap();
-    match client.available.get_rails().await {
-        Ok(rails) => println!("{} rails", rails.len()),
-        Err(Error::Api(err)) => eprintln!("api error {}: {}", err.status, err.message),
-        Err(err) => eprintln!("error: {err}"),
+    let blindpay = BlindPay::new("your-api-key-here", "your-instance-id-here").unwrap();
+
+    match blindpay.available.get_rails().await {
+        Ok(rails) => println!("Success: {} rails", rails.len()),
+        Err(Error::Api(err)) => eprintln!("API error {}: {}", err.status, err.message),
+        Err(err) => eprintln!("Error: {err}"),
     }
 }
 ```
 
 ## Configuration
 
-Use the builder for a custom base URL, timeout, or `reqwest::Client`:
+Use the builder for a custom timeout, base URL, or a preconfigured `reqwest::Client`:
 
 ```rust,no_run
 use std::time::Duration;
 use blindpay::BlindPay;
 
-let _client = BlindPay::builder("your-api-key", "your-instance-id")
+let blindpay = BlindPay::builder("your-api-key-here", "your-instance-id-here")
     .timeout(Duration::from_secs(10))
-    .build()
-    .unwrap();
+    .build()?;
+# let _ = blindpay;
+# Ok::<(), blindpay::Error>(())
 ```
 
-## Working with customers
-
-```rust,no_run
-use blindpay::{BlindPay, ListBankAccountsParams, ListCustomersParams};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = BlindPay::new("your-api-key", "your-instance-id")?;
-
-    // List customers (paginated).
-    let page = client.customers.list(&ListCustomersParams::default()).await?;
-    for customer in page.data() {
-        println!("{}: {:?}", customer.id, customer.kyc_status);
-    }
-
-    // Fetch a single customer and its bank accounts.
-    let customer = client.customers.get("cu_000000000000").await?;
-    println!("{:?}", customer.kyc_status);
-
-    let accounts = client
-        .customers
-        .bank_accounts
-        .list("cu_000000000000", &ListBankAccountsParams::default())
-        .await?;
-    println!("{} bank account(s)", accounts.len());
-
-    Ok(())
-}
-```
-
-## Working with payouts
-
-```rust,no_run
-use blindpay::{BlindPay, ListPayoutsParams};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = BlindPay::new("your-api-key", "your-instance-id")?;
-
-    // List payouts (paginated).
-    let page = client.payouts.list(&ListPayoutsParams::default()).await?;
-    for payout in page.data() {
-        println!("{} — {:?}", payout.id, payout.status);
-    }
-
-    // Fetch a single payout and its live tracking status.
-    let payout = client.payouts.get("po_000000000000").await?;
-    let tracked = client.payouts.get_track("po_000000000000").await?;
-    println!("{:?} / {:?}", payout.status, tracked.status);
-
-    Ok(())
-}
-```
-
-## Resources
-
-Each resource is a field on the [`BlindPay`] client. Some expose nested
-sub-resources (e.g. `client.customers.bank_accounts`, `client.wallets.blockchain`).
-
-| Resource                       | Methods                                                                                                                                                                                                                                                                                          |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `available`                    | `get_rails`, `get_bank_details`, `get_naics_codes`, `get_swift_code_bank_details`                                                                                                                                                                                                                |
-| `instances`                    | `get_members`, `update`, `delete`, `update_member_role`, `delete_member`, `migrate_ownership`                                                                                                                                                                                                    |
-| `instances.tos`                | `initiate`                                                                                                                                                                                                                                                                                       |
-| `instances.webhook_endpoints`  | `list`, `create`, `delete`, `get_secret`, `get_portal_access_url`                                                                                                                                                                                                                                |
-| `partner_fees`                 | `list`, `get`, `create`, `delete`                                                                                                                                                                                                                                                                |
-| `fees`                         | `get`                                                                                                                                                                                                                                                                                            |
-| `customers`                    | `list`, `create_individual_with_standard_kyc`, `create_individual_with_enhanced_kyc`, `create_business_with_standard_kyb`, `get`, `update`, `delete`, `get_limits`, `get_limit_increase_requests`, `request_limit_increase`                                                                       |
-| `customers.bank_accounts`      | `list`, `get`, `delete`, `create_pix`, `create_pix_safe`, `create_ted`, `create_spei_bitso`, `create_transfers_bitso`, `create_ach_cop_bitso`, `create_ach`, `create_wire`, `create_rtp`, `create_international_swift`, `create_sepa`                                                             |
-| `wallets.blockchain`           | `list`, `get`, `get_wallet_message`, `create_with_address`, `create_with_hash`, `delete`                                                                                                                                                                                                         |
-| `wallets.custodial`            | `list`, `get`, `get_balance`, `create`, `delete`                                                                                                                                                                                                                                                 |
-| `wallets.offramp`              | `list`, `get`, `create`                                                                                                                                                                                                                                                                          |
-| `virtual_accounts`             | `list`, `get`, `create`, `update`                                                                                                                                                                                                                                                                |
-| `quotes`                       | `create`, `get_fx_rate`                                                                                                                                                                                                                                                                          |
-| `payins`                       | `create_evm`, `list`, `get`, `get_track`                                                                                                                                                                                                                                                         |
-| `payins.quotes`                | `create`, `get_fx_rate`                                                                                                                                                                                                                                                                          |
-| `payouts`                      | `create_evm`, `create_solana`, `create_stellar`, `authorize_stellar_token`, `submit_documents`, `list`, `get`, `get_track`                                                                                                                                                                       |
-| `transfers`                    | `create`, `list`, `get`, `get_track`                                                                                                                                                                                                                                                             |
-| `transfers.quotes`             | `create`                                                                                                                                                                                                                                                                                         |
-| `upload`                       | `upload`                                                                                                                                                                                                                                                                                         |
-
-## Cargo features
+### Cargo features
 
 - `rustls-tls` *(default)* — TLS via [rustls](https://github.com/rustls/rustls).
 - `native-tls` — TLS via the platform's native library.
 
-## Releasing
+For detailed API documentation, visit:
+- [BlindPay API documentation](https://blindpay.com/docs/getting-started/overview)
+- [API Reference](https://api.blindpay.com/reference)
 
-Releases are automated with [release-plz](https://release-plz.dev). On every push
-to `main` it opens a release PR (version bump + changelog); merging that PR tags
-the release and publishes to crates.io. Publishing requires the
-`CARGO_REGISTRY_TOKEN` repository secret to be set (a crates.io API token).
+## Support
+
+- 📧 Email: [alves@blindpay.com](mailto:alves@blindpay.com)
+- 🐛 Issues: [GitHub Issues](https://github.com/blindpaylabs/blindpay-rust/issues)
 
 ## License
 
-Licensed under the [MIT license](https://github.com/blindpaylabs/blindpay-rust/blob/main/LICENSE).
+This project is licensed under the MIT License — see the [LICENSE](https://github.com/blindpaylabs/blindpay-rust/blob/main/LICENSE) file for details.
+
+Made with ❤️ by the [BlindPay](https://blindpay.com) team
