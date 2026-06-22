@@ -1,0 +1,7 @@
+/target
+**/*.rs.bk
+.DS_Store
+.claude/
+PLAN.md
+AGENTS.md
+CLAUDE.md
