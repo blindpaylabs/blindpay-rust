@@ -2,21 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::{CurrencyType, Network, TransactionStatus, open_enum};
-
-open_enum! {
-    /// A step in a transfer's blockchain tracking timeline.
-    pub enum TrackingStatus {
-        /// Being processed.
-        Processing => "processing",
-        /// Temporarily on hold.
-        OnHold => "on_hold",
-        /// Awaiting manual review.
-        PendingReview => "pending_review",
-        /// Completed.
-        Completed => "completed",
-    }
-}
+use crate::common::{CurrencyType, Network, TrackingStatus, TransactionStatus};
 
 /// A single blockchain step in a transfer's tracking timeline.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -253,22 +239,6 @@ pub struct TransferQuote {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn tracking_status_round_trips() {
-        assert_eq!(
-            serde_json::to_string(&TrackingStatus::OnHold).unwrap(),
-            "\"on_hold\""
-        );
-        assert_eq!(
-            serde_json::from_str::<TrackingStatus>("\"pending_review\"").unwrap(),
-            TrackingStatus::PendingReview
-        );
-        assert_eq!(
-            serde_json::from_str::<TrackingStatus>("\"future\"").unwrap(),
-            TrackingStatus::Unknown("future".to_string())
-        );
-    }
 
     #[test]
     fn create_transfer_input_serializes_quote_id() {

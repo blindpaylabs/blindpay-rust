@@ -3,8 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::common::{
-    AccountClass, AccountType, Country, Currency, Network, Rail, Token, TransactionStatus,
-    open_enum,
+    AccountClass, AccountType, Country, Currency, Network, ProviderName, Rail, Token,
+    TransactionStatus, open_enum,
 };
 
 open_enum! {
@@ -97,48 +97,6 @@ open_enum! {
         WaitingDocuments => "waiting_documents",
         /// Documents are under compliance review.
         ComplianceReviewing => "compliance_reviewing",
-    }
-}
-
-/// The name of the payment provider that processed a payout leg.
-///
-/// The API defines this as a large, evolving vendor set (and the wire values use
-/// vendor display names like `"JPMorgan Chase"`), so it is modeled as a
-/// transparent newtype rather than an enumerated type — strongly typed (never a
-/// bare `String`) yet forward-compatible with new providers.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-#[non_exhaustive]
-pub struct ProviderName(String);
-
-impl ProviderName {
-    /// Returns the provider name as a string slice.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl From<&str> for ProviderName {
-    fn from(value: &str) -> Self {
-        ProviderName(value.to_string())
-    }
-}
-
-impl From<String> for ProviderName {
-    fn from(value: String) -> Self {
-        ProviderName(value)
-    }
-}
-
-impl AsRef<str> for ProviderName {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for ProviderName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
     }
 }
 

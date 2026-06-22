@@ -11,7 +11,7 @@ pub use bank_accounts::{
     CreateAchInput, CreateInternationalSwiftInput, CreatePixInput, CreatePixSafeInput,
     CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
     CreateTransfersBitsoInput, CreateWireInput, ListBankAccountsParams, RecipientRelationship,
-    SpeiProtocol, SwiftPaymentCode, TransfersType,
+    SpeiProtocol, SwiftPaymentCode,
 };
 pub use types::{
     AmlHits, BusinessType, CreateBusinessWithStandardKybInput, CreateCustomerResponse,

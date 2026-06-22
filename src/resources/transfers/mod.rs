@@ -6,8 +6,8 @@ mod types;
 
 pub use quotes::TransferQuotes;
 pub use types::{
-    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, TrackingStatus,
-    Transfer, TransferQuote, TransferTrackingStep, TransferTrackingTransactionMonitoring,
+    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, Transfer, TransferQuote,
+    TransferTrackingStep, TransferTrackingTransactionMonitoring,
 };
 
 use std::sync::Arc;

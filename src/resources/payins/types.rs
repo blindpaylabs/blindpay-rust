@@ -4,21 +4,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::common::{
-    AccountClass, Currency, CurrencyType, Network, PaymentMethod, Token, TransactionStatus,
-    open_enum,
+    AccountClass, Currency, CurrencyType, Network, PaymentMethod, ProviderName, Token,
+    TrackingStatus, TransactionStatus, TransfersType, open_enum,
 };
-
-open_enum! {
-    /// The account-identifier type in a [`TransfersInstruction`] (Transfers 3.0).
-    pub enum TransfersType {
-        /// Clave Virtual Uniforme (CVU).
-        Cvu => "CVU",
-        /// Clave Bancaria Uniforme (CBU).
-        Cbu => "CBU",
-        /// Human-readable account alias.
-        Alias => "ALIAS",
-    }
-}
 
 open_enum! {
     /// The payer document type for PSE (Colombian) payins.
@@ -31,67 +19,12 @@ open_enum! {
 }
 
 open_enum! {
-    /// The lifecycle step shared by a payin's tracking legs.
-    pub enum TrackingStatus {
-        /// The leg is in progress.
-        Processing => "processing",
-        /// The leg is paused (e.g. awaiting review).
-        OnHold => "on_hold",
-        /// The leg is awaiting manual review.
-        PendingReview => "pending_review",
-        /// The leg has finished.
-        Completed => "completed",
-    }
-}
-
-open_enum! {
     /// The sub-status of a payin's inbound fiat-leg transaction.
     pub enum PayinTransactionStatus {
         /// The transaction failed.
         Failed => "failed",
         /// The transaction completed.
         Completed => "completed",
-    }
-}
-
-/// The name of the payment provider that processed a payin leg.
-///
-/// The API defines this as a large, evolving set of provider names, so it is
-/// modeled as a transparent newtype rather than an enumerated type — strongly
-/// typed (never a bare `String`) yet forward-compatible with new providers.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-#[non_exhaustive]
-pub struct ProviderName(String);
-
-impl ProviderName {
-    /// Returns the provider name as a string slice.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl From<&str> for ProviderName {
-    fn from(value: &str) -> Self {
-        ProviderName(value.to_string())
-    }
-}
-
-impl From<String> for ProviderName {
-    fn from(value: String) -> Self {
-        ProviderName(value)
-    }
-}
-
-impl AsRef<str> for ProviderName {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for ProviderName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
     }
 }
 

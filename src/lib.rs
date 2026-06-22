@@ -13,8 +13,8 @@ pub mod webhooks;
 pub use client::{BlindPay, BlindPayBuilder, DEFAULT_BASE_URL, DEFAULT_TIMEOUT};
 pub use common::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Limit, ListResponse,
-    Network, Offset, Pagination, PaginationParams, PaymentMethod, Rail, Success, Token,
-    TransactionStatus, WebhookEvent,
+    Network, Offset, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail, Success,
+    Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
 pub use error::{ApiError, Error, Result};
 pub use resources::available::{
@@ -32,7 +32,7 @@ pub use resources::customers::{
     LimitIncrease, LimitIncreaseStatus, LimitWindow, ListBankAccountsParams, ListCustomersParams,
     Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType, RecipientRelationship,
     RequestLimitIncreaseInput, RequestLimitIncreaseResponse, SpeiProtocol, SupportingDocumentType,
-    SwiftPaymentCode, TransfersType, UpdateCustomerInput,
+    SwiftPaymentCode, UpdateCustomerInput,
 };
 pub use resources::fees::{Fee, FeeOptions, Fees};
 pub use resources::instances::{
@@ -55,16 +55,14 @@ pub use resources::payouts::{
     PayoutLiquidityProviderStatus, PayoutPaymentProviderStatus, PayoutTrackingComplete,
     PayoutTrackingDocuments, PayoutTrackingLiquidity, PayoutTrackingPartnerFee,
     PayoutTrackingPayment, PayoutTrackingStep, PayoutTrackingTransaction, PayoutTransactionStatus,
-    Payouts, ProviderName, SubmitPayoutDocumentsInput, SubmitPayoutDocumentsResponse,
-    TransactionDocumentType,
+    Payouts, SubmitPayoutDocumentsInput, SubmitPayoutDocumentsResponse, TransactionDocumentType,
 };
 pub use resources::quotes::{
     CreateQuoteInput, GetFxRateInput, Quote, QuoteContract, QuoteContractNetwork, QuoteFx, Quotes,
 };
 pub use resources::transfers::{
-    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, TrackingStatus,
-    Transfer, TransferQuote, TransferQuotes, TransferTrackingStep,
-    TransferTrackingTransactionMonitoring, Transfers,
+    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, Transfer, TransferQuote,
+    TransferQuotes, TransferTrackingStep, TransferTrackingTransactionMonitoring, Transfers,
 };
 pub use resources::upload::{Upload, UploadBucket, UploadResponse};
 pub use resources::virtual_accounts::{

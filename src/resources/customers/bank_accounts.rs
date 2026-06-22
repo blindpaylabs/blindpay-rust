@@ -10,7 +10,7 @@ use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::client::Inner;
-use crate::common::{AccountClass, AccountType, Country, Rail, Success, open_enum};
+use crate::common::{AccountClass, AccountType, Country, Rail, Success, TransfersType, open_enum};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::resources::wallets::OfframpWallet;
@@ -105,19 +105,6 @@ open_enum! {
         Debitcard => "debitcard",
         /// Phone number.
         Phonenum => "phonenum",
-    }
-}
-
-open_enum! {
-    /// The Transfers 3.0 account identifier type (Argentina). Wire values are
-    /// uppercase.
-    pub enum TransfersType {
-        /// CVU (virtual uniform key).
-        Cvu => "CVU",
-        /// CBU (uniform banking key).
-        Cbu => "CBU",
-        /// Alias.
-        Alias => "ALIAS",
     }
 }
 

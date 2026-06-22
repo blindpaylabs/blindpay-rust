@@ -1,11 +1,10 @@
 //! Integration tests for the `payins` resource and its `quotes` sub-resource,
 //! backed by a mock HTTP server.
 
-use blindpay::resources::payins::{TrackingStatus, TransfersType};
 use blindpay::{
     AccountClass, BlindPay, CreatePayinInput, CreatePayinQuoteInput, Currency, CurrencyType, Error,
     Limit, ListPayinsParams, PayerRules, PayinQuoteFxInput, PaymentMethod, PseDocumentType, Token,
-    TransactionStatus,
+    TrackingStatus, TransactionStatus, TransfersType,
 };
 use wiremock::matchers::{body_json, header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};

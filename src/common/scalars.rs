@@ -310,6 +310,79 @@ impl PartialEq<&str> for Country {
     }
 }
 
+open_enum! {
+    /// The Transfers 3.0 account identifier type (Argentina). Wire values are
+    /// uppercase.
+    ///
+    /// Shared by bank accounts (`transfers_bitso`) and payin transfers
+    /// instructions.
+    pub enum TransfersType {
+        /// CVU (virtual uniform key).
+        Cvu => "CVU",
+        /// CBU (uniform banking key).
+        Cbu => "CBU",
+        /// Alias.
+        Alias => "ALIAS",
+    }
+}
+
+open_enum! {
+    /// A step in a transaction's tracking timeline (shared by payins and
+    /// transfers). Distinct from [`TransactionStatus`]: tracking steps include
+    /// `pending_review` and exclude `failed`/`refunded`.
+    pub enum TrackingStatus {
+        /// Being processed.
+        Processing => "processing",
+        /// Temporarily on hold.
+        OnHold => "on_hold",
+        /// Awaiting manual review.
+        PendingReview => "pending_review",
+        /// Completed.
+        Completed => "completed",
+    }
+}
+
+/// The name of the payment provider that processed a payin/payout leg.
+///
+/// The API defines this as a large, evolving set of vendor display names, so it
+/// is modeled as a transparent newtype rather than an enum — strongly typed
+/// (never a bare `String`) yet forward-compatible with new providers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+#[non_exhaustive]
+pub struct ProviderName(String);
+
+impl ProviderName {
+    /// Returns the provider name as a string slice.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<&str> for ProviderName {
+    fn from(value: &str) -> Self {
+        ProviderName(value.to_string())
+    }
+}
+
+impl From<String> for ProviderName {
+    fn from(value: String) -> Self {
+        ProviderName(value)
+    }
+}
+
+impl AsRef<str> for ProviderName {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for ProviderName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,5 +458,27 @@ mod tests {
         assert_eq!(c.as_str(), "US");
         assert_eq!(c, "US");
         assert_eq!(serde_json::to_string(&c).unwrap(), "\"US\"");
+    }
+
+    #[test]
+    fn shared_quote_and_tracking_types_round_trip() {
+        assert_eq!(
+            serde_json::to_string(&TransfersType::Cvu).unwrap(),
+            "\"CVU\""
+        );
+        assert_eq!(
+            serde_json::from_str::<TransfersType>("\"ALIAS\"").unwrap(),
+            TransfersType::Alias
+        );
+        assert_eq!(
+            serde_json::from_str::<TrackingStatus>("\"pending_review\"").unwrap(),
+            TrackingStatus::PendingReview
+        );
+        let provider: ProviderName = serde_json::from_str("\"JPMorgan Chase\"").unwrap();
+        assert_eq!(provider, ProviderName::from("JPMorgan Chase"));
+        assert_eq!(
+            serde_json::to_string(&provider).unwrap(),
+            "\"JPMorgan Chase\""
+        );
     }
 }

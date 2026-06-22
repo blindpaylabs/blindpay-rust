@@ -8,9 +8,8 @@ pub use types::{
     BlindpayBankAccount, BlindpayBankDetails, BlindpayBankParty, CreatePayinInput,
     CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, PayerRules, Payin, PayinQuote,
     PayinQuoteFx, PayinQuoteFxInput, PayinTrackingComplete, PayinTrackingPartnerFee,
-    PayinTrackingPayment, PayinTrackingTransaction, PayinTransactionStatus, ProviderName,
-    PseDocumentType, PseInstruction, SwiftReceivingBank, TedInstruction, TrackingStatus,
-    TransfersInstruction, TransfersType,
+    PayinTrackingPayment, PayinTrackingTransaction, PayinTransactionStatus, PseDocumentType,
+    PseInstruction, SwiftReceivingBank, TedInstruction, TransfersInstruction,
 };
 
 use std::sync::Arc;

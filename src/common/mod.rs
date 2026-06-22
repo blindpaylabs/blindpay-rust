@@ -9,7 +9,7 @@ mod scalars;
 pub use pagination::{Limit, ListResponse, Offset, Pagination, PaginationParams};
 pub use scalars::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Network, PaymentMethod,
-    Rail, Token, TransactionStatus, WebhookEvent,
+    ProviderName, Rail, Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
 
 use serde::Deserialize;

@@ -14,8 +14,7 @@ pub use types::{
     PayoutLiquidityProviderStatus, PayoutPaymentProviderStatus, PayoutTrackingComplete,
     PayoutTrackingDocuments, PayoutTrackingLiquidity, PayoutTrackingPartnerFee,
     PayoutTrackingPayment, PayoutTrackingStep, PayoutTrackingTransaction, PayoutTransactionStatus,
-    ProviderName, SubmitPayoutDocumentsInput, SubmitPayoutDocumentsResponse,
-    TransactionDocumentType,
+    SubmitPayoutDocumentsInput, SubmitPayoutDocumentsResponse, TransactionDocumentType,
 };
 
 use std::sync::Arc;
