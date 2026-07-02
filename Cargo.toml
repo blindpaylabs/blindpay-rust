@@ -1,0 +1,32 @@
+[package]
+name = "blindpay"
+version = "0.2.0"
+edition = "2024"
+description = "Official Rust SDK for the BlindPay payments API."
+license = "MIT"
+repository = "https://github.com/blindpaylabs/blindpay-rust"
+homepage = "https://www.blindpay.com"
+documentation = "https://docs.rs/blindpay"
+readme = "README.md"
+keywords = ["blindpay", "payments", "stablecoin", "api", "sdk"]
+categories = ["api-bindings", "finance"]
+
+[features]
+default = ["rustls-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+svix = "1"
+http = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+
+[package.metadata.docs.rs]
+all-features = true
