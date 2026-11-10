@@ -61,12 +61,15 @@ pub struct Transfer {
     pub tracking_bridge_swap: TransferTrackingStep,
     /// Completion tracking step.
     pub tracking_complete: TransferTrackingStep,
-    /// Partner-fee tracking step.
-    pub tracking_partner_fee: TransferTrackingStep,
+    /// Partner-fee tracking step, if any.
+    #[serde(default)]
+    pub tracking_partner_fee: Option<TransferTrackingStep>,
     /// When the transfer was created (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// When the transfer was last updated (ISO 8601).
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
     /// Receiver image URL, if any.
     #[serde(default)]
     pub image_url: Option<String>,
@@ -102,7 +105,8 @@ pub struct Transfer {
     /// The customer this transfer's wallet belongs to (`re_…`).
     pub customer_id: String,
     /// The sending wallet's blockchain address.
-    pub address: String,
+    #[serde(default)]
+    pub address: Option<String>,
     /// The sending wallet's blockchain network.
     pub network: Network,
 }
@@ -140,8 +144,9 @@ pub struct CreateTransferResponse {
     pub tracking_paymaster: TransferTrackingStep,
     /// Transaction-monitoring tracking step.
     pub tracking_transaction_monitoring: TransferTrackingTransactionMonitoring,
-    /// Partner-fee tracking step.
-    pub tracking_partner_fee: TransferTrackingStep,
+    /// Partner-fee tracking step, if any.
+    #[serde(default)]
+    pub tracking_partner_fee: Option<TransferTrackingStep>,
 }
 
 /// Input for `TransferQuotes::create`.

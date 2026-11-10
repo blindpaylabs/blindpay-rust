@@ -61,7 +61,7 @@ async fn list_customers_parses_paginated_response_and_sends_auth_headers() {
     assert_eq!(customer.kyc_type, KycType::Standard);
     assert_eq!(customer.kyc_status, KycStatus::Verifying);
     assert_eq!(customer.first_name.as_deref(), Some("Ana"));
-    assert_eq!(customer.limit.as_ref().unwrap().monthly, 1000000);
+    assert_eq!(customer.limit.as_ref().unwrap().monthly, Some(1000000));
     assert!(resp.pagination().is_some());
     assert!(!resp.pagination().unwrap().has_more);
 }

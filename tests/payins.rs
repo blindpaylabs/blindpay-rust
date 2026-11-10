@@ -74,8 +74,8 @@ async fn create_quote_sends_body_and_parses_response() {
         .unwrap();
 
     assert_eq!(quote.id, "pq_000000000000");
-    assert_eq!(quote.sender_amount, 5240);
-    assert_eq!(quote.receiver_amount, 1010);
+    assert_eq!(quote.sender_amount, Some(5240));
+    assert_eq!(quote.receiver_amount, Some(1010));
     assert_eq!(quote.partner_fee_amount, Some(150));
     assert_eq!(quote.is_otc, Some(false));
 }
@@ -116,7 +116,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
         .unwrap();
 
     assert_eq!(fx.result_amount, 1010);
-    assert_eq!(fx.instance_flat_fee, 50);
+    assert_eq!(fx.instance_flat_fee, Some(50));
     assert_eq!(fx.instance_percentage_fee, 100.0);
 }
 
@@ -177,7 +177,10 @@ async fn create_evm_sends_payin_quote_id_and_parses_response() {
     assert_eq!(payin.status, TransactionStatus::Processing);
     assert_eq!(payin.partner_fee, Some(25000));
     assert_eq!(payin.payment_method, Some(PaymentMethod::Pix));
-    assert_eq!(payin.blindpay_bank_details.routing_number, "121145349");
+    assert_eq!(
+        payin.blindpay_bank_details.routing_number.as_deref(),
+        Some("121145349")
+    );
     assert_eq!(payin.receiver_amount, Some(1010));
 }
 

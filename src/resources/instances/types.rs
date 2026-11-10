@@ -49,7 +49,8 @@ pub struct Member {
     /// The member's role within the instance.
     pub role: UserRole,
     /// Creation timestamp (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
 }
 
 /// Body for `Instances::update`.
@@ -129,9 +130,11 @@ pub struct WebhookEndpoint {
     /// The owning instance identifier.
     pub instance_id: String,
     /// Creation timestamp (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// Last update timestamp (ISO 8601).
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 /// Body for `WebhookEndpoints::create`.

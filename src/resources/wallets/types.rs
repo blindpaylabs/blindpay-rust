@@ -86,9 +86,11 @@ pub struct BlockchainWallet {
     /// Wallet identifier (prefix `bw_`).
     pub id: String,
     /// Display name for the wallet.
-    pub name: String,
+    #[serde(default)]
+    pub name: Option<String>,
     /// The blockchain network the wallet is on.
-    pub network: Network,
+    #[serde(default)]
+    pub network: Option<Network>,
     /// The wallet address. Present for account-abstraction registrations.
     #[serde(default)]
     pub address: Option<String>,
@@ -98,7 +100,8 @@ pub struct BlockchainWallet {
     pub signature_tx_hash: Option<String>,
     /// Whether the wallet was registered as an account-abstraction wallet
     /// (address-based) rather than via a signature.
-    pub is_account_abstraction: bool,
+    #[serde(default)]
+    pub is_account_abstraction: Option<bool>,
     /// Identifier of the customer the wallet belongs to (prefix `re_`).
     pub customer_id: String,
 }
@@ -158,7 +161,8 @@ pub struct Wallet {
     /// The blockchain network the wallet is on.
     pub network: Network,
     /// When the wallet was created.
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
 }
 
 /// Request body for creating a custodial wallet.
@@ -271,8 +275,8 @@ mod tests {
         });
         let wallet: BlockchainWallet = serde_json::from_value(json).unwrap();
         assert_eq!(wallet.id, "bw_000000000000");
-        assert_eq!(wallet.network, Network::Polygon);
-        assert!(wallet.is_account_abstraction);
+        assert_eq!(wallet.network, Some(Network::Polygon));
+        assert_eq!(wallet.is_account_abstraction, Some(true));
         assert_eq!(wallet.customer_id, "re_000000000000");
         assert!(wallet.signature_tx_hash.is_none());
     }

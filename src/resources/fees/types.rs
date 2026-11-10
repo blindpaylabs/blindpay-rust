@@ -68,9 +68,11 @@ pub struct Fee {
     /// Solana chain fees.
     pub solana: FeeOptions,
     /// ISO-8601 creation timestamp.
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// ISO-8601 last-update timestamp.
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 #[cfg(test)]

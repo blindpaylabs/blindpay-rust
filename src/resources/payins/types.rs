@@ -121,20 +121,26 @@ pub struct PayinQuote {
     /// Quote id.
     pub id: String,
     /// Epoch (seconds) after which the quote expires.
-    pub expires_at: i64,
+    #[serde(default)]
+    pub expires_at: Option<i64>,
     /// Commercial quotation (e.g. `4.95` = 1 USD = 4.95 BRL).
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation (commercial quotation plus BlindPay fees).
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Amount the receiver gets, in cents.
-    pub receiver_amount: i64,
+    #[serde(default)]
+    pub receiver_amount: Option<i64>,
     /// Amount the sender must send, in cents.
-    pub sender_amount: i64,
+    #[serde(default)]
+    pub sender_amount: Option<i64>,
     /// Partner fee amount in cents, if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
     /// Flat fee in cents.
-    pub flat_fee: i64,
+    #[serde(default)]
+    pub flat_fee: Option<i64>,
     /// Billing fee in cents, if any.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
@@ -162,13 +168,16 @@ pub struct PayinQuoteFxInput {
 #[non_exhaustive]
 pub struct PayinQuoteFx {
     /// Commercial quotation.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation.
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Resulting amount in cents.
     pub result_amount: i64,
     /// Instance flat fee in cents.
-    pub instance_flat_fee: i64,
+    #[serde(default)]
+    pub instance_flat_fee: Option<i64>,
     /// Instance percentage fee in basis points (may be fractional).
     pub instance_percentage_fee: f64,
 }
@@ -356,11 +365,14 @@ pub struct BlindpayBankAccount {
 #[non_exhaustive]
 pub struct BlindpayBankParty {
     /// Party name.
-    pub name: String,
+    #[serde(default)]
+    pub name: Option<String>,
     /// First address line.
-    pub address_line_1: String,
+    #[serde(default)]
+    pub address_line_1: Option<String>,
     /// Second address line.
-    pub address_line_2: String,
+    #[serde(default)]
+    pub address_line_2: Option<String>,
 }
 
 /// SWIFT receiving-bank block (nullable fields) within [`BlindpayBankDetails`].
@@ -383,11 +395,14 @@ pub struct SwiftReceivingBank {
 #[non_exhaustive]
 pub struct BlindpayBankDetails {
     /// Routing number.
-    pub routing_number: String,
+    #[serde(default)]
+    pub routing_number: Option<String>,
     /// Account number.
-    pub account_number: String,
+    #[serde(default)]
+    pub account_number: Option<String>,
     /// Account type label.
-    pub account_type: String,
+    #[serde(default)]
+    pub account_type: Option<String>,
     /// SWIFT/BIC code.
     #[serde(default)]
     pub swift_bic_code: Option<String>,
@@ -445,9 +460,11 @@ pub struct Payin {
     #[serde(default)]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Creation timestamp.
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// Last-update timestamp.
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
     /// Receiver avatar URL.
     #[serde(default)]
     pub image_url: Option<String>,
@@ -466,9 +483,11 @@ pub struct Payin {
     /// Payment method of the underlying quote.
     pub payment_method: PaymentMethod,
     /// Amount the sender sends, in cents.
-    pub sender_amount: i64,
+    #[serde(default)]
+    pub sender_amount: Option<i64>,
     /// Amount the receiver gets, in cents.
-    pub receiver_amount: i64,
+    #[serde(default)]
+    pub receiver_amount: Option<i64>,
     /// Stablecoin token received.
     pub token: Token,
     /// Applied partner fee id (`pf_…`), if any.
@@ -482,9 +501,11 @@ pub struct Payin {
     #[serde(default)]
     pub total_fee_amount: Option<f64>,
     /// Commercial quotation.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation.
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Quote currency.
     pub currency: Currency,
     /// Billing fee amount in cents, if any.
@@ -838,6 +859,7 @@ mod tests {
         .unwrap();
         assert_eq!(payin.id, "pi_123");
         assert_eq!(payin.customer_id, "re_123");
+        assert_eq!(payin.commercial_quotation, Some(4.95));
         assert_eq!(payin.account_class, AccountClass::Individual);
         assert_eq!(payin.payment_method, PaymentMethod::Pix);
         assert_eq!(payin.token, Token::Usdc);

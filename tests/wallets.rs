@@ -56,8 +56,8 @@ async fn blockchain_list_parses_and_sends_auth_headers() {
 
     assert_eq!(wallets.len(), 1);
     assert_eq!(wallets[0].id, "bw_000000000000");
-    assert_eq!(wallets[0].network, Network::Polygon);
-    assert!(wallets[0].is_account_abstraction);
+    assert_eq!(wallets[0].network, Some(Network::Polygon));
+    assert_eq!(wallets[0].is_account_abstraction, Some(true));
     assert_eq!(wallets[0].customer_id, "re_000000000000");
     assert!(wallets[0].signature_tx_hash.is_none());
 }
@@ -113,8 +113,8 @@ async fn blockchain_get_parses_single_wallet() {
         .await
         .unwrap();
 
-    assert_eq!(wallet.network, Network::Base);
-    assert!(!wallet.is_account_abstraction);
+    assert_eq!(wallet.network, Some(Network::Base));
+    assert_eq!(wallet.is_account_abstraction, Some(false));
     assert_eq!(
         wallet.signature_tx_hash.as_deref(),
         Some("0x3c499c542cef5e3811e1192ce70d8cc03d5c3359")
@@ -161,7 +161,7 @@ async fn blockchain_create_with_address_sends_true_discriminator() {
         .unwrap();
 
     assert_eq!(wallet.id, "bw_000000000000");
-    assert!(wallet.is_account_abstraction);
+    assert_eq!(wallet.is_account_abstraction, Some(true));
 }
 
 #[tokio::test]
@@ -203,7 +203,7 @@ async fn blockchain_create_with_hash_sends_false_discriminator() {
         .unwrap();
 
     assert_eq!(wallet.id, "bw_000000000001");
-    assert!(!wallet.is_account_abstraction);
+    assert_eq!(wallet.is_account_abstraction, Some(false));
 }
 
 #[tokio::test]

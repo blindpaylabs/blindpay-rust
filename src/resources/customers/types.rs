@@ -223,12 +223,15 @@ pub struct AmlHits {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
 pub struct CustomerLimit {
-    /// Per-transaction limit, in cents.
-    pub per_transaction: i64,
-    /// Daily limit, in cents.
-    pub daily: i64,
-    /// Monthly limit, in cents.
-    pub monthly: i64,
+    /// Per-transaction limit, in cents. May be `null`.
+    #[serde(default)]
+    pub per_transaction: Option<i64>,
+    /// Daily limit, in cents. May be `null`.
+    #[serde(default)]
+    pub daily: Option<i64>,
+    /// Monthly limit, in cents. May be `null`.
+    #[serde(default)]
+    pub monthly: Option<i64>,
 }
 
 /// A customer (individual or business).
