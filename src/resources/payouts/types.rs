@@ -281,7 +281,7 @@ pub struct PayoutTrackingDocuments {
 ///
 /// Combines the payout record with denormalized receiver, quote, and
 /// bank-account fields.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Payout {
     /// Customer id (`re_…`).
@@ -369,15 +369,16 @@ pub struct Payout {
     /// Partner fee amount in cents.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
-    /// Commercial quotation.
+    /// Commercial quotation (an FX rate, e.g. `514.13`).
     #[serde(default)]
-    pub commercial_quotation: Option<i64>,
-    /// BlindPay quotation.
+    pub commercial_quotation: Option<f64>,
+    /// BlindPay quotation (an FX rate, e.g. `505.23`).
     #[serde(default)]
-    pub blindpay_quotation: Option<i64>,
-    /// Total fee amount in cents.
+    pub blindpay_quotation: Option<f64>,
+    /// Total fee amount. The spec documents it in whole stablecoin units
+    /// (example `1.5` = 1.5 USDC), not cents.
     #[serde(default)]
-    pub total_fee_amount: Option<i64>,
+    pub total_fee_amount: Option<f64>,
     /// Estimated amount in the currency of the recipient bank account, in cents.
     #[serde(default)]
     pub customer_local_amount: Option<i64>,

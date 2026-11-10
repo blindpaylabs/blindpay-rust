@@ -186,7 +186,7 @@ pub struct KycWarning {
 }
 
 /// A fraud warning attached to a customer.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct FraudWarning {
     /// Warning identifier.
@@ -198,9 +198,9 @@ pub struct FraudWarning {
     /// The operation that triggered the warning.
     #[serde(default)]
     pub operation: Option<String>,
-    /// The warning score.
+    /// The warning score (may be fractional).
     #[serde(default)]
-    pub score: Option<i64>,
+    pub score: Option<f64>,
 }
 
 /// Anti-money-laundering match flags for a customer.
@@ -237,7 +237,7 @@ pub struct CustomerLimit {
 /// customer's [`type`](Customer::type_) and [`kyc_type`](Customer::kyc_type);
 /// variant-specific fields are absent for other variants, so they are all
 /// optional.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Customer {
     /// Customer identifier (`re_` prefix).

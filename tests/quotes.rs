@@ -176,7 +176,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
     assert!((fx.commercial_quotation - 4.95).abs() < 1e-9);
     assert_eq!(fx.result_amount, 4850);
     assert_eq!(fx.instance_flat_fee, Some(50));
-    assert_eq!(fx.instance_percentage_fee, 0);
+    assert_eq!(fx.instance_percentage_fee, 0.0);
 }
 
 #[tokio::test]
@@ -208,7 +208,7 @@ async fn get_fx_rate_allows_null_instance_flat_fee() {
         .unwrap();
 
     assert_eq!(fx.instance_flat_fee, None);
-    assert_eq!(fx.instance_percentage_fee, 25);
+    assert_eq!(fx.instance_percentage_fee, 25.0);
 }
 
 #[tokio::test]

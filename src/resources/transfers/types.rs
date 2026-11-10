@@ -25,7 +25,7 @@ pub struct TransferTrackingStep {
 }
 
 /// The transaction-monitoring step of a transfer's tracking timeline.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct TransferTrackingTransactionMonitoring {
     /// The step's status.
@@ -33,16 +33,16 @@ pub struct TransferTrackingTransactionMonitoring {
     /// Blockchain screening score (0–100), if computed.
     #[serde(default)]
     pub blockchain_screening: Option<i64>,
-    /// Risk score (0–100), if computed.
+    /// Risk score (0–100, may be fractional), if computed.
     #[serde(default)]
-    pub risk_score: Option<i64>,
+    pub risk_score: Option<f64>,
     /// When the step completed (ISO 8601), if it has.
     #[serde(default)]
     pub completed_at: Option<String>,
 }
 
 /// A transfer between two blockchain wallets.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Transfer {
     /// The transfer identifier.
@@ -125,7 +125,7 @@ impl CreateTransferInput {
 
 /// Response from `Transfers::create`: the freshly created transfer's id, status,
 /// and initial tracking steps.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct CreateTransferResponse {
     /// The transfer identifier.

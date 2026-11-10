@@ -169,8 +169,8 @@ pub struct PayinQuoteFx {
     pub result_amount: i64,
     /// Instance flat fee in cents.
     pub instance_flat_fee: i64,
-    /// Instance percentage fee in basis points.
-    pub instance_percentage_fee: i64,
+    /// Instance percentage fee in basis points (may be fractional).
+    pub instance_percentage_fee: f64,
 }
 
 /// Input for `Payins::create_evm` (`POST /instances/{instance_id}/payins/evm`).
@@ -477,9 +477,10 @@ pub struct Payin {
     /// Partner fee amount in cents, if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
-    /// Total fee amount in cents, if any.
+    /// Total fee amount, if any. The spec documents it in whole stablecoin
+    /// units (example `1.5` = 1.5 USDC), not cents.
     #[serde(default)]
-    pub total_fee_amount: Option<i64>,
+    pub total_fee_amount: Option<f64>,
     /// Commercial quotation.
     pub commercial_quotation: f64,
     /// BlindPay quotation.

@@ -122,8 +122,8 @@ pub struct QuoteFx {
     /// The instance's flat fee, in the smallest unit.
     #[serde(default)]
     pub instance_flat_fee: Option<i64>,
-    /// The instance's percentage fee, in basis points.
-    pub instance_percentage_fee: i64,
+    /// The instance's percentage fee, in basis points (may be fractional).
+    pub instance_percentage_fee: f64,
 }
 
 #[cfg(test)]
