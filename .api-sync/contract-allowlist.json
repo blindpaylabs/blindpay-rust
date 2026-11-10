@@ -1,0 +1,50 @@
+{
+  "_comment": "Direction A exceptions for tests/contract.rs: Rust wire fields that are deliberately not in the spec. Every entry needs a reason; stale entries fail the test.",
+  "direction_a": [
+    {
+      "rust": "Payout",
+      "field": "tracking_partner_fee",
+      "reason": "Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "field": "tracking_partner_fee",
+      "reason": "Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "Payin",
+      "field": "tracking_partner_fee",
+      "reason": "Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "field": "tracking_partner_fee",
+      "reason": "Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "Customer",
+      "field": "individual_holding_doc_front_file",
+      "reason": "Not in CustomerOut; the route's Zod output schema omits it (api-contract customer.schema.ts:1393). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "Customer",
+      "field": "aiprise_validation_key",
+      "reason": "Not in CustomerOut; the route's Zod output schema omits it (api-contract customer.schema.ts:1393). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "virtual_account_set",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "created_at",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "updated_at",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
+    }
+  ]
+}

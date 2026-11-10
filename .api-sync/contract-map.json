@@ -1,0 +1,332 @@
+{
+  "_comment": "Rust type -> spec schema map for tests/contract.rs. Seeded from sdk-parity/appendix/tools/rust-drift/cmp.py. `schema` names components.schemas; `op` + `part` names an operation's request or 200 response body (arrays unwrap to their items).",
+  "types": [
+    {
+      "rust": "Payout",
+      "direction": "response",
+      "schema": "PayoutOut"
+    },
+    {
+      "rust": "CreateEvmPayoutInput",
+      "direction": "request",
+      "schema": "PayoutOnEvmIn"
+    },
+    {
+      "rust": "CreateSolanaPayoutInput",
+      "direction": "request",
+      "schema": "PayoutOnSolanaIn"
+    },
+    {
+      "rust": "CreateStellarPayoutInput",
+      "direction": "request",
+      "schema": "PayoutOnStellarIn"
+    },
+    {
+      "rust": "AuthorizeStellarTokenInput",
+      "direction": "request",
+      "schema": "PayoutOnStellarAuthorizeIn"
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "direction": "response",
+      "schema": "PayoutOnEvmOut"
+    },
+    {
+      "rust": "SubmitPayoutDocumentsInput",
+      "direction": "request",
+      "schema": "SubmitPayoutDocumentsIn"
+    },
+    {
+      "rust": "CreateQuoteInput",
+      "direction": "request",
+      "schema": "QuoteIn"
+    },
+    {
+      "rust": "Quote",
+      "direction": "response",
+      "schema": "QuoteOut"
+    },
+    {
+      "rust": "GetFxRateInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/quotes/fx",
+      "part": "request"
+    },
+    {
+      "rust": "QuoteFx",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/quotes/fx",
+      "part": "response"
+    },
+    {
+      "rust": "CreatePayinQuoteInput",
+      "direction": "request",
+      "schema": "CreatePayinQuoteIn"
+    },
+    {
+      "rust": "PayinQuote",
+      "direction": "response",
+      "schema": "CreatePayinQuoteOut"
+    },
+    {
+      "rust": "PayinQuoteFxInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/payin-quotes/fx",
+      "part": "request"
+    },
+    {
+      "rust": "PayinQuoteFx",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/payin-quotes/fx",
+      "part": "response"
+    },
+    {
+      "rust": "Payin",
+      "direction": "response",
+      "schema": "PayinOut"
+    },
+    {
+      "rust": "CreatePayinInput",
+      "direction": "request",
+      "schema": "CreatePayinIn"
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "direction": "response",
+      "schema": "CreatePayinOut"
+    },
+    {
+      "rust": "Customer",
+      "direction": "response",
+      "schema": "CustomerOut"
+    },
+    {
+      "rust": "UpdateCustomerInput",
+      "direction": "request",
+      "schema": "UpdateCustomerIn"
+    },
+    {
+      "rust": "RequestLimitIncreaseInput",
+      "direction": "request",
+      "schema": "CustomerLimitIncreaseIn"
+    },
+    {
+      "rust": "LimitIncrease",
+      "direction": "response",
+      "schema": "GetCustomerLimitIncreaseOut"
+    },
+    {
+      "rust": "GetCustomerLimitsResponse",
+      "direction": "response",
+      "schema": "GetCustomerLimitsOut"
+    },
+    {
+      "rust": "BankAccount",
+      "direction": "response",
+      "schema": "BankAccountOut"
+    },
+    {
+      "rust": "CreateVirtualAccountInput",
+      "direction": "request",
+      "schema": "CreateVirtualAccountIn"
+    },
+    {
+      "rust": "VirtualAccount",
+      "direction": "response",
+      "schema": "VirtualAccountOut"
+    },
+    {
+      "rust": "UpdateVirtualAccountInput",
+      "direction": "request",
+      "schema": "UpdateVirtualAccountIn"
+    },
+    {
+      "rust": "CreateWalletInput",
+      "direction": "request",
+      "schema": "CreateWalletIn"
+    },
+    {
+      "rust": "Wallet",
+      "direction": "response",
+      "schema": "WalletOut"
+    },
+    {
+      "rust": "WalletBalance",
+      "direction": "response",
+      "schema": "WalletBalanceOut"
+    },
+    {
+      "rust": "BlockchainWallet",
+      "direction": "response",
+      "schema": "BlockchainWalletOut"
+    },
+    {
+      "rust": "BlockchainWalletMessage",
+      "direction": "response",
+      "schema": "BlockchainWalletMessageOut"
+    },
+    {
+      "rust": "CreateTransferQuoteInput",
+      "direction": "request",
+      "schema": "CreateTransferQuoteIn"
+    },
+    {
+      "rust": "TransferQuote",
+      "direction": "response",
+      "schema": "CreateTransferQuoteOut"
+    },
+    {
+      "rust": "CreateTransferInput",
+      "direction": "request",
+      "schema": "CreateTransferIn"
+    },
+    {
+      "rust": "CreateTransferResponse",
+      "direction": "response",
+      "schema": "CreateTransferOut"
+    },
+    {
+      "rust": "Transfer",
+      "direction": "response",
+      "schema": "TransferOut"
+    },
+    {
+      "rust": "CreateWebhookEndpointInput",
+      "direction": "request",
+      "schema": "WebhookEndpointIn"
+    },
+    {
+      "rust": "CreateWebhookEndpointResponse",
+      "direction": "response",
+      "schema": "WebhookEndpointOut"
+    },
+    {
+      "rust": "WebhookEndpoint",
+      "direction": "response",
+      "schema": "WebhookEndpoint"
+    },
+    {
+      "rust": "PortalAccess",
+      "direction": "response",
+      "schema": "PortalAccessOut"
+    },
+    {
+      "rust": "OfframpWallet",
+      "direction": "response",
+      "schema": "OfframpWallet"
+    },
+    {
+      "rust": "CreateOfframpWalletInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets",
+      "part": "request"
+    },
+    {
+      "rust": "UpdateInstanceInput",
+      "direction": "request",
+      "schema": "UpdateInstanceIn"
+    },
+    {
+      "rust": "Member",
+      "direction": "response",
+      "op": "GET /v1/instances/{id}/members",
+      "part": "response"
+    },
+    {
+      "rust": "InitiateTosInput",
+      "direction": "request",
+      "schema": "InitiateTosIn"
+    },
+    {
+      "rust": "InitiateTosResponse",
+      "direction": "response",
+      "schema": "InitiateTosOut"
+    },
+    {
+      "rust": "Fee",
+      "direction": "response",
+      "schema": "GetFeesOut"
+    },
+    {
+      "rust": "CreatePartnerFeeInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/partner-fees",
+      "part": "request"
+    },
+    {
+      "rust": "PartnerFee",
+      "direction": "response",
+      "op": "GET /v1/instances/{instance_id}/partner-fees/{id}",
+      "part": "response"
+    },
+    {
+      "rust": "UploadResponse",
+      "direction": "response",
+      "schema": "UploadOut"
+    },
+    {
+      "rust": "MintUsdbSolanaInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/mint-usdb-solana",
+      "part": "request"
+    },
+    {
+      "rust": "MintUsdbSolanaResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/mint-usdb-solana",
+      "part": "response"
+    },
+    {
+      "rust": "MintUsdbStellarInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/mint-usdb-stellar",
+      "part": "request"
+    },
+    {
+      "rust": "PrepareSolanaDelegationInput",
+      "direction": "request",
+      "op": "POST /v1/instances/{instance_id}/prepare-delegate-solana",
+      "part": "request"
+    },
+    {
+      "rust": "PrepareSolanaDelegationResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/prepare-delegate-solana",
+      "part": "response"
+    },
+    {
+      "rust": "CreateAssetTrustlineResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/create-asset-trustline",
+      "part": "response"
+    },
+    {
+      "rust": "AuthorizeStellarTokenResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/payouts/stellar/authorize",
+      "part": "response"
+    },
+    {
+      "rust": "WebhookEndpointSecret",
+      "direction": "response",
+      "op": "GET /v1/instances/{instance_id}/webhook-endpoints/{id}/secret",
+      "part": "response"
+    },
+    {
+      "rust": "CreateCustomerResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/customers",
+      "part": "response"
+    },
+    {
+      "rust": "RequestLimitIncreaseResponse",
+      "direction": "response",
+      "schema": "CustomerLimitIncreaseOut"
+    },
+    {
+      "rust": "SwiftCodeBankDetail",
+      "direction": "response",
+      "schema": "SwiftCodeResponse"
+    }
+  ]
+}
