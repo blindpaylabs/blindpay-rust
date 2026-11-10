@@ -178,8 +178,8 @@ pub struct PayinQuoteFx {
     /// Instance flat fee in cents.
     #[serde(default)]
     pub instance_flat_fee: Option<i64>,
-    /// Instance percentage fee in basis points (may be fractional).
-    pub instance_percentage_fee: f64,
+    /// Instance percentage fee in basis points.
+    pub instance_percentage_fee: i64,
 }
 
 /// Input for `Payins::create_evm` (`POST /instances/{instance_id}/payins/evm`).

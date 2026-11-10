@@ -117,7 +117,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
 
     assert_eq!(fx.result_amount, 1010);
     assert_eq!(fx.instance_flat_fee, Some(50));
-    assert_eq!(fx.instance_percentage_fee, 100.0);
+    assert_eq!(fx.instance_percentage_fee, 100);
 }
 
 #[tokio::test]
