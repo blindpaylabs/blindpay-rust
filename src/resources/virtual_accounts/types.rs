@@ -114,6 +114,52 @@ pub struct UsVirtualAccountDetails {
     pub swift_intermediary_bank: Option<UsSwiftIntermediaryBank>,
 }
 
+/// The Bre-B key of a Colombian virtual account.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct CoBreBDetails {
+    /// The Bre-B key payers send to, e.g. `"@BP000000000000"`.
+    pub key: String,
+}
+
+/// The SPEI coordinates of a Mexican virtual account.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct MxSpeiDetails {
+    /// The 18-digit CLABE payers send to.
+    pub clabe: String,
+}
+
+/// The beneficiary shown to payers of a non-US virtual account.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct VirtualAccountBeneficiary {
+    /// Beneficiary name.
+    pub name: String,
+}
+
+/// The nested Colombian (Bre-B) banking-details object on a [`VirtualAccount`].
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct CoVirtualAccountDetails {
+    /// Bre-B coordinates.
+    pub bre_b: CoBreBDetails,
+    /// Beneficiary details. May be absent.
+    #[serde(default)]
+    pub beneficiary: Option<VirtualAccountBeneficiary>,
+}
+
+/// The nested Mexican (SPEI) banking-details object on a [`VirtualAccount`].
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct MxVirtualAccountDetails {
+    /// SPEI coordinates.
+    pub spei: MxSpeiDetails,
+    /// Beneficiary details. May be absent.
+    #[serde(default)]
+    pub beneficiary: Option<VirtualAccountBeneficiary>,
+}
+
 /// The blockchain wallet a virtual account settles to, as embedded in the
 /// virtual-account response.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -121,8 +167,9 @@ pub struct UsVirtualAccountDetails {
 pub struct VirtualAccountWallet {
     /// The wallet's blockchain network.
     pub network: Network,
-    /// The on-chain wallet address.
-    pub address: String,
+    /// The on-chain wallet address. May be absent.
+    #[serde(default)]
+    pub address: Option<String>,
 }
 
 /// A virtual account, returned by the `virtual_accounts` endpoints.
@@ -131,12 +178,21 @@ pub struct VirtualAccountWallet {
 pub struct VirtualAccount {
     /// The virtual account identifier (`va_…`).
     pub id: String,
-    /// The banking partner backing the account.
-    pub banking_partner: BankingPartner,
-    /// The KYC/KYB status of the owning customer.
-    pub kyc_status: KycStatus,
-    /// The US banking details for funding the account.
-    pub us: UsVirtualAccountDetails,
+    /// The banking partner backing the account. May be `null`.
+    #[serde(default)]
+    pub banking_partner: Option<BankingPartner>,
+    /// The KYC/KYB status of the owning customer. May be `null`.
+    #[serde(default)]
+    pub kyc_status: Option<KycStatus>,
+    /// The US banking details (ACH/wire/RTP/SWIFT). `None` for non-US accounts.
+    #[serde(default)]
+    pub us: Option<UsVirtualAccountDetails>,
+    /// The Colombian (Bre-B) banking details. `None` for non-CO accounts.
+    #[serde(default)]
+    pub co: Option<CoVirtualAccountDetails>,
+    /// The Mexican (SPEI) banking details. `None` for non-MX accounts.
+    #[serde(default)]
+    pub mx: Option<MxVirtualAccountDetails>,
     /// The stablecoin token funds are converted to.
     pub token: Token,
     /// The blockchain wallet identifier (`bw_…`) funds settle to. May be absent.
@@ -273,20 +329,73 @@ mod tests {
 
         let va: VirtualAccount = serde_json::from_value(json).unwrap();
         assert_eq!(va.id, "va_123");
-        assert_eq!(va.banking_partner, BankingPartner::Jpmorgan);
-        assert_eq!(va.kyc_status, KycStatus::Approved);
-        assert_eq!(va.us.wire.account_number, "222222222");
-        assert!(va.us.ach.is_some());
-        assert!(va.us.rtp.is_none());
-        assert_eq!(va.us.swift_bic_code.as_deref(), Some("TCCLGB3L"));
+        assert_eq!(va.banking_partner, Some(BankingPartner::Jpmorgan));
+        assert_eq!(va.kyc_status, Some(KycStatus::Approved));
+        assert!(va.co.is_none() && va.mx.is_none());
+        let us = va.us.unwrap();
+        assert_eq!(us.wire.account_number, "222222222");
+        assert!(us.ach.is_some());
+        assert!(us.rtp.is_none());
+        assert_eq!(us.swift_bic_code.as_deref(), Some("TCCLGB3L"));
         assert_eq!(
-            va.us
-                .swift_intermediary_bank
+            us.swift_intermediary_bank
                 .unwrap()
                 .swift_code_bic
                 .as_deref(),
             Some("CHASUS33")
         );
         assert!(va.blockchain_wallet.is_none());
+    }
+
+    // The shared spec fixtures can't express a non-US account (their `full`
+    // variant fills every block), so these two are hand-written from the
+    // spec's `VirtualAccountOut` examples.
+    #[test]
+    fn virtual_account_parses_colombian_bre_b_account_without_us_block() {
+        let va: VirtualAccount = serde_json::from_value(serde_json::json!({
+            "id": "va_000000000000",
+            "banking_partner": "bre_b",
+            "kyc_status": "approved",
+            "us": null,
+            "co": {
+                "bre_b": { "key": "@BP000000000000" },
+                "beneficiary": { "name": "Customer Name" }
+            },
+            "token": "USDC",
+            "blockchain_wallet_id": "bw_000000000000",
+            "blockchain_wallet": { "network": "polygon", "address": null }
+        }))
+        .unwrap();
+        assert!(va.us.is_none());
+        assert_eq!(
+            va.banking_partner,
+            Some(BankingPartner::Unknown("bre_b".to_string()))
+        );
+        let co = va.co.unwrap();
+        assert_eq!(co.bre_b.key, "@BP000000000000");
+        assert_eq!(co.beneficiary.unwrap().name, "Customer Name");
+        let wallet = va.blockchain_wallet.unwrap();
+        assert_eq!(wallet.network, Network::Polygon);
+        assert!(wallet.address.is_none());
+    }
+
+    #[test]
+    fn virtual_account_parses_mexican_spei_account_with_null_partner_and_kyc() {
+        let va: VirtualAccount = serde_json::from_value(serde_json::json!({
+            "id": "va_000000000000",
+            "banking_partner": null,
+            "kyc_status": null,
+            "mx": {
+                "spei": { "clabe": "710969000000000001" },
+                "beneficiary": null
+            },
+            "token": "USDC"
+        }))
+        .unwrap();
+        assert!(va.us.is_none() && va.co.is_none());
+        assert!(va.banking_partner.is_none() && va.kyc_status.is_none());
+        let mx = va.mx.unwrap();
+        assert_eq!(mx.spei.clabe, "710969000000000001");
+        assert!(mx.beneficiary.is_none());
     }
 }
