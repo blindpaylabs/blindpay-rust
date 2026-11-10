@@ -987,8 +987,8 @@ pub struct GetCustomerLimitsResponse {
 pub struct LimitIncrease {
     /// Request identifier.
     pub id: String,
-    /// The receiver the request belongs to.
-    pub receiver_id: String,
+    /// The customer the request belongs to (prefix `re_`).
+    pub customer_id: String,
     /// The current request status.
     pub status: LimitIncreaseStatus,
     /// Requested per-transaction limit, in cents.

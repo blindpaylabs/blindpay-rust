@@ -276,7 +276,7 @@ async fn get_limit_increase_requests_parses_array() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
             {
                 "id": "rl_123",
-                "receiver_id": "re_123",
+                "customer_id": "re_123",
                 "status": "in_review",
                 "daily": 50000,
                 "monthly": 250000,
@@ -296,7 +296,7 @@ async fn get_limit_increase_requests_parses_array() {
         .unwrap();
     assert_eq!(requests.len(), 1);
     assert_eq!(requests[0].id, "rl_123");
-    assert_eq!(requests[0].receiver_id, "re_123");
+    assert_eq!(requests[0].customer_id, "re_123");
     assert_eq!(requests[0].status, blindpay::LimitIncreaseStatus::InReview);
     assert_eq!(
         requests[0].supporting_document_type,

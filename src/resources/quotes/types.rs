@@ -85,9 +85,9 @@ pub struct Quote {
     /// Billing fee charged via invoice, in the smallest unit.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
-    /// Estimated amount in the receiver bank account's local currency.
+    /// Estimated amount in the recipient bank account's local currency.
     #[serde(default)]
-    pub receiver_local_amount: Option<i64>,
+    pub customer_local_amount: Option<i64>,
     /// The memo/description echoed back from the request.
     #[serde(default)]
     pub description: Option<String>,

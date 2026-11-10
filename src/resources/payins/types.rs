@@ -418,8 +418,8 @@ pub struct BlindpayBankDetails {
 pub struct Payin {
     /// Payin id (`pi_…`).
     pub id: String,
-    /// The receiver/customer this payin belongs to (`re_…`).
-    pub receiver_id: String,
+    /// The customer this payin belongs to (`re_…`).
+    pub customer_id: String,
     /// PIX copy-and-paste code, when the rail is PIX.
     #[serde(default)]
     pub pix_code: Option<String>,
@@ -567,9 +567,9 @@ pub struct CreatePayinResponse {
     pub transaction_fee_amount: Option<i64>,
     /// BlindPay deposit instructions.
     pub blindpay_bank_details: BlindpayBankDetails,
-    /// The receiver/customer this payin belongs to (`re_…`).
+    /// The customer this payin belongs to (`re_…`).
     #[serde(default)]
-    pub receiver_id: Option<String>,
+    pub customer_id: Option<String>,
     /// Amount the receiver gets, in cents.
     #[serde(default)]
     pub receiver_amount: Option<i64>,
@@ -605,9 +605,9 @@ pub struct ListPayinsParams {
     /// Filter by customer id (`re_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub customer_id: Option<String>,
-    /// Filter by receiver display name.
+    /// Filter by customer display name.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_name: Option<String>,
+    pub customer_name: Option<String>,
     /// Filter by bank account id (`ba_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bank_account_id: Option<String>,
@@ -654,6 +654,12 @@ impl ListPayinsParams {
         self.customer_id = Some(customer_id.into());
         self
     }
+
+    /// Filters by customer display name.
+    pub fn customer_name(mut self, customer_name: impl Into<String>) -> Self {
+        self.customer_name = Some(customer_name.into());
+        self
+    }
 }
 
 #[cfg(test)]
@@ -696,6 +702,16 @@ mod tests {
         assert_eq!(
             json,
             serde_json::json!({ "pix_allowed_tax_ids": ["123.456.789-09"] })
+        );
+    }
+
+    #[test]
+    fn list_params_use_customer_name_filter() {
+        // Spec `GET /v1/instances/{instance_id}/payins` query param.
+        let params = ListPayinsParams::new().customer_name("Ana");
+        assert_eq!(
+            serde_json::to_value(&params).unwrap(),
+            serde_json::json!({ "customer_name": "Ana" })
         );
     }
 
@@ -800,7 +816,7 @@ mod tests {
     fn payin_deserializes_with_type_renamed_to_account_class() {
         let payin: Payin = serde_json::from_value(serde_json::json!({
             "id": "pi_123",
-            "receiver_id": "re_123",
+            "customer_id": "re_123",
             "status": "processing",
             "payin_quote_id": "pq_123",
             "instance_id": "in_test",
@@ -820,6 +836,7 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(payin.id, "pi_123");
+        assert_eq!(payin.customer_id, "re_123");
         assert_eq!(payin.account_class, AccountClass::Individual);
         assert_eq!(payin.payment_method, PaymentMethod::Pix);
         assert_eq!(payin.token, Token::Usdc);

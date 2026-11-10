@@ -99,9 +99,8 @@ pub struct BlockchainWallet {
     /// Whether the wallet was registered as an account-abstraction wallet
     /// (address-based) rather than via a signature.
     pub is_account_abstraction: bool,
-    /// Identifier of the customer the wallet belongs to (wire field
-    /// `receiver_id`, prefix `re_`).
-    pub receiver_id: String,
+    /// Identifier of the customer the wallet belongs to (prefix `re_`).
+    pub customer_id: String,
 }
 
 /// The challenge message a customer signs to register a blockchain wallet by
@@ -210,7 +209,7 @@ pub struct WalletBalance {
 /// `wallets.offramp` endpoints.
 ///
 /// The `create` endpoint returns a subset of these fields; the absent ones
-/// (`instance_id`, `receiver_id`, `bank_account_id`, `created_at`, `updated_at`)
+/// (`instance_id`, `customer_id`, `bank_account_id`, `created_at`, `updated_at`)
 /// default to `None`/empty in that case.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
@@ -223,10 +222,10 @@ pub struct OfframpWallet {
     /// Identifier of the instance the wallet belongs to. Absent on `create`.
     #[serde(default)]
     pub instance_id: Option<String>,
-    /// Identifier of the customer the wallet belongs to (wire field
-    /// `receiver_id`). Absent on `create`.
+    /// Identifier of the customer the wallet belongs to (prefix `re_`).
+    /// Absent on `create`.
     #[serde(default)]
-    pub receiver_id: Option<String>,
+    pub customer_id: Option<String>,
     /// Identifier of the bank account the wallet is attached to. Absent on
     /// `create`.
     #[serde(default)]
@@ -261,20 +260,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn blockchain_wallet_uses_receiver_id_wire_field() {
+    fn blockchain_wallet_uses_customer_id_wire_field() {
         let json = serde_json::json!({
             "id": "bw_000000000000",
             "name": "My Wallet",
             "network": "polygon",
             "address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
             "is_account_abstraction": true,
-            "receiver_id": "re_000000000000"
+            "customer_id": "re_000000000000"
         });
         let wallet: BlockchainWallet = serde_json::from_value(json).unwrap();
         assert_eq!(wallet.id, "bw_000000000000");
         assert_eq!(wallet.network, Network::Polygon);
         assert!(wallet.is_account_abstraction);
-        assert_eq!(wallet.receiver_id, "re_000000000000");
+        assert_eq!(wallet.customer_id, "re_000000000000");
         assert!(wallet.signature_tx_hash.is_none());
     }
 

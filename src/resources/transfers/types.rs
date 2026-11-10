@@ -87,20 +87,20 @@ pub struct Transfer {
     pub sender_amount: i64,
     /// The amount credited to the receiver, in the smallest unit (cents).
     pub receiver_amount: i64,
-    /// The receiver's blockchain network.
-    pub receiver_network: Network,
+    /// The destination blockchain network.
+    pub customer_network: Network,
     /// The token received.
-    pub receiver_token: crate::common::Token,
-    /// The receiver's wallet address.
-    pub receiver_wallet_address: String,
+    pub customer_token: crate::common::Token,
+    /// The destination wallet address.
+    pub customer_wallet_address: String,
     /// The partner fee charged, in the smallest unit (cents), if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
     /// The wallet's external identifier, if any.
     #[serde(default)]
     pub external_id: Option<String>,
-    /// The receiver this transfer's wallet belongs to.
-    pub receiver_id: String,
+    /// The customer this transfer's wallet belongs to (`re_…`).
+    pub customer_id: String,
     /// The sending wallet's blockchain address.
     pub address: String,
     /// The sending wallet's blockchain network.
@@ -156,12 +156,12 @@ pub struct CreateTransferQuoteInput {
     pub request_amount: i64,
     /// The token to send.
     pub sender_token: crate::common::Token,
-    /// The receiver's wallet address.
-    pub receiver_wallet_address: String,
+    /// The destination wallet address.
+    pub customer_wallet_address: String,
     /// The token to receive.
-    pub receiver_token: crate::common::Token,
-    /// The receiver's blockchain network.
-    pub receiver_network: Network,
+    pub customer_token: crate::common::Token,
+    /// The destination blockchain network.
+    pub customer_network: Network,
     /// Whether the sender covers the fees (`true`) or the receiver does
     /// (`false`).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -180,18 +180,18 @@ impl CreateTransferQuoteInput {
         amount_reference: CurrencyType,
         request_amount: i64,
         sender_token: crate::common::Token,
-        receiver_wallet_address: impl Into<String>,
-        receiver_token: crate::common::Token,
-        receiver_network: Network,
+        customer_wallet_address: impl Into<String>,
+        customer_token: crate::common::Token,
+        customer_network: Network,
     ) -> Self {
         Self {
             wallet_id: wallet_id.into(),
             amount_reference,
             request_amount,
             sender_token,
-            receiver_wallet_address: receiver_wallet_address.into(),
-            receiver_token,
-            receiver_network,
+            customer_wallet_address: customer_wallet_address.into(),
+            customer_token,
+            customer_network,
             cover_fees: None,
             partner_fee_id: None,
         }
@@ -268,9 +268,9 @@ mod tests {
                 "amount_reference": "sender",
                 "request_amount": 1000,
                 "sender_token": "USDC",
-                "receiver_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
-                "receiver_token": "USDC",
-                "receiver_network": "polygon"
+                "customer_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
+                "customer_token": "USDC",
+                "customer_network": "polygon"
             })
         );
 
