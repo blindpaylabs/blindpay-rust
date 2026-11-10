@@ -465,19 +465,19 @@ pub struct Payin {
     /// Last-update timestamp.
     #[serde(default)]
     pub updated_at: Option<String>,
-    /// Receiver avatar URL.
+    /// Customer avatar URL.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name (individual).
+    /// Customer first name (individual).
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name (individual).
+    /// Customer last name (individual).
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal name (business).
+    /// Customer legal name (business).
     #[serde(default)]
     pub legal_name: Option<String>,
-    /// Whether the receiver is an individual or a business.
+    /// Whether the customer is an individual or a business.
     #[serde(rename = "type")]
     pub account_class: AccountClass,
     /// Payment method of the underlying quote.

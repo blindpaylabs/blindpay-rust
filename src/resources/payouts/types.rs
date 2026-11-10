@@ -279,7 +279,7 @@ pub struct PayoutTrackingDocuments {
 /// A payout — the large joined object returned by `Payouts::get`,
 /// `Payouts::get_track`, and each item of `Payouts::list`.
 ///
-/// Combines the payout record with denormalized receiver, quote, and
+/// Combines the payout record with denormalized customer, quote, and
 /// bank-account fields.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
@@ -333,17 +333,17 @@ pub struct Payout {
     #[serde(default)]
     pub updated_at: Option<String>,
 
-    // ---- Denormalized receiver fields ----
-    /// Receiver image URL.
+    // ---- Denormalized customer fields ----
+    /// Customer image URL.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name.
+    /// Customer first name.
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name.
+    /// Customer last name.
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal (business) name.
+    /// Customer legal (business) name.
     #[serde(default)]
     pub legal_name: Option<String>,
 

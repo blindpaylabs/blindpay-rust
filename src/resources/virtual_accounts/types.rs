@@ -144,7 +144,7 @@ pub struct VirtualAccountBeneficiary {
 pub struct CoVirtualAccountDetails {
     /// Bre-B coordinates.
     pub bre_b: CoBreBDetails,
-    /// Beneficiary details. May be absent.
+    /// Beneficiary details. May be `null`.
     #[serde(default)]
     pub beneficiary: Option<VirtualAccountBeneficiary>,
 }
@@ -155,7 +155,7 @@ pub struct CoVirtualAccountDetails {
 pub struct MxVirtualAccountDetails {
     /// SPEI coordinates.
     pub spei: MxSpeiDetails,
-    /// Beneficiary details. May be absent.
+    /// Beneficiary details. May be `null`.
     #[serde(default)]
     pub beneficiary: Option<VirtualAccountBeneficiary>,
 }
@@ -167,7 +167,7 @@ pub struct MxVirtualAccountDetails {
 pub struct VirtualAccountWallet {
     /// The wallet's blockchain network.
     pub network: Network,
-    /// The on-chain wallet address. May be absent.
+    /// The on-chain wallet address. May be `null`.
     #[serde(default)]
     pub address: Option<String>,
 }

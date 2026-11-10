@@ -70,16 +70,16 @@ pub struct Transfer {
     /// When the transfer was last updated (ISO 8601).
     #[serde(default)]
     pub updated_at: Option<String>,
-    /// Receiver image URL, if any.
+    /// Customer image URL, if any.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name, if any.
+    /// Customer first name, if any.
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name, if any.
+    /// Customer last name, if any.
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal name, if any.
+    /// Customer legal name, if any.
     #[serde(default)]
     pub legal_name: Option<String>,
     /// The sending wallet's identifier.
