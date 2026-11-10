@@ -19,7 +19,7 @@ type Outcome = std::result::Result<(), String>;
 type Decoder = fn(&[u8]) -> Outcome;
 
 /// Decodes `bytes` as `T`, exactly like `Inner::request` does.
-fn dec<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
+fn decode_as<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
     serde_json::from_slice::<T>(bytes)
         .map(drop)
         .map_err(|e| e.to_string())
@@ -28,7 +28,7 @@ fn dec<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
 /// Decodes a list response. `ListResponse` is `#[serde(untagged)]`, whose
 /// error hides the real cause, so on failure re-decode each item as `T` to
 /// report the field that broke.
-fn dec_list<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
+fn decode_list_as<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
     let Err(outer) = serde_json::from_slice::<ListResponse<T>>(bytes) else {
         return Ok(());
     };
@@ -56,273 +56,294 @@ fn dec_list<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
 /// `"METHOD /v1/path"` (as in `index.json`) → the SDK method's return type.
 const DECODERS: &[(&str, Decoder)] = &[
     // available
-    ("GET /v1/available/rails", dec::<Vec<RailEntry>>),
-    ("GET /v1/available/bank-details", dec::<Vec<BankDetail>>),
-    ("GET /v1/available/naics", dec::<Vec<NaicsCode>>),
+    ("GET /v1/available/rails", decode_as::<Vec<RailEntry>>),
+    (
+        "GET /v1/available/bank-details",
+        decode_as::<Vec<BankDetail>>,
+    ),
+    ("GET /v1/available/naics", decode_as::<Vec<NaicsCode>>),
     (
         "GET /v1/available/swift/{swift}",
-        dec::<Vec<SwiftCodeBankDetail>>,
+        decode_as::<Vec<SwiftCodeBankDetail>>,
     ),
     // bank accounts
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts",
-        dec::<Vec<BankAccount>>,
+        decode_as::<Vec<BankAccount>>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{id}",
-        dec::<BankAccount>,
+        decode_as::<BankAccount>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts",
-        dec::<BankAccount>,
+        decode_as::<BankAccount>,
     ),
     // customers
     (
         "GET /v1/instances/{instance_id}/customers",
-        dec_list::<Customer>,
+        decode_list_as::<Customer>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers",
-        dec::<CreateCustomerResponse>,
+        decode_as::<CreateCustomerResponse>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{id}",
-        dec::<Customer>,
+        decode_as::<Customer>,
     ),
     (
         "PUT /v1/instances/{instance_id}/customers/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/customers/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "GET /v1/instances/{instance_id}/limits/customers/{id}",
-        dec::<GetCustomerLimitsResponse>,
+        decode_as::<GetCustomerLimitsResponse>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/limit-increase",
-        dec::<Vec<LimitIncrease>>,
+        decode_as::<Vec<LimitIncrease>>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/limit-increase",
-        dec::<RequestLimitIncreaseResponse>,
+        decode_as::<RequestLimitIncreaseResponse>,
     ),
     // fees
-    ("GET /v1/instances/{instance_id}/billing/fees", dec::<Fee>),
+    (
+        "GET /v1/instances/{instance_id}/billing/fees",
+        decode_as::<Fee>,
+    ),
     // instances
-    ("GET /v1/instances/{id}/members", dec::<Vec<Member>>),
-    ("PUT /v1/instances/{id}", dec::<Success>),
-    ("DELETE /v1/instances/{id}", dec::<Success>),
-    ("PUT /v1/instances/{id}/members/{user_id}", dec::<Success>),
+    ("GET /v1/instances/{id}/members", decode_as::<Vec<Member>>),
+    ("PUT /v1/instances/{id}", decode_as::<Success>),
+    ("DELETE /v1/instances/{id}", decode_as::<Success>),
+    (
+        "PUT /v1/instances/{id}/members/{user_id}",
+        decode_as::<Success>,
+    ),
     (
         "DELETE /v1/instances/{id}/members/{user_id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
-    ("POST /v1/instances/{id}/ownership", dec::<Success>),
+    ("POST /v1/instances/{id}/ownership", decode_as::<Success>),
     (
         "POST /v1/e/instances/{instance_id}/tos",
-        dec::<InitiateTosResponse>,
+        decode_as::<InitiateTosResponse>,
     ),
     // webhook endpoints
     (
         "GET /v1/instances/{instance_id}/webhook-endpoints",
-        dec::<Vec<WebhookEndpoint>>,
+        decode_as::<Vec<WebhookEndpoint>>,
     ),
     (
         "POST /v1/instances/{instance_id}/webhook-endpoints",
-        dec::<CreateWebhookEndpointResponse>,
+        decode_as::<CreateWebhookEndpointResponse>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/webhook-endpoints/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "GET /v1/instances/{instance_id}/webhook-endpoints/{id}/secret",
-        dec::<WebhookEndpointSecret>,
+        decode_as::<WebhookEndpointSecret>,
     ),
     (
         "GET /v1/instances/{instance_id}/webhook-endpoints/portal-access",
-        dec::<PortalAccess>,
+        decode_as::<PortalAccess>,
     ),
     // partner fees
     (
         "GET /v1/instances/{instance_id}/partner-fees",
-        dec::<Vec<PartnerFee>>,
+        decode_as::<Vec<PartnerFee>>,
     ),
     (
         "GET /v1/instances/{instance_id}/partner-fees/{id}",
-        dec::<PartnerFee>,
+        decode_as::<PartnerFee>,
     ),
     (
         "POST /v1/instances/{instance_id}/partner-fees",
-        dec::<PartnerFee>,
+        decode_as::<PartnerFee>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/partner-fees/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     // payins
     (
         "POST /v1/instances/{instance_id}/payins/evm",
-        dec::<CreatePayinResponse>,
+        decode_as::<CreatePayinResponse>,
     ),
-    ("GET /v1/instances/{instance_id}/payins", dec_list::<Payin>),
-    ("GET /v1/instances/{instance_id}/payins/{id}", dec::<Payin>),
-    ("GET /v1/e/payins/{id}", dec::<Payin>),
+    (
+        "GET /v1/instances/{instance_id}/payins",
+        decode_list_as::<Payin>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/payins/{id}",
+        decode_as::<Payin>,
+    ),
+    ("GET /v1/e/payins/{id}", decode_as::<Payin>),
     (
         "POST /v1/instances/{instance_id}/payin-quotes",
-        dec::<PayinQuote>,
+        decode_as::<PayinQuote>,
     ),
     (
         "POST /v1/instances/{instance_id}/payin-quotes/fx",
-        dec::<PayinQuoteFx>,
+        decode_as::<PayinQuoteFx>,
     ),
     // payouts
     (
         "POST /v1/instances/{instance_id}/payouts/evm",
-        dec::<CreatePayoutResponse>,
+        decode_as::<CreatePayoutResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/payouts/solana",
-        dec::<CreatePayoutResponse>,
+        decode_as::<CreatePayoutResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/payouts/stellar",
-        dec::<CreatePayoutResponse>,
+        decode_as::<CreatePayoutResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/payouts/stellar/authorize",
-        dec::<AuthorizeStellarTokenResponse>,
+        decode_as::<AuthorizeStellarTokenResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/payouts/{id}/documents",
-        dec::<SubmitPayoutDocumentsResponse>,
+        decode_as::<SubmitPayoutDocumentsResponse>,
     ),
     (
         "GET /v1/instances/{instance_id}/payouts",
-        dec_list::<Payout>,
+        decode_list_as::<Payout>,
     ),
     (
         "GET /v1/instances/{instance_id}/payouts/{id}",
-        dec::<Payout>,
+        decode_as::<Payout>,
     ),
-    ("GET /v1/e/payouts/{id}", dec::<Payout>),
+    ("GET /v1/e/payouts/{id}", decode_as::<Payout>),
     // quotes
-    ("POST /v1/instances/{instance_id}/quotes", dec::<Quote>),
-    ("POST /v1/instances/{instance_id}/quotes/fx", dec::<QuoteFx>),
+    (
+        "POST /v1/instances/{instance_id}/quotes",
+        decode_as::<Quote>,
+    ),
+    (
+        "POST /v1/instances/{instance_id}/quotes/fx",
+        decode_as::<QuoteFx>,
+    ),
     // transfers
     (
         "POST /v1/instances/{instance_id}/transfers",
-        dec::<CreateTransferResponse>,
+        decode_as::<CreateTransferResponse>,
     ),
     (
         "GET /v1/instances/{instance_id}/transfers",
-        dec_list::<Transfer>,
+        decode_list_as::<Transfer>,
     ),
     (
         "GET /v1/instances/{instance_id}/transfers/{id}",
-        dec::<Transfer>,
+        decode_as::<Transfer>,
     ),
-    ("GET /v1/e/transfers/{id}", dec::<Transfer>),
+    ("GET /v1/e/transfers/{id}", decode_as::<Transfer>),
     (
         "POST /v1/instances/{instance_id}/transfer-quotes",
-        dec::<TransferQuote>,
+        decode_as::<TransferQuote>,
     ),
     // upload
-    ("POST /v1/upload", dec::<UploadResponse>),
+    ("POST /v1/upload", decode_as::<UploadResponse>),
     // virtual accounts
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts",
-        dec::<Vec<VirtualAccount>>,
+        decode_as::<Vec<VirtualAccount>>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts/{id}",
-        dec::<Option<VirtualAccount>>,
+        decode_as::<Option<VirtualAccount>>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts",
-        dec::<VirtualAccount>,
+        decode_as::<VirtualAccount>,
     ),
     (
         "PUT /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     // blockchain wallets
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets",
-        dec::<Vec<BlockchainWallet>>,
+        decode_as::<Vec<BlockchainWallet>>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/sign-message",
-        dec::<BlockchainWalletMessage>,
+        decode_as::<BlockchainWalletMessage>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}",
-        dec::<BlockchainWallet>,
+        decode_as::<BlockchainWallet>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets",
-        dec::<BlockchainWallet>,
+        decode_as::<BlockchainWallet>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "POST /v1/instances/{instance_id}/create-asset-trustline",
-        dec::<CreateAssetTrustlineResponse>,
+        decode_as::<CreateAssetTrustlineResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/mint-usdb-stellar",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     (
         "POST /v1/instances/{instance_id}/mint-usdb-solana",
-        dec::<MintUsdbSolanaResponse>,
+        decode_as::<MintUsdbSolanaResponse>,
     ),
     (
         "POST /v1/instances/{instance_id}/prepare-delegate-solana",
-        dec::<PrepareSolanaDelegationResponse>,
+        decode_as::<PrepareSolanaDelegationResponse>,
     ),
     // custodial wallets
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets",
-        dec::<Vec<Wallet>>,
+        decode_as::<Vec<Wallet>>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}",
-        dec::<Wallet>,
+        decode_as::<Wallet>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}/balance",
-        dec::<WalletBalance>,
+        decode_as::<WalletBalance>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/wallets",
-        dec::<Wallet>,
+        decode_as::<Wallet>,
     ),
     (
         "DELETE /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}",
-        dec::<Success>,
+        decode_as::<Success>,
     ),
     // offramp wallets
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets",
-        dec::<Vec<OfframpWallet>>,
+        decode_as::<Vec<OfframpWallet>>,
     ),
     (
         "POST /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets",
-        dec::<OfframpWallet>,
+        decode_as::<OfframpWallet>,
     ),
     (
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}",
-        dec::<OfframpWallet>,
+        decode_as::<OfframpWallet>,
     ),
 ];
 
@@ -349,54 +370,6 @@ const NOT_YET_IMPLEMENTED: &[&str] = &[
     "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}/deposits",
 ];
 
-/// Known defects in the shared fixtures: integer-cent fields the spec types as
-/// bare `number` with no field-level example, so the generator synthesized
-/// `12.34`. The API source rounds every one of them to an integer, and the
-/// plan's D16 forbids retyping cents as floats. The test truncates exactly
-/// these values (and fails if an entry stops matching, so the list can't rot).
-/// Reported upstream as a `gen_fixtures.py` issue.
-const FIXTURE_DEFECTS: &[(&str, &[&str], &str)] = &[
-    (
-        "GET /v1/instances/{instance_id}/limits/customers/{id}",
-        &[
-            "/limits/payin/daily",
-            "/limits/payin/monthly",
-            "/limits/payout/daily",
-            "/limits/payout/monthly",
-        ],
-        "cents; `Math.round` in get.instances.[instance_id].limits.customers.[id].ts:114-130 \
-         (schema-level example is 500000)",
-    ),
-    (
-        "POST /v1/instances/{instance_id}/quotes/fx",
-        &["/result_amount"],
-        "cents; sender/receiver_amount via Math.round/floor in shared/helpers/use-quote.ts:82-98",
-    ),
-    (
-        "POST /v1/instances/{instance_id}/payin-quotes/fx",
-        &["/result_amount"],
-        "cents; sender/receiver_amount via Math.round/floor in shared/helpers/use-payin-quote.ts:106-126",
-    ),
-];
-
-/// Truncates the known-defect values in `body`; returns how many it changed.
-fn patch_fixture_defects(op: &str, body: &mut Value) -> usize {
-    let mut patched = 0;
-    for (_, pointers, _) in FIXTURE_DEFECTS.iter().filter(|(o, _, _)| *o == op) {
-        for pointer in *pointers {
-            // No let-chains: MSRV is 1.85.
-            let Some(slot) = body.pointer_mut(pointer) else {
-                continue;
-            };
-            if let Some(f) = slot.as_f64().filter(|f| f.fract() != 0.0) {
-                *slot = Value::from(f.trunc() as i64);
-                patched += 1;
-            }
-        }
-    }
-    patched
-}
-
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
 }
@@ -412,6 +385,29 @@ fn index_operations() -> serde_json::Map<String, Value> {
         .as_object()
         .expect("index.json has an `operations` object")
         .clone()
+}
+
+/// Loads the fixture file `index.json` maps `op` to.
+fn fixture_for(op: &str) -> Value {
+    let ops = index_operations();
+    let file = ops
+        .get(op)
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| panic!("{op}: not in index.json"));
+    read_json(file)
+}
+
+/// Decodes the 200 response variant `name` of `op` as `T`. A bare-array body
+/// (list ops) decodes its first item.
+fn variant<T: DeserializeOwned>(op: &str, name: &str) -> T {
+    let fixture = fixture_for(op);
+    let body = &fixture["responses"]["200"]["variants"][name];
+    assert!(!body.is_null(), "{op}: no `{name}` variant");
+    let body = match body {
+        Value::Array(items) => items[0].clone(),
+        other => other.clone(),
+    };
+    serde_json::from_value(body).unwrap_or_else(|e| panic!("{op} {name}: {e}"))
 }
 
 #[test]
@@ -440,17 +436,14 @@ fn every_surface_op_is_decoded_or_explicitly_pending() {
 
 #[test]
 fn every_response_variant_decodes() {
-    let ops = index_operations();
     let mut failures = Vec::new();
     let mut decoded = 0usize;
-    let mut patched_ops = BTreeSet::new();
 
     for (op, decoder) in DECODERS {
-        let file = ops[*op].as_str().expect("index value is a path");
-        let fixture = read_json(file);
+        let fixture = fixture_for(op);
         let responses = fixture["responses"]
             .as_object()
-            .unwrap_or_else(|| panic!("{file}: no `responses` object"));
+            .unwrap_or_else(|| panic!("{op}: no `responses` object"));
         for (status, response) in responses {
             if response["empty_body"] == Value::Bool(true) {
                 // Mirror the HTTP layer's empty-body fallback.
@@ -463,14 +456,10 @@ fn every_response_variant_decodes() {
             }
             let variants = response["variants"]
                 .as_object()
-                .unwrap_or_else(|| panic!("{file} {status}: neither `variants` nor `empty_body`"));
-            assert!(!variants.is_empty(), "{file} {status}: no variants");
+                .unwrap_or_else(|| panic!("{op} {status}: neither `variants` nor `empty_body`"));
+            assert!(!variants.is_empty(), "{op} {status}: no variants");
             for (name, body) in variants {
-                let mut body = body.clone();
-                if patch_fixture_defects(op, &mut body) > 0 {
-                    patched_ops.insert(*op);
-                }
-                let bytes = serde_json::to_vec(&body).expect("re-serialize fixture");
+                let bytes = serde_json::to_vec(body).expect("re-serialize fixture");
                 if let Err(e) = decoder(&bytes) {
                     failures.push(format!("{op} [{status} {name}]: {e}"));
                 }
@@ -479,12 +468,6 @@ fn every_response_variant_decodes() {
         }
     }
 
-    for (op, _, reason) in FIXTURE_DEFECTS {
-        assert!(
-            patched_ops.contains(op),
-            "FIXTURE_DEFECTS entry for {op} ({reason}) no longer matches; remove it"
-        );
-    }
     println!(
         "decoded {decoded} variants across {} ops ({} failed)",
         DECODERS.len(),
@@ -498,71 +481,66 @@ fn every_response_variant_decodes() {
     );
 }
 
-/// Decodes the `full` variant of `op` as `T`. For list ops (bare array, or
-/// the `full.b1` branch) it decodes the first item.
-fn full<T: DeserializeOwned>(op: &str) -> T {
-    let ops = index_operations();
-    let fixture = read_json(ops[op].as_str().expect("index value is a path"));
-    let variants = &fixture["responses"]["200"]["variants"];
-    let body = variants.get("full").unwrap_or(&variants["full.b1"]);
-    let body = match body {
-        Value::Array(items) => items[0].clone(),
-        other => other.clone(),
-    };
-    serde_json::from_value(body).unwrap_or_else(|e| panic!("{op} full: {e}"))
-}
-
 /// A decode-only test can't catch a misnamed *optional* field: it just comes
 /// back `None`. Assert the renamed `customer_*` fields (and the other fields
 /// this fix touched) are actually populated from the spec's `full` shape.
 #[test]
 fn renamed_and_retyped_fields_are_populated_from_full_variants() {
-    let payout: Payout = full("GET /v1/instances/{instance_id}/payouts/{id}");
+    let payout: Payout = variant("GET /v1/instances/{instance_id}/payouts/{id}", "full");
     assert!(!payout.customer_id.is_empty());
     assert!(payout.customer_local_amount.is_some());
     assert!(payout.commercial_quotation.is_some());
     assert!(payout.blindpay_quotation.is_some());
     assert!(payout.total_fee_amount.is_some());
 
-    let created: CreatePayoutResponse = full("POST /v1/instances/{instance_id}/payouts/evm");
+    let created: CreatePayoutResponse =
+        variant("POST /v1/instances/{instance_id}/payouts/evm", "full");
     assert!(created.customer_id.is_some());
 
-    let payin: Payin = full("GET /v1/instances/{instance_id}/payins/{id}");
+    let payin: Payin = variant("GET /v1/instances/{instance_id}/payins/{id}", "full");
     assert!(!payin.customer_id.is_empty());
     assert!(payin.created_at.is_some());
     assert!(payin.commercial_quotation.is_some());
 
-    let created: CreatePayinResponse = full("POST /v1/instances/{instance_id}/payins/evm");
+    let created: CreatePayinResponse =
+        variant("POST /v1/instances/{instance_id}/payins/evm", "full");
     assert!(created.customer_id.is_some());
     assert!(created.blindpay_bank_details.routing_number.is_some());
 
-    let transfer: Transfer = full("GET /v1/instances/{instance_id}/transfers/{id}");
+    let transfer: Transfer = variant("GET /v1/instances/{instance_id}/transfers/{id}", "full");
     assert!(!transfer.customer_id.is_empty());
     assert!(!transfer.customer_wallet_address.is_empty());
     assert!(transfer.tracking_partner_fee.is_some());
     assert!(transfer.address.is_some());
 
-    let wallet: BlockchainWallet =
-        full("GET /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}");
+    let wallet: BlockchainWallet = variant(
+        "GET /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}",
+        "full",
+    );
     assert!(!wallet.customer_id.is_empty());
     assert!(wallet.name.is_some() && wallet.network.is_some());
     assert!(wallet.is_account_abstraction.is_some());
 
-    let request: LimitIncrease =
-        full("GET /v1/instances/{instance_id}/customers/{customer_id}/limit-increase");
+    let request: LimitIncrease = variant(
+        "GET /v1/instances/{instance_id}/customers/{customer_id}/limit-increase",
+        "full",
+    );
     assert!(!request.customer_id.is_empty());
 
-    let offramp: OfframpWallet = full(
+    let offramp: OfframpWallet = variant(
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}",
+        "full",
     );
     assert!(offramp.customer_id.is_some());
 
-    let quote: Quote = full("POST /v1/instances/{instance_id}/quotes");
+    let quote: Quote = variant("POST /v1/instances/{instance_id}/quotes", "full");
     assert!(quote.customer_local_amount.is_some());
     assert!(quote.expires_at.is_some());
 
-    let va: VirtualAccount =
-        full("GET /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts/{id}");
+    let va: VirtualAccount = variant(
+        "GET /v1/instances/{instance_id}/customers/{customer_id}/virtual-accounts/{id}",
+        "full",
+    );
     assert!(va.us.is_some() && va.co.is_some() && va.mx.is_some());
     assert!(va.banking_partner.is_some() && va.kyc_status.is_some());
 }
@@ -570,14 +548,7 @@ fn renamed_and_retyped_fields_are_populated_from_full_variants() {
 /// The `decimals` variant must keep FX rates fractional, not truncate them.
 #[test]
 fn payout_fx_rates_keep_their_fraction() {
-    let ops = index_operations();
-    let fixture = read_json(
-        ops["GET /v1/instances/{instance_id}/payouts/{id}"]
-            .as_str()
-            .unwrap(),
-    );
-    let body = fixture["responses"]["200"]["variants"]["decimals"].clone();
-    let payout: Payout = serde_json::from_value(body).unwrap();
+    let payout: Payout = variant("GET /v1/instances/{instance_id}/payouts/{id}", "decimals");
     assert_eq!(payout.commercial_quotation, Some(1234.56));
     assert_eq!(payout.blindpay_quotation, Some(1234.56));
 }
