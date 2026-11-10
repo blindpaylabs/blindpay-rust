@@ -202,12 +202,6 @@ open_enum! {
     /// A webhook event type. Wire values are dotted camelCase (e.g.
     /// `bankAccount.new`), so they're matched verbatim.
     pub enum WebhookEvent {
-        /// A receiver (legacy customer) was created.
-        ReceiverNew => "receiver.new",
-        /// A receiver was updated.
-        ReceiverUpdate => "receiver.update",
-        /// A receiver was deleted.
-        ReceiverDelete => "receiver.delete",
         /// A customer was created.
         CustomerNew => "customer.new",
         /// A customer was updated.
@@ -226,6 +220,8 @@ open_enum! {
         PayoutPartnerFee => "payout.partnerFee",
         /// A blockchain wallet was created.
         BlockchainWalletNew => "blockchainWallet.new",
+        /// A blockchain wallet was updated (e.g. self-custody set).
+        BlockchainWalletUpdate => "blockchainWallet.update",
         /// A payin was created.
         PayinNew => "payin.new",
         /// A payin was updated.
@@ -252,8 +248,16 @@ open_enum! {
         TransferComplete => "transfer.complete",
         /// A custodial wallet was created.
         WalletNew => "wallet.new",
+        /// A custodial wallet was updated.
+        WalletUpdate => "wallet.update",
         /// A custodial wallet received an inbound transfer.
         WalletInbound => "wallet.inbound",
+        /// A payable was created.
+        PayableNew => "payable.new",
+        /// A payable was updated.
+        PayableUpdate => "payable.update",
+        /// A payable completed.
+        PayableComplete => "payable.complete",
     }
 }
 
