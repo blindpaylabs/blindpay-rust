@@ -31,6 +31,7 @@ use crate::client::Inner;
 use crate::common::{ListResponse, Success};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `customers` resource.
 ///
@@ -65,11 +66,27 @@ impl Customers {
         &self,
         input: &CreateIndividualWithStandardKycInput,
     ) -> Result<CreateCustomerResponse> {
-        self.create(Discriminated {
-            account_type: "individual",
-            kyc_type: "standard",
-            input,
-        })
+        self.create_individual_with_standard_kyc_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_individual_with_standard_kyc`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers`
+    pub async fn create_individual_with_standard_kyc_with_options(
+        &self,
+        input: &CreateIndividualWithStandardKycInput,
+        options: &RequestOptions,
+    ) -> Result<CreateCustomerResponse> {
+        self.create(
+            Discriminated {
+                account_type: "individual",
+                kyc_type: "standard",
+                input,
+            },
+            options,
+        )
         .await
     }
 
@@ -80,11 +97,27 @@ impl Customers {
         &self,
         input: &CreateIndividualWithEnhancedKycInput,
     ) -> Result<CreateCustomerResponse> {
-        self.create(Discriminated {
-            account_type: "individual",
-            kyc_type: "enhanced",
-            input,
-        })
+        self.create_individual_with_enhanced_kyc_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_individual_with_enhanced_kyc`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers`
+    pub async fn create_individual_with_enhanced_kyc_with_options(
+        &self,
+        input: &CreateIndividualWithEnhancedKycInput,
+        options: &RequestOptions,
+    ) -> Result<CreateCustomerResponse> {
+        self.create(
+            Discriminated {
+                account_type: "individual",
+                kyc_type: "enhanced",
+                input,
+            },
+            options,
+        )
         .await
     }
 
@@ -95,21 +128,38 @@ impl Customers {
         &self,
         input: &CreateBusinessWithStandardKybInput,
     ) -> Result<CreateCustomerResponse> {
-        self.create(Discriminated {
-            account_type: "business",
-            kyc_type: "standard",
-            input,
-        })
+        self.create_business_with_standard_kyb_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_business_with_standard_kyb`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers`
+    pub async fn create_business_with_standard_kyb_with_options(
+        &self,
+        input: &CreateBusinessWithStandardKybInput,
+        options: &RequestOptions,
+    ) -> Result<CreateCustomerResponse> {
+        self.create(
+            Discriminated {
+                account_type: "business",
+                kyc_type: "standard",
+                input,
+            },
+            options,
+        )
         .await
     }
 
     async fn create<T: Serialize>(
         &self,
         body: Discriminated<'_, T>,
+        options: &RequestOptions,
     ) -> Result<CreateCustomerResponse> {
         let path = format!("/instances/{}/customers", self.client.instance_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(&body))
+            .request_with(Method::POST, &path, None::<&()>, Some(&body), options)
             .await
     }
 
@@ -133,13 +183,27 @@ impl Customers {
         customer_id: impl AsRef<str>,
         input: &UpdateCustomerInput,
     ) -> Result<Success> {
+        self.update_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::update`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PUT /instances/{instance_id}/customers/{id}`
+    pub async fn update_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &UpdateCustomerInput,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "/instances/{}/customers/{}",
             self.client.instance_id,
             encode_path_segment(customer_id.as_ref())
         );
         self.client
-            .request(Method::PUT, &path, None::<&()>, Some(input))
+            .request_with(Method::PUT, &path, None::<&()>, Some(input), options)
             .await
     }
 
@@ -147,13 +211,26 @@ impl Customers {
     ///
     /// `DELETE /instances/{instance_id}/customers/{id}`
     pub async fn delete(&self, customer_id: impl AsRef<str>) -> Result<Success> {
+        self.delete_with_options(customer_id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::delete`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{instance_id}/customers/{id}`
+    pub async fn delete_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "/instances/{}/customers/{}",
             self.client.instance_id,
             encode_path_segment(customer_id.as_ref())
         );
         self.client
-            .request(Method::DELETE, &path, None::<&()>, None::<&()>)
+            .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
     }
 
@@ -195,13 +272,27 @@ impl Customers {
         customer_id: impl AsRef<str>,
         input: &RequestLimitIncreaseInput,
     ) -> Result<RequestLimitIncreaseResponse> {
+        self.request_limit_increase_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::request_limit_increase`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/limit-increase`
+    pub async fn request_limit_increase_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &RequestLimitIncreaseInput,
+        options: &RequestOptions,
+    ) -> Result<RequestLimitIncreaseResponse> {
         let path = format!(
             "/instances/{}/customers/{}/limit-increase",
             self.client.instance_id,
             encode_path_segment(customer_id.as_ref())
         );
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 }

@@ -8,6 +8,7 @@ use crate::client::Inner;
 use crate::common::Success;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 use crate::resources::instances::types::{
     CreateWebhookEndpointInput, CreateWebhookEndpointResponse, PortalAccess, WebhookEndpoint,
     WebhookEndpointSecret,
@@ -41,9 +42,22 @@ impl WebhookEndpoints {
         &self,
         body: &CreateWebhookEndpointInput,
     ) -> Result<CreateWebhookEndpointResponse> {
+        self.create_with_options(body, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/webhook-endpoints`
+    pub async fn create_with_options(
+        &self,
+        body: &CreateWebhookEndpointInput,
+        options: &RequestOptions,
+    ) -> Result<CreateWebhookEndpointResponse> {
         let path = format!("/instances/{}/webhook-endpoints", self.client.instance_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(body))
+            .request_with(Method::POST, &path, None::<&()>, Some(body), options)
             .await
     }
 
@@ -51,13 +65,26 @@ impl WebhookEndpoints {
     ///
     /// `DELETE /instances/{instance_id}/webhook-endpoints/{id}`
     pub async fn delete(&self, id: impl AsRef<str>) -> Result<Success> {
+        self.delete_with_options(id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::delete`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{instance_id}/webhook-endpoints/{id}`
+    pub async fn delete_with_options(
+        &self,
+        id: impl AsRef<str>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "/instances/{}/webhook-endpoints/{}",
             self.client.instance_id,
             encode_path_segment(id.as_ref())
         );
         self.client
-            .request(Method::DELETE, &path, None::<&()>, None::<&()>)
+            .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
     }
 

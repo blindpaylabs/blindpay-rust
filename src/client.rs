@@ -1,5 +1,7 @@
 //! The BlindPay API client and its builder.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -22,22 +24,39 @@ use crate::resources::wallets::Wallets;
 /// The default BlindPay API base URL (`https://api.blindpay.com/v1`).
 pub const DEFAULT_BASE_URL: &str = "https://api.blindpay.com/v1";
 
-/// The default per-request timeout (30 seconds).
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
+/// The default per-attempt timeout (60 seconds).
+pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// Shared, reference-counted client state.
+/// The default number of retries after the first attempt (so 3 attempts).
+pub const DEFAULT_MAX_RETRIES: u32 = 2;
+
+/// How the client waits between retries; see [`BlindPayBuilder::retry_sleep`].
+pub type RetrySleep =
+    Arc<dyn Fn(Duration) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+
+/// Shared, reference-counted client state. Immutable after `build()`.
 pub(crate) struct Inner {
     pub(crate) http: reqwest::Client,
     pub(crate) base_url: String,
     pub(crate) api_key: String,
     pub(crate) instance_id: String,
     pub(crate) user_agent: String,
+    pub(crate) timeout: Duration,
+    pub(crate) max_retries: u32,
+    pub(crate) sleep: RetrySleep,
 }
 
 /// A client for the BlindPay API.
 ///
 /// `BlindPay` is cheap to clone — its internal state is reference-counted, so
-/// clones share the same connection pool and configuration.
+/// clones share the same connection pool and configuration. A built client is
+/// immutable and `Send + Sync`: share it across tasks and threads freely.
+/// Per-request [`RequestOptions`](crate::RequestOptions) never change it.
+///
+/// Requests time out after [`DEFAULT_TIMEOUT`] per attempt and are retried up
+/// to [`DEFAULT_MAX_RETRIES`] times: `GET`s on connection errors, timeouts,
+/// 408, 429 and 5xx; mutations only when no response arrived, on 429 and on an
+/// in-flight idempotency 409, always under an `Idempotency-Key`.
 ///
 /// # Example
 ///
@@ -141,7 +160,21 @@ pub struct BlindPayBuilder {
     instance_id: String,
     base_url: String,
     timeout: Duration,
+    max_retries: u32,
     http_client: Option<reqwest::Client>,
+    sleep: Option<RetrySleep>,
+}
+
+impl std::fmt::Debug for BlindPayBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlindPayBuilder")
+            .field("base_url", &self.base_url)
+            .field("instance_id", &self.instance_id)
+            .field("api_key", &"<redacted>")
+            .field("timeout", &self.timeout)
+            .field("max_retries", &self.max_retries)
+            .finish_non_exhaustive()
+    }
 }
 
 impl BlindPayBuilder {
@@ -151,29 +184,58 @@ impl BlindPayBuilder {
             instance_id,
             base_url: DEFAULT_BASE_URL.to_string(),
             timeout: DEFAULT_TIMEOUT,
+            max_retries: DEFAULT_MAX_RETRIES,
             http_client: None,
+            sleep: None,
         }
     }
 
     /// Overrides the API base URL. Defaults to [`DEFAULT_BASE_URL`].
+    ///
+    /// Useful for tests and proxies. The URL receives your API key, so only
+    /// point it at hosts you trust.
     pub fn base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
     }
 
-    /// Overrides the per-request timeout. Defaults to [`DEFAULT_TIMEOUT`].
-    ///
-    /// Ignored when a custom client is supplied via [`Self::http_client`].
+    /// Overrides the per-attempt timeout. Defaults to [`DEFAULT_TIMEOUT`].
+    /// Applies to a custom [`Self::http_client`] too; override it per call with
+    /// [`RequestOptions::timeout`](crate::RequestOptions::timeout).
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
 
+    /// Sets how many times a failed request is retried. Defaults to
+    /// [`DEFAULT_MAX_RETRIES`]; `0` disables retries (and automatic
+    /// idempotency keys).
+    pub fn max_retries(mut self, max_retries: u32) -> Self {
+        self.max_retries = max_retries;
+        self
+    }
+
     /// Supplies a fully configured [`reqwest::Client`] (for proxies, custom TLS,
-    /// connection pooling, etc.). When set, [`Self::timeout`] is ignored —
-    /// configure the timeout on your own client.
+    /// connection pooling, test transports, etc.). The SDK still sets a
+    /// per-request timeout from [`Self::timeout`].
     pub fn http_client(mut self, http_client: reqwest::Client) -> Self {
         self.http_client = Some(http_client);
+        self
+    }
+
+    /// Overrides how the client waits between retries. Defaults to
+    /// `tokio::time::sleep`. Mainly a test seam: record the delays and return
+    /// immediately.
+    ///
+    /// ```
+    /// use std::sync::Arc;
+    /// let client = blindpay::BlindPay::builder("key", "in_000000000000")
+    ///     .retry_sleep(Arc::new(|_delay| Box::pin(async {})))
+    ///     .build()?;
+    /// # Ok::<(), blindpay::Error>(())
+    /// ```
+    pub fn retry_sleep(mut self, sleep: RetrySleep) -> Self {
+        self.sleep = Some(sleep);
         self
     }
 
@@ -207,10 +269,12 @@ impl BlindPayBuilder {
         let http = match self.http_client {
             Some(client) => client,
             None => reqwest::Client::builder()
-                .timeout(self.timeout)
                 .build()
-                .map_err(Error::Http)?,
+                .map_err(|e| Error::Config(format!("failed to build http client: {e}")))?,
         };
+        let sleep = self
+            .sleep
+            .unwrap_or_else(|| Arc::new(|delay| Box::pin(tokio::time::sleep(delay))));
 
         let user_agent = format!("blindpay-rust/{}", env!("CARGO_PKG_VERSION"));
 
@@ -220,6 +284,9 @@ impl BlindPayBuilder {
             api_key: self.api_key,
             instance_id: self.instance_id,
             user_agent,
+            timeout: self.timeout,
+            max_retries: self.max_retries,
+            sleep,
         });
         let available = Available::new(Arc::clone(&inner));
         let instances = Instances::new(Arc::clone(&inner));

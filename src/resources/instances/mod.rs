@@ -22,6 +22,7 @@ use crate::client::Inner;
 use crate::common::Success;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `instances` resource.
 ///
@@ -56,9 +57,22 @@ impl Instances {
     ///
     /// `PUT /instances/{id}`
     pub async fn update(&self, body: &UpdateInstanceInput) -> Result<Success> {
+        self.update_with_options(body, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::update`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PUT /instances/{id}`
+    pub async fn update_with_options(
+        &self,
+        body: &UpdateInstanceInput,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!("/instances/{}", self.client.instance_id);
         self.client
-            .request(Method::PUT, &path, None::<&()>, Some(body))
+            .request_with(Method::PUT, &path, None::<&()>, Some(body), options)
             .await
     }
 
@@ -66,9 +80,17 @@ impl Instances {
     ///
     /// `DELETE /instances/{id}`
     pub async fn delete(&self) -> Result<Success> {
+        self.delete_with_options(&RequestOptions::default()).await
+    }
+
+    /// Like [`Self::delete`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{id}`
+    pub async fn delete_with_options(&self, options: &RequestOptions) -> Result<Success> {
         let path = format!("/instances/{}", self.client.instance_id);
         self.client
-            .request(Method::DELETE, &path, None::<&()>, None::<&()>)
+            .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
     }
 
@@ -79,6 +101,20 @@ impl Instances {
         &self,
         user_id: impl AsRef<str>,
         user_role: UserRole,
+    ) -> Result<Success> {
+        self.update_member_role_with_options(user_id, user_role, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::update_member_role`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PUT /instances/{id}/members/{user_id}`
+    pub async fn update_member_role_with_options(
+        &self,
+        user_id: impl AsRef<str>,
+        user_role: UserRole,
+        options: &RequestOptions,
     ) -> Result<Success> {
         #[derive(Serialize)]
         struct Body {
@@ -91,7 +127,13 @@ impl Instances {
             encode_path_segment(user_id.as_ref())
         );
         self.client
-            .request(Method::PUT, &path, None::<&()>, Some(&Body { user_role }))
+            .request_with(
+                Method::PUT,
+                &path,
+                None::<&()>,
+                Some(&Body { user_role }),
+                options,
+            )
             .await
     }
 
@@ -99,13 +141,26 @@ impl Instances {
     ///
     /// `DELETE /instances/{id}/members/{user_id}`
     pub async fn delete_member(&self, user_id: impl AsRef<str>) -> Result<Success> {
+        self.delete_member_with_options(user_id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::delete_member`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{id}/members/{user_id}`
+    pub async fn delete_member_with_options(
+        &self,
+        user_id: impl AsRef<str>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "/instances/{}/members/{}",
             self.client.instance_id,
             encode_path_segment(user_id.as_ref())
         );
         self.client
-            .request(Method::DELETE, &path, None::<&()>, None::<&()>)
+            .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
     }
 
@@ -113,6 +168,19 @@ impl Instances {
     ///
     /// `POST /instances/{id}/ownership`
     pub async fn migrate_ownership(&self, user_id: impl Into<String>) -> Result<Success> {
+        self.migrate_ownership_with_options(user_id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::migrate_ownership`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{id}/ownership`
+    pub async fn migrate_ownership_with_options(
+        &self,
+        user_id: impl Into<String>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         #[derive(Serialize)]
         struct Body {
             user_id: String,
@@ -120,13 +188,14 @@ impl Instances {
 
         let path = format!("/instances/{}/ownership", self.client.instance_id);
         self.client
-            .request(
+            .request_with(
                 Method::POST,
                 &path,
                 None::<&()>,
                 Some(&Body {
                     user_id: user_id.into(),
                 }),
+                options,
             )
             .await
     }

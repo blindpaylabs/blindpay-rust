@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::client::Inner;
 use crate::error::Result;
+use crate::options::RequestOptions;
 
 use super::types::{CreatePayinQuoteInput, PayinQuote, PayinQuoteFx, PayinQuoteFxInput};
 
@@ -25,9 +26,22 @@ impl PayinQuotes {
     ///
     /// `POST /instances/{instance_id}/payin-quotes`
     pub async fn create(&self, input: &CreatePayinQuoteInput) -> Result<PayinQuote> {
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payin-quotes`
+    pub async fn create_with_options(
+        &self,
+        input: &CreatePayinQuoteInput,
+        options: &RequestOptions,
+    ) -> Result<PayinQuote> {
         let path = format!("/instances/{}/payin-quotes", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -35,9 +49,22 @@ impl PayinQuotes {
     ///
     /// `POST /instances/{instance_id}/payin-quotes/fx`
     pub async fn get_fx_rate(&self, input: &PayinQuoteFxInput) -> Result<PayinQuoteFx> {
+        self.get_fx_rate_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::get_fx_rate`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payin-quotes/fx`
+    pub async fn get_fx_rate_with_options(
+        &self,
+        input: &PayinQuoteFxInput,
+        options: &RequestOptions,
+    ) -> Result<PayinQuoteFx> {
         let path = format!("/instances/{}/payin-quotes/fx", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 }

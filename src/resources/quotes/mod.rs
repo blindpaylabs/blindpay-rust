@@ -14,6 +14,7 @@ use reqwest::Method;
 
 use crate::client::Inner;
 use crate::error::Result;
+use crate::options::RequestOptions;
 
 /// Handle for the `quotes` resource.
 ///
@@ -33,9 +34,22 @@ impl Quotes {
     ///
     /// `POST /instances/{instance_id}/quotes`
     pub async fn create(&self, input: &CreateQuoteInput) -> Result<Quote> {
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/quotes`
+    pub async fn create_with_options(
+        &self,
+        input: &CreateQuoteInput,
+        options: &RequestOptions,
+    ) -> Result<Quote> {
         let path = format!("/instances/{}/quotes", self.client.instance_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 
@@ -43,9 +57,22 @@ impl Quotes {
     ///
     /// `POST /instances/{instance_id}/quotes/fx`
     pub async fn get_fx_rate(&self, input: &GetFxRateInput) -> Result<QuoteFx> {
+        self.get_fx_rate_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::get_fx_rate`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/quotes/fx`
+    pub async fn get_fx_rate_with_options(
+        &self,
+        input: &GetFxRateInput,
+        options: &RequestOptions,
+    ) -> Result<QuoteFx> {
         let path = format!("/instances/{}/quotes/fx", self.client.instance_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 }

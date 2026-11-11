@@ -272,7 +272,7 @@ async fn error_body_without_message_synthesizes_message() {
         Error::Api(api) => {
             assert_eq!(api.status, 500);
             // No `message` field in the body, so the message is synthesized...
-            assert!(api.message.starts_with("HTTP 500 error"));
+            assert!(api.message.starts_with("HTTP 500"));
             // ...but the raw body is always retained.
             assert!(api.raw_body.contains("oops"));
         }

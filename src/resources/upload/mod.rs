@@ -17,6 +17,7 @@ use reqwest::multipart::{Form, Part};
 
 use crate::client::Inner;
 use crate::error::Result;
+use crate::options::RequestOptions;
 
 /// Handle for the `upload` resource.
 ///
@@ -43,16 +44,32 @@ impl Upload {
         file: impl Into<Vec<u8>>,
         bucket: UploadBucket,
     ) -> Result<UploadResponse> {
+        self.upload_with_options(file_name, file, bucket, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::upload`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /upload?instance_id={instance_id}`
+    pub async fn upload_with_options(
+        &self,
+        file_name: impl Into<String>,
+        file: impl Into<Vec<u8>>,
+        bucket: UploadBucket,
+        options: &RequestOptions,
+    ) -> Result<UploadResponse> {
         let part = Part::bytes(file.into()).file_name(file_name.into());
         let form = Form::new()
             .part("file", part)
             .text("bucket", bucket.as_str().to_string());
 
         self.client
-            .post_multipart(
+            .post_multipart_with(
                 "/upload",
                 &[("instance_id", &self.client.instance_id)],
                 form,
+                options,
             )
             .await
     }

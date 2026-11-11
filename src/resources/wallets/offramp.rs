@@ -12,6 +12,7 @@ use reqwest::Method;
 use crate::client::Inner;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 use super::types::{CreateOfframpWalletInput, OfframpWallet};
 
@@ -55,6 +56,26 @@ impl OfframpWallets {
         bank_account_id: impl AsRef<str>,
         input: &CreateOfframpWalletInput,
     ) -> Result<OfframpWallet> {
+        self.create_with_options(
+            customer_id,
+            bank_account_id,
+            input,
+            &RequestOptions::default(),
+        )
+        .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets`
+    pub async fn create_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        bank_account_id: impl AsRef<str>,
+        input: &CreateOfframpWalletInput,
+        options: &RequestOptions,
+    ) -> Result<OfframpWallet> {
         let path = format!(
             "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets",
             self.client.instance_id,
@@ -62,7 +83,7 @@ impl OfframpWallets {
             encode_path_segment(bank_account_id.as_ref()),
         );
         self.client
-            .request::<_, (), _>(Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
     }
 

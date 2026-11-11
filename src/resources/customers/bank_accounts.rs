@@ -13,6 +13,7 @@ use crate::client::Inner;
 use crate::common::{AccountClass, AccountType, Country, Rail, Success, TransfersType, open_enum};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 use crate::resources::wallets::OfframpWallet;
 
 /// A SWIFT payment-purpose code (the API's `swiftCode` enum).
@@ -789,13 +790,27 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         id: impl AsRef<str>,
     ) -> Result<Success> {
+        self.delete_with_options(customer_id, id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::delete`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{instance_id}/customers/{customer_id}/bank-accounts/{id}`
+    pub async fn delete_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "{}/{}",
             self.collection_path(customer_id),
             encode_path_segment(id.as_ref())
         );
         self.client
-            .request(Method::DELETE, &path, None::<&()>, None::<&()>)
+            .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
     }
 
@@ -807,7 +822,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreatePixInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "pix", input).await
+        self.create_pix_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_pix`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_pix_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreatePixInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "pix", input, options).await
     }
 
     /// Creates a PIX Safe bank account.
@@ -818,7 +847,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreatePixSafeInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "pix_safe", input).await
+        self.create_pix_safe_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_pix_safe`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_pix_safe_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreatePixSafeInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "pix_safe", input, options).await
     }
 
     /// Creates a TED bank account.
@@ -829,7 +872,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateTedInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "ted", input).await
+        self.create_ted_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_ted`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_ted_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateTedInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "ted", input, options).await
     }
 
     /// Creates a SPEI (via Bitso) bank account.
@@ -840,7 +897,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateSpeiBitsoInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "spei_bitso", input).await
+        self.create_spei_bitso_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_spei_bitso`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_spei_bitso_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateSpeiBitsoInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "spei_bitso", input, options).await
     }
 
     /// Creates a Transfers 3.0 (via Bitso) bank account.
@@ -851,7 +922,22 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateTransfersBitsoInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "transfers_bitso", input).await
+        self.create_transfers_bitso_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_transfers_bitso`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_transfers_bitso_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateTransfersBitsoInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "transfers_bitso", input, options)
+            .await
     }
 
     /// Creates a Colombian ACH (via Bitso) bank account.
@@ -862,7 +948,22 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateAchCopBitsoInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "ach_cop_bitso", input).await
+        self.create_ach_cop_bitso_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_ach_cop_bitso`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_ach_cop_bitso_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateAchCopBitsoInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "ach_cop_bitso", input, options)
+            .await
     }
 
     /// Creates an ACH bank account.
@@ -873,7 +974,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateAchInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "ach", input).await
+        self.create_ach_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_ach`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_ach_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateAchInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "ach", input, options).await
     }
 
     /// Creates a domestic-wire bank account.
@@ -884,7 +999,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateWireInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "wire", input).await
+        self.create_wire_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_wire`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_wire_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateWireInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "wire", input, options).await
     }
 
     /// Creates an RTP bank account.
@@ -895,7 +1024,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateRtpInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "rtp", input).await
+        self.create_rtp_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_rtp`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_rtp_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateRtpInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "rtp", input, options).await
     }
 
     /// Creates an international SWIFT bank account.
@@ -906,7 +1049,22 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateInternationalSwiftInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "international_swift", input).await
+        self.create_international_swift_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_international_swift`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_international_swift_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateInternationalSwiftInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "international_swift", input, options)
+            .await
     }
 
     /// Creates a SEPA bank account.
@@ -917,7 +1075,21 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateSepaInput,
     ) -> Result<BankAccount> {
-        self.create(customer_id, "sepa", input).await
+        self.create_sepa_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_sepa`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_sepa_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateSepaInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "sepa", input, options).await
     }
 
     async fn create<T: Serialize>(
@@ -925,11 +1097,12 @@ impl BankAccounts {
         customer_id: impl AsRef<str>,
         rail: &'static str,
         input: &T,
+        options: &RequestOptions,
     ) -> Result<BankAccount> {
         let body = Discriminated { type_: rail, input };
         let path = self.collection_path(customer_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(&body))
+            .request_with(Method::POST, &path, None::<&()>, Some(&body), options)
             .await
     }
 

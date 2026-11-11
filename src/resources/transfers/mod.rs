@@ -18,6 +18,7 @@ use crate::client::Inner;
 use crate::common::{ListResponse, PaginationParams};
 use crate::error::{Error, Result};
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `transfers` resource.
 ///
@@ -41,9 +42,22 @@ impl Transfers {
     ///
     /// `POST /instances/{instance_id}/transfers`
     pub async fn create(&self, input: &CreateTransferInput) -> Result<CreateTransferResponse> {
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/transfers`
+    pub async fn create_with_options(
+        &self,
+        input: &CreateTransferInput,
+        options: &RequestOptions,
+    ) -> Result<CreateTransferResponse> {
         let path = format!("/instances/{}/transfers", self.client.instance_id);
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 

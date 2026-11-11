@@ -18,6 +18,7 @@ use crate::client::Inner;
 use crate::common::Success;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `virtual_accounts` resource.
 ///
@@ -73,13 +74,27 @@ impl VirtualAccounts {
         customer_id: impl AsRef<str>,
         input: &CreateVirtualAccountInput,
     ) -> Result<VirtualAccount> {
+        self.create_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/virtual-accounts`
+    pub async fn create_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateVirtualAccountInput,
+        options: &RequestOptions,
+    ) -> Result<VirtualAccount> {
         let path = format!(
             "/instances/{}/customers/{}/virtual-accounts",
             self.client.instance_id,
             encode_path_segment(customer_id.as_ref())
         );
         self.client
-            .request::<VirtualAccount, (), _>(Method::POST, &path, None, Some(input))
+            .request_with::<VirtualAccount, (), _>(Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -92,6 +107,21 @@ impl VirtualAccounts {
         id: impl AsRef<str>,
         input: &UpdateVirtualAccountInput,
     ) -> Result<Success> {
+        self.update_with_options(customer_id, id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::update`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PUT /instances/{instance_id}/customers/{customer_id}/virtual-accounts/{id}`
+    pub async fn update_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        input: &UpdateVirtualAccountInput,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let path = format!(
             "/instances/{}/customers/{}/virtual-accounts/{}",
             self.client.instance_id,
@@ -99,7 +129,7 @@ impl VirtualAccounts {
             encode_path_segment(id.as_ref())
         );
         self.client
-            .request::<Success, (), _>(Method::PUT, &path, None, Some(input))
+            .request_with::<Success, (), _>(Method::PUT, &path, None, Some(input), options)
             .await
     }
 }

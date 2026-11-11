@@ -7,16 +7,20 @@ pub mod common;
 mod error;
 mod http;
 mod internal;
+mod options;
 pub mod resources;
 pub mod webhooks;
 
-pub use client::{BlindPay, BlindPayBuilder, DEFAULT_BASE_URL, DEFAULT_TIMEOUT};
+pub use client::{
+    BlindPay, BlindPayBuilder, DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, RetrySleep,
+};
 pub use common::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Limit, ListResponse,
     Network, Offset, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail, Success,
     Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
 pub use error::{ApiError, Error, Result};
+pub use options::RequestOptions;
 pub use resources::available::{
     Available, BankDetail, BankDetailItem, BankDetailKey, NaicsCode, RailEntry, RequiredWhen,
     RequiredWhenOperator, SwiftCodeBankDetail,

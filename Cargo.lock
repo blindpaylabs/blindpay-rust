@@ -78,6 +78,8 @@ name = "blindpay"
 version = "0.2.0"
 dependencies = [
  "http 1.4.2",
+ "proc-macro2",
+ "quote",
  "reqwest",
  "serde",
  "serde_json",
@@ -85,6 +87,7 @@ dependencies = [
  "syn",
  "thiserror 1.0.69",
  "tokio",
+ "uuid",
  "wiremock",
 ]
 

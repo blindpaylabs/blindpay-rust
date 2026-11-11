@@ -13,6 +13,7 @@ use crate::client::Inner;
 use crate::common::Success;
 use crate::error::{Error, Result};
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `partner_fees` resource.
 ///
@@ -60,9 +61,22 @@ impl PartnerFees {
     ///
     /// `POST /instances/{instance_id}/partner-fees`
     pub async fn create(&self, input: &CreatePartnerFeeInput) -> Result<PartnerFee> {
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/partner-fees`
+    pub async fn create_with_options(
+        &self,
+        input: &CreatePartnerFeeInput,
+        options: &RequestOptions,
+    ) -> Result<PartnerFee> {
         let path = format!("/instances/{}/partner-fees", self.client.instance_id);
         self.client
-            .request::<_, (), _>(Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -74,6 +88,19 @@ impl PartnerFees {
     ///
     /// Returns [`Error::Config`] if `id` is empty.
     pub async fn delete(&self, id: impl AsRef<str>) -> Result<Success> {
+        self.delete_with_options(id, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::delete`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `DELETE /instances/{instance_id}/partner-fees/{id}`
+    pub async fn delete_with_options(
+        &self,
+        id: impl AsRef<str>,
+        options: &RequestOptions,
+    ) -> Result<Success> {
         let id = id.as_ref().trim();
         if id.is_empty() {
             return Err(Error::Config("partner fee id cannot be empty".to_string()));
@@ -84,7 +111,7 @@ impl PartnerFees {
             encode_path_segment(id)
         );
         self.client
-            .request::<_, (), ()>(Method::DELETE, &path, None, None)
+            .request_with::<_, (), ()>(Method::DELETE, &path, None, None, options)
             .await
     }
 }

@@ -18,6 +18,7 @@ use crate::client::Inner;
 use crate::common::ListResponse;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `payins` resource.
 ///
@@ -42,9 +43,22 @@ impl Payins {
     ///
     /// `POST /instances/{instance_id}/payins/evm`
     pub async fn create_evm(&self, input: &CreatePayinInput) -> Result<CreatePayinResponse> {
+        self.create_evm_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_evm`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payins/evm`
+    pub async fn create_evm_with_options(
+        &self,
+        input: &CreatePayinInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayinResponse> {
         let path = format!("/instances/{}/payins/evm", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 

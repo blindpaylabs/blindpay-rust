@@ -23,6 +23,7 @@ use crate::client::Inner;
 use crate::common::ListResponse;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `payouts` resource.
 ///
@@ -41,9 +42,22 @@ impl Payouts {
     ///
     /// `POST /instances/{instance_id}/payouts/evm`
     pub async fn create_evm(&self, input: &CreateEvmPayoutInput) -> Result<CreatePayoutResponse> {
+        self.create_evm_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_evm`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/evm`
+    pub async fn create_evm_with_options(
+        &self,
+        input: &CreateEvmPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
         let path = format!("/instances/{}/payouts/evm", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -54,9 +68,22 @@ impl Payouts {
         &self,
         input: &CreateSolanaPayoutInput,
     ) -> Result<CreatePayoutResponse> {
+        self.create_solana_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_solana`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/solana`
+    pub async fn create_solana_with_options(
+        &self,
+        input: &CreateSolanaPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
         let path = format!("/instances/{}/payouts/solana", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -67,9 +94,22 @@ impl Payouts {
         &self,
         input: &CreateStellarPayoutInput,
     ) -> Result<CreatePayoutResponse> {
+        self.create_stellar_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_stellar`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/stellar`
+    pub async fn create_stellar_with_options(
+        &self,
+        input: &CreateStellarPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
         let path = format!("/instances/{}/payouts/stellar", self.client.instance_id);
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -80,12 +120,25 @@ impl Payouts {
         &self,
         input: &AuthorizeStellarTokenInput,
     ) -> Result<AuthorizeStellarTokenResponse> {
+        self.authorize_stellar_token_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::authorize_stellar_token`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/stellar/authorize`
+    pub async fn authorize_stellar_token_with_options(
+        &self,
+        input: &AuthorizeStellarTokenInput,
+        options: &RequestOptions,
+    ) -> Result<AuthorizeStellarTokenResponse> {
         let path = format!(
             "/instances/{}/payouts/stellar/authorize",
             self.client.instance_id
         );
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -97,13 +150,27 @@ impl Payouts {
         payout_id: impl AsRef<str>,
         input: &SubmitPayoutDocumentsInput,
     ) -> Result<SubmitPayoutDocumentsResponse> {
+        self.submit_documents_with_options(payout_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::submit_documents`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/{id}/documents`
+    pub async fn submit_documents_with_options(
+        &self,
+        payout_id: impl AsRef<str>,
+        input: &SubmitPayoutDocumentsInput,
+        options: &RequestOptions,
+    ) -> Result<SubmitPayoutDocumentsResponse> {
         let path = format!(
             "/instances/{}/payouts/{}/documents",
             self.client.instance_id,
             encode_path_segment(payout_id.as_ref())
         );
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
