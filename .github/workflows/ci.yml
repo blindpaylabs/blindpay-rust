@@ -26,9 +26,7 @@ jobs:
       - name: Test
         run: cargo test --all-features
       - name: Docs
-        run: cargo doc --no-deps --all-features
-        env:
-          RUSTDOCFLAGS: -D warnings
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
       - name: Package contents (no tests or fixtures)
         run: |
           cargo package --list --allow-dirty > package.txt
