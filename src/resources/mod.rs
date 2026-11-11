@@ -9,6 +9,7 @@ pub mod customers;
 pub mod fees;
 pub mod instances;
 pub mod partner_fees;
+pub mod payables;
 pub mod payins;
 pub mod payouts;
 pub mod quotes;
