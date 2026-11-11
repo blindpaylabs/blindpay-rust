@@ -8,6 +8,7 @@ use serde::Deserialize;
 use crate::client::Inner;
 use crate::common::Country;
 use crate::error::Result;
+use crate::resources::customers::ProofOfAddressDocType;
 
 /// The instance's business details (`GET …/onboarding/business_details`).
 /// Every field is optional: only what was filled in is returned.
@@ -94,7 +95,7 @@ pub struct OnboardingOwnershipDocuments {
     pub proof_of_ownership_doc_file: Option<String>,
     /// Proof-of-address document type.
     #[serde(default)]
-    pub proof_of_address_doc_type: Option<String>,
+    pub proof_of_address_doc_type: Option<ProofOfAddressDocType>,
     /// Proof-of-address document URL.
     #[serde(default)]
     pub proof_of_address_doc_file: Option<String>,

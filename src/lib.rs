@@ -57,10 +57,11 @@ pub use resources::payables::{
 };
 pub use resources::payins::{
     BlindpayBankAccount, BlindpayBankDetails, BlindpayBankParty, CreatePayinInput,
-    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, PayerRules, Payin, PayinQuote,
-    PayinQuoteFx, PayinQuoteFxInput, PayinQuotes, PayinTrackingComplete, PayinTrackingPartnerFee,
-    PayinTrackingPayment, PayinTrackingTransaction, PayinTransactionStatus, Payins,
-    PseDocumentType, PseInstruction, SwiftReceivingBank, TedInstruction, TransfersInstruction,
+    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, ManualExecutionStatus,
+    PayerRules, Payin, PayinQuote, PayinQuoteFx, PayinQuoteFxInput, PayinQuotes,
+    PayinTrackingComplete, PayinTrackingPartnerFee, PayinTrackingPayment, PayinTrackingTransaction,
+    PayinTransactionStatus, Payins, PseDocumentType, PseInstruction, SwiftReceivingBank,
+    TedInstruction, TransfersInstruction,
 };
 pub use resources::payouts::{
     AuthorizeStellarTokenInput, AuthorizeStellarTokenResponse, CreateEvmPayoutInput,
@@ -101,7 +102,7 @@ pub use resources::wallets::{
     ListWalletDepositsParams, MintUsdbSolanaInput, MintUsdbSolanaResponse, MintUsdbStellarInput,
     OfframpWallet, OfframpWallets, PrepareSolanaDelegationInput, PrepareSolanaDelegationResponse,
     UpdateOfframpWalletInput, Wallet, WalletBalance, WalletDeposit, WalletDepositStatus,
-    WalletTokenBalance, Wallets,
+    WalletTokenBalance, Wallets, YieldStatus,
 };
 pub use webhooks::{
     CustomerDeleteEvent, TosAcceptEvent, WalletInboundEvent, WebhookEventPayload,

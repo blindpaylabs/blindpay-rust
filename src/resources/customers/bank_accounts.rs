@@ -806,6 +806,66 @@ pub struct CreateFasterPaymentsInput {
     pub faster_payments_beneficiary_postal_code: Option<String>,
 }
 
+impl CreateFasterPaymentsInput {
+    /// Creates the input from the required fields; set the rest with the
+    /// chainable setters.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        name: impl Into<String>,
+        account_class: AccountClass,
+        sort_code: impl Into<String>,
+        account_number: impl Into<String>,
+        beneficiary_legal_name: impl Into<String>,
+        beneficiary_address_line_1: impl Into<String>,
+        beneficiary_city: impl Into<String>,
+        beneficiary_country: impl Into<Country>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            account_class,
+            faster_payments_sort_code: sort_code.into(),
+            faster_payments_account_number: account_number.into(),
+            faster_payments_beneficiary_legal_name: beneficiary_legal_name.into(),
+            faster_payments_beneficiary_address_line_1: beneficiary_address_line_1.into(),
+            faster_payments_beneficiary_city: beneficiary_city.into(),
+            faster_payments_beneficiary_country: beneficiary_country.into(),
+            faster_payments_beneficiary_address_line_2: None,
+            faster_payments_beneficiary_state_province_region: None,
+            faster_payments_beneficiary_postal_code: None,
+        }
+    }
+
+    /// Sets `faster_payments_beneficiary_address_line_2`: beneficiary second address line.
+    pub fn faster_payments_beneficiary_address_line_2(
+        mut self,
+        faster_payments_beneficiary_address_line_2: impl Into<String>,
+    ) -> Self {
+        self.faster_payments_beneficiary_address_line_2 =
+            Some(faster_payments_beneficiary_address_line_2.into());
+        self
+    }
+
+    /// Sets `faster_payments_beneficiary_state_province_region`: beneficiary state / province / region.
+    pub fn faster_payments_beneficiary_state_province_region(
+        mut self,
+        faster_payments_beneficiary_state_province_region: impl Into<String>,
+    ) -> Self {
+        self.faster_payments_beneficiary_state_province_region =
+            Some(faster_payments_beneficiary_state_province_region.into());
+        self
+    }
+
+    /// Sets `faster_payments_beneficiary_postal_code`: beneficiary postal code (omit if the beneficiary has none).
+    pub fn faster_payments_beneficiary_postal_code(
+        mut self,
+        faster_payments_beneficiary_postal_code: impl Into<String>,
+    ) -> Self {
+        self.faster_payments_beneficiary_postal_code =
+            Some(faster_payments_beneficiary_postal_code.into());
+        self
+    }
+}
+
 /// Body for [`BankAccounts::create_plaid_link`] (spec `CreatePlaidLinkIn`).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[non_exhaustive]

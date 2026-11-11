@@ -169,9 +169,9 @@ pub struct Wallet {
     /// When the wallet was created.
     #[serde(default)]
     pub created_at: Option<String>,
-    /// Yield status (`disabled`, `enabled`, `disabling`).
+    /// Yield status.
     #[serde(default)]
-    pub yield_status: Option<String>,
+    pub yield_status: Option<YieldStatus>,
 }
 
 /// Request body for creating a custodial wallet.
@@ -394,6 +394,18 @@ impl UpdateOfframpWalletInput {
     pub fn clear_partner_fee(mut self) -> Self {
         self.partner_fee_id = Some(None);
         self
+    }
+}
+
+open_enum! {
+    /// Whether a custodial wallet earns yield.
+    pub enum YieldStatus {
+        /// Not earning yield.
+        Disabled => "disabled",
+        /// Earning yield.
+        Enabled => "enabled",
+        /// Being switched off.
+        Disabling => "disabling",
     }
 }
 

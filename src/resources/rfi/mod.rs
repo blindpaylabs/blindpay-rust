@@ -29,7 +29,7 @@ use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::client::Inner;
-use crate::common::{AccountClass, open_enum};
+use crate::common::{AccountClass, KycStatus, open_enum};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -188,7 +188,7 @@ pub struct CustomerRfi {
     pub customer_type: Option<AccountClass>,
     /// The customer's KYC status.
     #[serde(default)]
-    pub customer_kyc_status: Option<String>,
+    pub customer_kyc_status: Option<KycStatus>,
 }
 
 /// The result of an RFI submit: `success`, or why it wasn't applied.

@@ -9,6 +9,18 @@ use crate::common::{
 };
 
 open_enum! {
+    /// The state of a payin created while manual OTC execution was on.
+    pub enum ManualExecutionStatus {
+        /// An operator still has to execute it.
+        Pending => "pending",
+        /// Executed.
+        Concluded => "concluded",
+        /// Execution failed.
+        Failed => "failed",
+    }
+}
+
+open_enum! {
     /// The payer document type for PSE (Colombian) payins.
     pub enum PseDocumentType {
         /// Cédula de Ciudadanía.
@@ -568,9 +580,9 @@ pub struct Payin {
     /// Partner fee amount in integer cents.
     #[serde(default)]
     pub partner_fee: Option<i64>,
-    /// Manual OTC execution status (`pending`, `concluded`, `failed`). May be `null`.
+    /// Manual OTC execution status. May be `null`.
     #[serde(default)]
-    pub manual_execution_status: Option<String>,
+    pub manual_execution_status: Option<ManualExecutionStatus>,
     /// When the manual OTC execution concluded (an ISO 8601 string on the
     /// wire; untyped in the spec, so kept as raw JSON). May be `null`.
     #[serde(default)]

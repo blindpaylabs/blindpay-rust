@@ -545,7 +545,7 @@ pub struct Payout {
     pub sepa_beneficiary_postal_code: Option<String>,
     /// SEPA beneficiary country.
     #[serde(default)]
-    pub sepa_beneficiary_country: Option<String>,
+    pub sepa_beneficiary_country: Option<Country>,
     /// Faster Payments sort code.
     #[serde(default)]
     pub faster_payments_sort_code: Option<String>,
@@ -566,7 +566,7 @@ pub struct Payout {
     pub faster_payments_beneficiary_postal_code: Option<String>,
     /// Faster Payments beneficiary country.
     #[serde(default)]
-    pub faster_payments_beneficiary_country: Option<String>,
+    pub faster_payments_beneficiary_country: Option<Country>,
 }
 
 /// The response returned by the chain-specific create methods

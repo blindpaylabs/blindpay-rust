@@ -6,10 +6,11 @@ mod types;
 pub use quotes::PayinQuotes;
 pub use types::{
     BlindpayBankAccount, BlindpayBankDetails, BlindpayBankParty, CreatePayinInput,
-    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, PayerRules, Payin, PayinQuote,
-    PayinQuoteFx, PayinQuoteFxInput, PayinTrackingComplete, PayinTrackingPartnerFee,
-    PayinTrackingPayment, PayinTrackingTransaction, PayinTransactionStatus, PseDocumentType,
-    PseInstruction, SwiftReceivingBank, TedInstruction, TransfersInstruction,
+    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, ManualExecutionStatus,
+    PayerRules, Payin, PayinQuote, PayinQuoteFx, PayinQuoteFxInput, PayinTrackingComplete,
+    PayinTrackingPartnerFee, PayinTrackingPayment, PayinTrackingTransaction,
+    PayinTransactionStatus, PseDocumentType, PseInstruction, SwiftReceivingBank, TedInstruction,
+    TransfersInstruction,
 };
 
 use std::sync::Arc;

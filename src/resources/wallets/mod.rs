@@ -20,7 +20,7 @@ pub use types::{
     CreateOfframpWalletInput, CreateWalletInput, DepositsLimit, ListWalletDepositsParams,
     MintUsdbSolanaInput, MintUsdbSolanaResponse, MintUsdbStellarInput, OfframpWallet,
     PrepareSolanaDelegationInput, PrepareSolanaDelegationResponse, UpdateOfframpWalletInput,
-    Wallet, WalletBalance, WalletDeposit, WalletDepositStatus, WalletTokenBalance,
+    Wallet, WalletBalance, WalletDeposit, WalletDepositStatus, WalletTokenBalance, YieldStatus,
 };
 
 use std::sync::Arc;
