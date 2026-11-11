@@ -279,13 +279,13 @@ pub struct PayoutTrackingDocuments {
 /// A payout — the large joined object returned by `Payouts::get`,
 /// `Payouts::get_track`, and each item of `Payouts::list`.
 ///
-/// Combines the payout record with denormalized receiver, quote, and
+/// Combines the payout record with denormalized customer, quote, and
 /// bank-account fields.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Payout {
-    /// Receiver id (`re_…`).
-    pub receiver_id: String,
+    /// Customer id (`re_…`).
+    pub customer_id: String,
     /// Payout id (`pa_…`).
     pub id: String,
     /// Overall payout status.
@@ -333,17 +333,17 @@ pub struct Payout {
     #[serde(default)]
     pub updated_at: Option<String>,
 
-    // ---- Denormalized receiver fields ----
-    /// Receiver image URL.
+    // ---- Denormalized customer fields ----
+    /// Customer image URL.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name.
+    /// Customer first name.
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name.
+    /// Customer last name.
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal (business) name.
+    /// Customer legal (business) name.
     #[serde(default)]
     pub legal_name: Option<String>,
 
@@ -369,18 +369,19 @@ pub struct Payout {
     /// Partner fee amount in cents.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
-    /// Commercial quotation.
+    /// Commercial quotation (an FX rate, e.g. `514.13`).
     #[serde(default)]
-    pub commercial_quotation: Option<i64>,
-    /// BlindPay quotation.
+    pub commercial_quotation: Option<f64>,
+    /// BlindPay quotation (an FX rate, e.g. `505.23`).
     #[serde(default)]
-    pub blindpay_quotation: Option<i64>,
-    /// Total fee amount in cents.
+    pub blindpay_quotation: Option<f64>,
+    /// Total fee amount. The spec documents it in whole stablecoin units
+    /// (example `1.5` = 1.5 USDC), not cents.
     #[serde(default)]
-    pub total_fee_amount: Option<i64>,
-    /// Amount the receiver receives in their local currency, in cents.
+    pub total_fee_amount: Option<f64>,
+    /// Estimated amount in the currency of the recipient bank account, in cents.
     #[serde(default)]
-    pub receiver_local_amount: Option<i64>,
+    pub customer_local_amount: Option<i64>,
     /// Local fiat currency of the receiver.
     #[serde(default)]
     pub currency: Option<Currency>,
@@ -559,9 +560,9 @@ pub struct CreatePayoutResponse {
     /// Documents tracking leg.
     #[serde(default)]
     pub tracking_documents: Option<PayoutTrackingDocuments>,
-    /// Receiver id (`re_…`).
+    /// Customer id (`re_…`).
     #[serde(default)]
-    pub receiver_id: Option<String>,
+    pub customer_id: Option<String>,
     /// Bank account id (`ba_…`).
     #[serde(default)]
     pub bank_account_id: Option<String>,
@@ -720,18 +721,15 @@ pub struct ListPayoutsParams {
     /// Cursor: return items before this object id.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ending_before: Option<String>,
-    /// Filter by receiver id (`re_…`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_id: Option<String>,
-    /// Filter by customer id (`cus_…`).
+    /// Filter by customer id (`re_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub customer_id: Option<String>,
     /// Filter by payout status.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<TransactionStatus>,
-    /// Filter by receiver display name.
+    /// Filter by customer display name.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_name: Option<String>,
+    pub customer_name: Option<String>,
     /// Filter by bank account id (`ba_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bank_account_id: Option<String>,
@@ -773,9 +771,15 @@ impl ListPayoutsParams {
         self
     }
 
-    /// Filters by receiver id.
-    pub fn receiver_id(mut self, receiver_id: impl Into<String>) -> Self {
-        self.receiver_id = Some(receiver_id.into());
+    /// Filters by customer id.
+    pub fn customer_id(mut self, customer_id: impl Into<String>) -> Self {
+        self.customer_id = Some(customer_id.into());
+        self
+    }
+
+    /// Filters by customer display name.
+    pub fn customer_name(mut self, customer_name: impl Into<String>) -> Self {
+        self.customer_name = Some(customer_name.into());
         self
     }
 
@@ -945,6 +949,18 @@ mod tests {
         let json = serde_json::to_value(&params).unwrap();
         assert_eq!(json["network"], "polygon");
         assert_eq!(json["token"], "USDC");
+    }
+
+    #[test]
+    fn list_params_use_customer_filter_names() {
+        // Spec `GET /v1/instances/{instance_id}/payouts` query params.
+        let params = ListPayoutsParams::new()
+            .customer_id("re_000000000000")
+            .customer_name("Ana");
+        assert_eq!(
+            serde_json::to_value(&params).unwrap(),
+            serde_json::json!({ "customer_id": "re_000000000000", "customer_name": "Ana" })
+        );
     }
 
     #[test]

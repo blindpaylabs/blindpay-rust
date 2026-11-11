@@ -25,7 +25,7 @@ pub struct TransferTrackingStep {
 }
 
 /// The transaction-monitoring step of a transfer's tracking timeline.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct TransferTrackingTransactionMonitoring {
     /// The step's status.
@@ -33,16 +33,16 @@ pub struct TransferTrackingTransactionMonitoring {
     /// Blockchain screening score (0–100), if computed.
     #[serde(default)]
     pub blockchain_screening: Option<i64>,
-    /// Risk score (0–100), if computed.
+    /// Risk score (0–100, may be fractional), if computed.
     #[serde(default)]
-    pub risk_score: Option<i64>,
+    pub risk_score: Option<f64>,
     /// When the step completed (ISO 8601), if it has.
     #[serde(default)]
     pub completed_at: Option<String>,
 }
 
 /// A transfer between two blockchain wallets.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Transfer {
     /// The transfer identifier.
@@ -61,22 +61,25 @@ pub struct Transfer {
     pub tracking_bridge_swap: TransferTrackingStep,
     /// Completion tracking step.
     pub tracking_complete: TransferTrackingStep,
-    /// Partner-fee tracking step.
-    pub tracking_partner_fee: TransferTrackingStep,
+    /// Partner-fee tracking step, if any.
+    #[serde(default)]
+    pub tracking_partner_fee: Option<TransferTrackingStep>,
     /// When the transfer was created (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// When the transfer was last updated (ISO 8601).
-    pub updated_at: String,
-    /// Receiver image URL, if any.
+    #[serde(default)]
+    pub updated_at: Option<String>,
+    /// Customer image URL, if any.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name, if any.
+    /// Customer first name, if any.
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name, if any.
+    /// Customer last name, if any.
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal name, if any.
+    /// Customer legal name, if any.
     #[serde(default)]
     pub legal_name: Option<String>,
     /// The sending wallet's identifier.
@@ -87,22 +90,23 @@ pub struct Transfer {
     pub sender_amount: i64,
     /// The amount credited to the receiver, in the smallest unit (cents).
     pub receiver_amount: i64,
-    /// The receiver's blockchain network.
-    pub receiver_network: Network,
+    /// The destination blockchain network.
+    pub customer_network: Network,
     /// The token received.
-    pub receiver_token: crate::common::Token,
-    /// The receiver's wallet address.
-    pub receiver_wallet_address: String,
+    pub customer_token: crate::common::Token,
+    /// The destination wallet address.
+    pub customer_wallet_address: String,
     /// The partner fee charged, in the smallest unit (cents), if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
     /// The wallet's external identifier, if any.
     #[serde(default)]
     pub external_id: Option<String>,
-    /// The receiver this transfer's wallet belongs to.
-    pub receiver_id: String,
+    /// The customer this transfer's wallet belongs to (`re_…`).
+    pub customer_id: String,
     /// The sending wallet's blockchain address.
-    pub address: String,
+    #[serde(default)]
+    pub address: Option<String>,
     /// The sending wallet's blockchain network.
     pub network: Network,
 }
@@ -125,7 +129,7 @@ impl CreateTransferInput {
 
 /// Response from `Transfers::create`: the freshly created transfer's id, status,
 /// and initial tracking steps.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct CreateTransferResponse {
     /// The transfer identifier.
@@ -140,8 +144,9 @@ pub struct CreateTransferResponse {
     pub tracking_paymaster: TransferTrackingStep,
     /// Transaction-monitoring tracking step.
     pub tracking_transaction_monitoring: TransferTrackingTransactionMonitoring,
-    /// Partner-fee tracking step.
-    pub tracking_partner_fee: TransferTrackingStep,
+    /// Partner-fee tracking step, if any.
+    #[serde(default)]
+    pub tracking_partner_fee: Option<TransferTrackingStep>,
 }
 
 /// Input for `TransferQuotes::create`.
@@ -156,12 +161,12 @@ pub struct CreateTransferQuoteInput {
     pub request_amount: i64,
     /// The token to send.
     pub sender_token: crate::common::Token,
-    /// The receiver's wallet address.
-    pub receiver_wallet_address: String,
+    /// The destination wallet address.
+    pub customer_wallet_address: String,
     /// The token to receive.
-    pub receiver_token: crate::common::Token,
-    /// The receiver's blockchain network.
-    pub receiver_network: Network,
+    pub customer_token: crate::common::Token,
+    /// The destination blockchain network.
+    pub customer_network: Network,
     /// Whether the sender covers the fees (`true`) or the receiver does
     /// (`false`).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -180,18 +185,18 @@ impl CreateTransferQuoteInput {
         amount_reference: CurrencyType,
         request_amount: i64,
         sender_token: crate::common::Token,
-        receiver_wallet_address: impl Into<String>,
-        receiver_token: crate::common::Token,
-        receiver_network: Network,
+        customer_wallet_address: impl Into<String>,
+        customer_token: crate::common::Token,
+        customer_network: Network,
     ) -> Self {
         Self {
             wallet_id: wallet_id.into(),
             amount_reference,
             request_amount,
             sender_token,
-            receiver_wallet_address: receiver_wallet_address.into(),
-            receiver_token,
-            receiver_network,
+            customer_wallet_address: customer_wallet_address.into(),
+            customer_token,
+            customer_network,
             cover_fees: None,
             partner_fee_id: None,
         }
@@ -268,9 +273,9 @@ mod tests {
                 "amount_reference": "sender",
                 "request_amount": 1000,
                 "sender_token": "USDC",
-                "receiver_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
-                "receiver_token": "USDC",
-                "receiver_network": "polygon"
+                "customer_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
+                "customer_token": "USDC",
+                "customer_network": "polygon"
             })
         );
 

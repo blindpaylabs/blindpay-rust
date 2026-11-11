@@ -66,9 +66,10 @@ pub use resources::transfers::{
 };
 pub use resources::upload::{Upload, UploadBucket, UploadResponse};
 pub use resources::virtual_accounts::{
-    BankingPartner, CreateVirtualAccountInput, SoleProprietorDocType, UpdateVirtualAccountInput,
+    BankingPartner, CoBreBDetails, CoVirtualAccountDetails, CreateVirtualAccountInput,
+    MxSpeiDetails, MxVirtualAccountDetails, SoleProprietorDocType, UpdateVirtualAccountInput,
     UsAddress, UsBankCoordinates, UsSwiftIntermediaryBank, UsVirtualAccountDetails, VirtualAccount,
-    VirtualAccountWallet, VirtualAccounts,
+    VirtualAccountBeneficiary, VirtualAccountWallet, VirtualAccounts,
 };
 pub use resources::wallets::{
     BlockchainWallet, BlockchainWalletMessage, BlockchainWallets, CreateAssetTrustlineResponse,

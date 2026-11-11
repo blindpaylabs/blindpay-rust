@@ -74,8 +74,8 @@ async fn create_quote_sends_body_and_parses_response() {
         .unwrap();
 
     assert_eq!(quote.id, "pq_000000000000");
-    assert_eq!(quote.sender_amount, 5240);
-    assert_eq!(quote.receiver_amount, 1010);
+    assert_eq!(quote.sender_amount, Some(5240));
+    assert_eq!(quote.receiver_amount, Some(1010));
     assert_eq!(quote.partner_fee_amount, Some(150));
     assert_eq!(quote.is_otc, Some(false));
 }
@@ -116,7 +116,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
         .unwrap();
 
     assert_eq!(fx.result_amount, 1010);
-    assert_eq!(fx.instance_flat_fee, 50);
+    assert_eq!(fx.instance_flat_fee, Some(50));
     assert_eq!(fx.instance_percentage_fee, 100);
 }
 
@@ -156,7 +156,7 @@ async fn create_evm_sends_payin_quote_id_and_parses_response() {
                     "address_line_2": "San Francisco, CA 94129"
                 }
             },
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "receiver_amount": 1010,
             "payment_method": "pix",
             "sender_amount": 5240
@@ -177,7 +177,10 @@ async fn create_evm_sends_payin_quote_id_and_parses_response() {
     assert_eq!(payin.status, TransactionStatus::Processing);
     assert_eq!(payin.partner_fee, Some(25000));
     assert_eq!(payin.payment_method, Some(PaymentMethod::Pix));
-    assert_eq!(payin.blindpay_bank_details.routing_number, "121145349");
+    assert_eq!(
+        payin.blindpay_bank_details.routing_number.as_deref(),
+        Some("121145349")
+    );
     assert_eq!(payin.receiver_amount, Some(1010));
 }
 
@@ -194,7 +197,7 @@ async fn list_sends_pagination_and_filters_and_parses_paginated() {
             "data": [
                 {
                     "id": "pi_000000000000",
-                    "receiver_id": "re_000000000000",
+                    "customer_id": "re_000000000000",
                     "status": "completed",
                     "payin_quote_id": "pq_000000000000",
                     "instance_id": "in_test",
@@ -262,7 +265,7 @@ async fn list_handles_bare_array_response() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
             {
                 "id": "pi_000000000000",
-                "receiver_id": "re_000000000000",
+                "customer_id": "re_000000000000",
                 "status": "processing",
                 "payin_quote_id": "pq_000000000000",
                 "instance_id": "in_test",
@@ -304,7 +307,7 @@ async fn get_parses_full_payin() {
         .and(path("/v1/instances/in_test/payins/pi_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "pi_000000000000",
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "pix_code": "00020101...6304BCAB",
             "status": "on_hold",
             "payin_quote_id": "pq_000000000000",
@@ -368,7 +371,7 @@ async fn get_parses_transfers_instruction_and_null_tracking_fields() {
         .and(path("/v1/instances/in_test/payins/pi_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "pi_000000000000",
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "status": "processing",
             "payin_quote_id": "pq_000000000000",
             "instance_id": "in_test",
@@ -425,7 +428,7 @@ async fn get_track_uses_unauthenticated_e_route() {
         .and(path("/v1/e/payins/pi_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "pi_000000000000",
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "status": "completed",
             "payin_quote_id": "pq_000000000000",
             "instance_id": "in_test",
@@ -465,7 +468,7 @@ async fn unknown_payment_method_does_not_break_decoding() {
         .and(path("/v1/instances/in_test/payins/pi_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "pi_000000000000",
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "status": "processing",
             "payin_quote_id": "pq_000000000000",
             "instance_id": "in_test",

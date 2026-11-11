@@ -67,15 +67,20 @@ pub struct Quote {
     /// The quote id (prefix `qu_`).
     pub id: String,
     /// Epoch (seconds) after which the quote is no longer valid.
-    pub expires_at: i64,
+    #[serde(default)]
+    pub expires_at: Option<i64>,
     /// Commercial FX quotation, e.g. `4.95` for `1 USD = 4.95 BRL`.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay FX quotation (commercial minus BlindPay's spread).
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Amount the receiver gets, in the smallest unit.
-    pub receiver_amount: i64,
+    #[serde(default)]
+    pub receiver_amount: Option<i64>,
     /// Amount the sender must send, in the smallest unit.
-    pub sender_amount: i64,
+    #[serde(default)]
+    pub sender_amount: Option<i64>,
     /// Partner fee charged, in the smallest unit.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
@@ -85,9 +90,9 @@ pub struct Quote {
     /// Billing fee charged via invoice, in the smallest unit.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
-    /// Estimated amount in the receiver bank account's local currency.
+    /// Estimated amount in the recipient bank account's local currency.
     #[serde(default)]
-    pub receiver_local_amount: Option<i64>,
+    pub customer_local_amount: Option<i64>,
     /// The memo/description echoed back from the request.
     #[serde(default)]
     pub description: Option<String>,
@@ -114,9 +119,11 @@ pub struct GetFxRateInput {
 #[non_exhaustive]
 pub struct QuoteFx {
     /// Commercial FX quotation, e.g. `4.95` for `1 USD = 4.95 BRL`.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay FX quotation (commercial minus BlindPay's spread).
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// The converted amount, in the smallest unit.
     pub result_amount: i64,
     /// The instance's flat fee, in the smallest unit.

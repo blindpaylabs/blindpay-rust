@@ -67,7 +67,7 @@ async fn get_parses_response_and_sends_auth_headers() {
     assert_eq!(fee.sepa.payout_flat, 30);
     assert_eq!(fee.solana.payin_percentage, 50);
     assert_eq!(fee.ted.as_ref().unwrap().payin_flat, 15);
-    assert_eq!(fee.created_at, "2024-01-01T00:00:00.000Z");
+    assert_eq!(fee.created_at.as_deref(), Some("2024-01-01T00:00:00.000Z"));
 }
 
 #[tokio::test]

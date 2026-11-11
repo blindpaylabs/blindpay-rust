@@ -332,7 +332,7 @@ async fn tos_initiate_uses_external_path_and_returns_url() {
         .and(path("/v1/e/instances/in_test/tos"))
         .and(body_json(serde_json::json!({
             "idempotency_key": "123e4567-e89b-12d3-a456-426614174000",
-            "receiver_id": "cus_123"
+            "customer_id": "re_123"
         })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "url": "https://tos.blindpay.com/abc"
@@ -341,7 +341,7 @@ async fn tos_initiate_uses_external_path_and_returns_url() {
         .await;
 
     let body = InitiateTosInput {
-        receiver_id: Some("cus_123".to_string()),
+        customer_id: Some("re_123".to_string()),
         ..InitiateTosInput::new("123e4567-e89b-12d3-a456-426614174000")
     };
     let res = client(&server)

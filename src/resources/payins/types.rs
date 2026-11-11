@@ -121,20 +121,26 @@ pub struct PayinQuote {
     /// Quote id.
     pub id: String,
     /// Epoch (seconds) after which the quote expires.
-    pub expires_at: i64,
+    #[serde(default)]
+    pub expires_at: Option<i64>,
     /// Commercial quotation (e.g. `4.95` = 1 USD = 4.95 BRL).
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation (commercial quotation plus BlindPay fees).
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Amount the receiver gets, in cents.
-    pub receiver_amount: i64,
+    #[serde(default)]
+    pub receiver_amount: Option<i64>,
     /// Amount the sender must send, in cents.
-    pub sender_amount: i64,
+    #[serde(default)]
+    pub sender_amount: Option<i64>,
     /// Partner fee amount in cents, if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
     /// Flat fee in cents.
-    pub flat_fee: i64,
+    #[serde(default)]
+    pub flat_fee: Option<i64>,
     /// Billing fee in cents, if any.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
@@ -162,13 +168,16 @@ pub struct PayinQuoteFxInput {
 #[non_exhaustive]
 pub struct PayinQuoteFx {
     /// Commercial quotation.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation.
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Resulting amount in cents.
     pub result_amount: i64,
     /// Instance flat fee in cents.
-    pub instance_flat_fee: i64,
+    #[serde(default)]
+    pub instance_flat_fee: Option<i64>,
     /// Instance percentage fee in basis points.
     pub instance_percentage_fee: i64,
 }
@@ -356,11 +365,14 @@ pub struct BlindpayBankAccount {
 #[non_exhaustive]
 pub struct BlindpayBankParty {
     /// Party name.
-    pub name: String,
+    #[serde(default)]
+    pub name: Option<String>,
     /// First address line.
-    pub address_line_1: String,
+    #[serde(default)]
+    pub address_line_1: Option<String>,
     /// Second address line.
-    pub address_line_2: String,
+    #[serde(default)]
+    pub address_line_2: Option<String>,
 }
 
 /// SWIFT receiving-bank block (nullable fields) within [`BlindpayBankDetails`].
@@ -383,11 +395,14 @@ pub struct SwiftReceivingBank {
 #[non_exhaustive]
 pub struct BlindpayBankDetails {
     /// Routing number.
-    pub routing_number: String,
+    #[serde(default)]
+    pub routing_number: Option<String>,
     /// Account number.
-    pub account_number: String,
+    #[serde(default)]
+    pub account_number: Option<String>,
     /// Account type label.
-    pub account_type: String,
+    #[serde(default)]
+    pub account_type: Option<String>,
     /// SWIFT/BIC code.
     #[serde(default)]
     pub swift_bic_code: Option<String>,
@@ -418,8 +433,8 @@ pub struct BlindpayBankDetails {
 pub struct Payin {
     /// Payin id (`pi_…`).
     pub id: String,
-    /// The receiver/customer this payin belongs to (`re_…`).
-    pub receiver_id: String,
+    /// The customer this payin belongs to (`re_…`).
+    pub customer_id: String,
     /// PIX copy-and-paste code, when the rail is PIX.
     #[serde(default)]
     pub pix_code: Option<String>,
@@ -445,30 +460,34 @@ pub struct Payin {
     #[serde(default)]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Creation timestamp.
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// Last-update timestamp.
-    pub updated_at: String,
-    /// Receiver avatar URL.
+    #[serde(default)]
+    pub updated_at: Option<String>,
+    /// Customer avatar URL.
     #[serde(default)]
     pub image_url: Option<String>,
-    /// Receiver first name (individual).
+    /// Customer first name (individual).
     #[serde(default)]
     pub first_name: Option<String>,
-    /// Receiver last name (individual).
+    /// Customer last name (individual).
     #[serde(default)]
     pub last_name: Option<String>,
-    /// Receiver legal name (business).
+    /// Customer legal name (business).
     #[serde(default)]
     pub legal_name: Option<String>,
-    /// Whether the receiver is an individual or a business.
+    /// Whether the customer is an individual or a business.
     #[serde(rename = "type")]
     pub account_class: AccountClass,
     /// Payment method of the underlying quote.
     pub payment_method: PaymentMethod,
     /// Amount the sender sends, in cents.
-    pub sender_amount: i64,
+    #[serde(default)]
+    pub sender_amount: Option<i64>,
     /// Amount the receiver gets, in cents.
-    pub receiver_amount: i64,
+    #[serde(default)]
+    pub receiver_amount: Option<i64>,
     /// Stablecoin token received.
     pub token: Token,
     /// Applied partner fee id (`pf_…`), if any.
@@ -477,13 +496,16 @@ pub struct Payin {
     /// Partner fee amount in cents, if any.
     #[serde(default)]
     pub partner_fee_amount: Option<i64>,
-    /// Total fee amount in cents, if any.
+    /// Total fee amount, if any. The spec documents it in whole stablecoin
+    /// units (example `1.5` = 1.5 USDC), not cents.
     #[serde(default)]
-    pub total_fee_amount: Option<i64>,
+    pub total_fee_amount: Option<f64>,
     /// Commercial quotation.
-    pub commercial_quotation: f64,
+    #[serde(default)]
+    pub commercial_quotation: Option<f64>,
     /// BlindPay quotation.
-    pub blindpay_quotation: f64,
+    #[serde(default)]
+    pub blindpay_quotation: Option<f64>,
     /// Quote currency.
     pub currency: Currency,
     /// Billing fee amount in cents, if any.
@@ -567,9 +589,9 @@ pub struct CreatePayinResponse {
     pub transaction_fee_amount: Option<i64>,
     /// BlindPay deposit instructions.
     pub blindpay_bank_details: BlindpayBankDetails,
-    /// The receiver/customer this payin belongs to (`re_…`).
+    /// The customer this payin belongs to (`re_…`).
     #[serde(default)]
-    pub receiver_id: Option<String>,
+    pub customer_id: Option<String>,
     /// Amount the receiver gets, in cents.
     #[serde(default)]
     pub receiver_amount: Option<i64>,
@@ -605,9 +627,9 @@ pub struct ListPayinsParams {
     /// Filter by customer id (`re_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub customer_id: Option<String>,
-    /// Filter by receiver display name.
+    /// Filter by customer display name.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_name: Option<String>,
+    pub customer_name: Option<String>,
     /// Filter by bank account id (`ba_…`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bank_account_id: Option<String>,
@@ -654,6 +676,12 @@ impl ListPayinsParams {
         self.customer_id = Some(customer_id.into());
         self
     }
+
+    /// Filters by customer display name.
+    pub fn customer_name(mut self, customer_name: impl Into<String>) -> Self {
+        self.customer_name = Some(customer_name.into());
+        self
+    }
 }
 
 #[cfg(test)]
@@ -696,6 +724,16 @@ mod tests {
         assert_eq!(
             json,
             serde_json::json!({ "pix_allowed_tax_ids": ["123.456.789-09"] })
+        );
+    }
+
+    #[test]
+    fn list_params_use_customer_name_filter() {
+        // Spec `GET /v1/instances/{instance_id}/payins` query param.
+        let params = ListPayinsParams::new().customer_name("Ana");
+        assert_eq!(
+            serde_json::to_value(&params).unwrap(),
+            serde_json::json!({ "customer_name": "Ana" })
         );
     }
 
@@ -800,7 +838,7 @@ mod tests {
     fn payin_deserializes_with_type_renamed_to_account_class() {
         let payin: Payin = serde_json::from_value(serde_json::json!({
             "id": "pi_123",
-            "receiver_id": "re_123",
+            "customer_id": "re_123",
             "status": "processing",
             "payin_quote_id": "pq_123",
             "instance_id": "in_test",
@@ -820,6 +858,8 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(payin.id, "pi_123");
+        assert_eq!(payin.customer_id, "re_123");
+        assert_eq!(payin.commercial_quotation, Some(4.95));
         assert_eq!(payin.account_class, AccountClass::Individual);
         assert_eq!(payin.payment_method, PaymentMethod::Pix);
         assert_eq!(payin.token, Token::Usdc);

@@ -4,9 +4,10 @@
 mod types;
 
 pub use types::{
-    BankingPartner, CreateVirtualAccountInput, SoleProprietorDocType, UpdateVirtualAccountInput,
+    BankingPartner, CoBreBDetails, CoVirtualAccountDetails, CreateVirtualAccountInput,
+    MxSpeiDetails, MxVirtualAccountDetails, SoleProprietorDocType, UpdateVirtualAccountInput,
     UsAddress, UsBankCoordinates, UsSwiftIntermediaryBank, UsVirtualAccountDetails, VirtualAccount,
-    VirtualAccountWallet,
+    VirtualAccountBeneficiary, VirtualAccountWallet,
 };
 
 use std::sync::Arc;

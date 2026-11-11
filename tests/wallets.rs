@@ -40,7 +40,7 @@ async fn blockchain_list_parses_and_sends_auth_headers() {
                 "network": "polygon",
                 "address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
                 "is_account_abstraction": true,
-                "receiver_id": "re_000000000000"
+                "customer_id": "re_000000000000"
             }
         ])))
         .mount(&server)
@@ -56,9 +56,9 @@ async fn blockchain_list_parses_and_sends_auth_headers() {
 
     assert_eq!(wallets.len(), 1);
     assert_eq!(wallets[0].id, "bw_000000000000");
-    assert_eq!(wallets[0].network, Network::Polygon);
-    assert!(wallets[0].is_account_abstraction);
-    assert_eq!(wallets[0].receiver_id, "re_000000000000");
+    assert_eq!(wallets[0].network, Some(Network::Polygon));
+    assert_eq!(wallets[0].is_account_abstraction, Some(true));
+    assert_eq!(wallets[0].customer_id, "re_000000000000");
     assert!(wallets[0].signature_tx_hash.is_none());
 }
 
@@ -100,7 +100,7 @@ async fn blockchain_get_parses_single_wallet() {
             "network": "base",
             "signature_tx_hash": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
             "is_account_abstraction": false,
-            "receiver_id": "re_000000000000"
+            "customer_id": "re_000000000000"
         })))
         .mount(&server)
         .await;
@@ -113,8 +113,8 @@ async fn blockchain_get_parses_single_wallet() {
         .await
         .unwrap();
 
-    assert_eq!(wallet.network, Network::Base);
-    assert!(!wallet.is_account_abstraction);
+    assert_eq!(wallet.network, Some(Network::Base));
+    assert_eq!(wallet.is_account_abstraction, Some(false));
     assert_eq!(
         wallet.signature_tx_hash.as_deref(),
         Some("0x3c499c542cef5e3811e1192ce70d8cc03d5c3359")
@@ -141,7 +141,7 @@ async fn blockchain_create_with_address_sends_true_discriminator() {
             "network": "polygon",
             "address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
             "is_account_abstraction": true,
-            "receiver_id": "re_000000000000"
+            "customer_id": "re_000000000000"
         })))
         .mount(&server)
         .await;
@@ -161,7 +161,7 @@ async fn blockchain_create_with_address_sends_true_discriminator() {
         .unwrap();
 
     assert_eq!(wallet.id, "bw_000000000000");
-    assert!(wallet.is_account_abstraction);
+    assert_eq!(wallet.is_account_abstraction, Some(true));
 }
 
 #[tokio::test]
@@ -183,7 +183,7 @@ async fn blockchain_create_with_hash_sends_false_discriminator() {
             "network": "base",
             "signature_tx_hash": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
             "is_account_abstraction": false,
-            "receiver_id": "re_000000000000"
+            "customer_id": "re_000000000000"
         })))
         .mount(&server)
         .await;
@@ -203,7 +203,7 @@ async fn blockchain_create_with_hash_sends_false_discriminator() {
         .unwrap();
 
     assert_eq!(wallet.id, "bw_000000000001");
-    assert!(!wallet.is_account_abstraction);
+    assert_eq!(wallet.is_account_abstraction, Some(false));
 }
 
 #[tokio::test]
@@ -504,7 +504,7 @@ async fn offramp_list_parses_full_wallets() {
                 "id": "ow_000000000000",
                 "external_id": "your_external_id",
                 "instance_id": "in_test",
-                "receiver_id": "re_000000000000",
+                "customer_id": "re_000000000000",
                 "bank_account_id": "ba_123",
                 "circle_wallet_id": "01234567-abcd-efgh-ijkl-012345678901",
                 "network": "tron",
@@ -528,7 +528,7 @@ async fn offramp_list_parses_full_wallets() {
     assert_eq!(wallets[0].id, "ow_000000000000");
     assert_eq!(wallets[0].network, Network::Tron);
     assert_eq!(wallets[0].bank_account_id.as_deref(), Some("ba_123"));
-    assert_eq!(wallets[0].receiver_id.as_deref(), Some("re_000000000000"));
+    assert_eq!(wallets[0].customer_id.as_deref(), Some("re_000000000000"));
 }
 
 #[tokio::test]
@@ -582,7 +582,7 @@ async fn offramp_get_parses_wallet() {
             "id": "ow_000000000000",
             "external_id": null,
             "instance_id": "in_test",
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "bank_account_id": "ba_123",
             "circle_wallet_id": null,
             "network": "solana",

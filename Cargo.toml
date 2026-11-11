@@ -8,6 +8,8 @@ repository = "https://github.com/blindpaylabs/blindpay-rust"
 homepage = "https://www.blindpay.com"
 documentation = "https://docs.rs/blindpay"
 readme = "README.md"
+# The shared spec fixtures (1.2 MB) are test-only; keep them out of the crate.
+exclude = ["tests/fixtures/"]
 keywords = ["blindpay", "payments", "stablecoin", "api", "sdk"]
 categories = ["api-bindings", "finance"]
 

@@ -29,7 +29,7 @@ fn create_out_body() -> serde_json::Value {
         "tracking_transaction": { "step": "processing", "transaction_hash": "0xabc" },
         "tracking_payment": { "step": "on_hold", "provider_name": "HSBC" },
         "tracking_complete": { "step": "pending_review" },
-        "receiver_id": "re_000000000000",
+        "customer_id": "re_000000000000",
         "bank_account_id": "ba_000000000000",
         "offramp_wallet_id": null
     })
@@ -65,7 +65,7 @@ async fn create_evm_posts_quote_and_wallet_and_parses_response() {
     assert_eq!(payout.sender_wallet_address, "0x123456789");
     assert_eq!(payout.billing_fee_amount, Some(100));
     assert_eq!(payout.partner_fee, Some(-25000));
-    assert_eq!(payout.receiver_id.as_deref(), Some("re_000000000000"));
+    assert_eq!(payout.customer_id.as_deref(), Some("re_000000000000"));
     assert_eq!(payout.bank_account_id.as_deref(), Some("ba_000000000000"));
     assert_eq!(
         payout.tracking_complete.unwrap().step,
@@ -199,7 +199,7 @@ async fn list_sends_pagination_and_rail_filter_and_parses_joined_payout() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "data": [
                 {
-                    "receiver_id": "re_000000000000",
+                    "customer_id": "re_000000000000",
                     "id": "pa_000000000000",
                     "status": "completed",
                     "sender_wallet_address": "0x123456789",
@@ -249,7 +249,7 @@ async fn get_parses_joined_payout() {
     Mock::given(method("GET"))
         .and(path("/v1/instances/in_test/payouts/pa_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "id": "pa_000000000000",
             "status": "processing",
             "sender_wallet_address": "0x123456789",
@@ -313,7 +313,7 @@ async fn get_track_uses_unauthenticated_e_route() {
     Mock::given(method("GET"))
         .and(path("/v1/e/payouts/pa_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "id": "pa_000000000000",
             "status": "completed",
             "sender_wallet_address": "0x123456789",
@@ -341,7 +341,7 @@ async fn unknown_tracking_step_does_not_break_decoding() {
     Mock::given(method("GET"))
         .and(path("/v1/instances/in_test/payouts/pa_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "receiver_id": "re_000000000000",
+            "customer_id": "re_000000000000",
             "id": "pa_000000000000",
             "status": "on_hold",
             "sender_wallet_address": "0x123456789",

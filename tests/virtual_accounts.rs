@@ -76,12 +76,13 @@ async fn list_parses_response_and_sends_auth_headers() {
     assert_eq!(accounts.len(), 1);
     let va = &accounts[0];
     assert_eq!(va.id, "va_123");
-    assert_eq!(va.banking_partner, BankingPartner::Jpmorgan);
-    assert_eq!(va.kyc_status, KycStatus::Approved);
+    assert_eq!(va.banking_partner, Some(BankingPartner::Jpmorgan));
+    assert_eq!(va.kyc_status, Some(KycStatus::Approved));
     assert_eq!(va.token, Token::Usdc);
-    assert_eq!(va.us.wire.account_number, "222222222");
-    assert!(va.us.ach.is_some());
-    assert_eq!(va.us.swift_bic_code.as_deref(), Some("TCCLGB3L"));
+    let us = va.us.as_ref().unwrap();
+    assert_eq!(us.wire.account_number, "222222222");
+    assert!(us.ach.is_some());
+    assert_eq!(us.swift_bic_code.as_deref(), Some("TCCLGB3L"));
     assert_eq!(
         va.blockchain_wallet.as_ref().unwrap().network,
         Network::Base
@@ -188,7 +189,7 @@ async fn create_sends_body_and_parses_response() {
         .unwrap();
 
     assert_eq!(va.id, "va_123");
-    assert_eq!(va.banking_partner, BankingPartner::Jpmorgan);
+    assert_eq!(va.banking_partner, Some(BankingPartner::Jpmorgan));
 }
 
 #[tokio::test]

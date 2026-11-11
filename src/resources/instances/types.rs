@@ -49,7 +49,8 @@ pub struct Member {
     /// The member's role within the instance.
     pub role: UserRole,
     /// Creation timestamp (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
 }
 
 /// Body for `Instances::update`.
@@ -57,9 +58,9 @@ pub struct Member {
 pub struct UpdateInstanceInput {
     /// Display name for the instance (required).
     pub name: String,
-    /// URL receivers are redirected to after accepting an invite.
+    /// URL customers are redirected to after accepting an invite.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_invite_redirect_url: Option<String>,
+    pub customer_invite_redirect_url: Option<String>,
     /// Whether email notifications are enabled.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email_notifications: Option<bool>,
@@ -73,7 +74,7 @@ impl UpdateInstanceInput {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            receiver_invite_redirect_url: None,
+            customer_invite_redirect_url: None,
             email_notifications: None,
             require_passkey: None,
         }
@@ -85,9 +86,9 @@ impl UpdateInstanceInput {
 pub struct InitiateTosInput {
     /// Idempotency key (UUID) for the request (required).
     pub idempotency_key: String,
-    /// The customer (receiver) the terms apply to.
+    /// The customer the terms apply to (prefix `re_`).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub receiver_id: Option<String>,
+    pub customer_id: Option<String>,
     /// URL to redirect to after acceptance.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub redirect_url: Option<String>,
@@ -98,7 +99,7 @@ impl InitiateTosInput {
     pub fn new(idempotency_key: impl Into<String>) -> Self {
         Self {
             idempotency_key: idempotency_key.into(),
-            receiver_id: None,
+            customer_id: None,
             redirect_url: None,
         }
     }
@@ -129,9 +130,11 @@ pub struct WebhookEndpoint {
     /// The owning instance identifier.
     pub instance_id: String,
     /// Creation timestamp (ISO 8601).
-    pub created_at: String,
+    #[serde(default)]
+    pub created_at: Option<String>,
     /// Last update timestamp (ISO 8601).
-    pub updated_at: String,
+    #[serde(default)]
+    pub updated_at: Option<String>,
 }
 
 /// Body for `WebhookEndpoints::create`.
@@ -207,7 +210,7 @@ mod tests {
 
         let full = UpdateInstanceInput {
             name: "Acme".to_string(),
-            receiver_invite_redirect_url: Some("https://example.com".to_string()),
+            customer_invite_redirect_url: Some("https://example.com".to_string()),
             email_notifications: Some(false),
             require_passkey: Some(true),
         };
@@ -215,7 +218,7 @@ mod tests {
             serde_json::to_value(&full).unwrap(),
             serde_json::json!({
                 "name": "Acme",
-                "receiver_invite_redirect_url": "https://example.com",
+                "customer_invite_redirect_url": "https://example.com",
                 "email_notifications": false,
                 "require_passkey": true
             })

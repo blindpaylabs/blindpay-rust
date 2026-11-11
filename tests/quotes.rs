@@ -44,7 +44,7 @@ async fn create_sends_body_and_parses_quote() {
             "partner_fee_amount": 150,
             "flat_fee": 50,
             "billing_fee_amount": 50,
-            "receiver_local_amount": 1000,
+            "customer_local_amount": 1000,
             "description": "memo",
             "contract": {
                 "abi": [{}],
@@ -75,10 +75,10 @@ async fn create_sends_body_and_parses_quote() {
         .unwrap();
 
     assert_eq!(quote.id, "qu_123");
-    assert_eq!(quote.sender_amount, 1010);
+    assert_eq!(quote.sender_amount, Some(1010));
     assert_eq!(quote.partner_fee_amount, Some(150));
     assert_eq!(quote.flat_fee, Some(50));
-    assert_eq!(quote.receiver_local_amount, Some(1000));
+    assert_eq!(quote.customer_local_amount, Some(1000));
 
     let contract = quote.contract.unwrap();
     assert_eq!(contract.function_name, "approve");
@@ -173,7 +173,7 @@ async fn get_fx_rate_sends_body_and_parses_response() {
         .await
         .unwrap();
 
-    assert!((fx.commercial_quotation - 4.95).abs() < 1e-9);
+    assert!((fx.commercial_quotation.unwrap() - 4.95).abs() < 1e-9);
     assert_eq!(fx.result_amount, 4850);
     assert_eq!(fx.instance_flat_fee, Some(50));
     assert_eq!(fx.instance_percentage_fee, 0);

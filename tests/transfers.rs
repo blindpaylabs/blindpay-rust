@@ -56,12 +56,12 @@ fn transfer_body() -> serde_json::Value {
         "sender_token": "USDC",
         "sender_amount": 1000,
         "receiver_amount": 1000,
-        "receiver_network": "polygon",
-        "receiver_token": "USDC",
-        "receiver_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
+        "customer_network": "polygon",
+        "customer_token": "USDC",
+        "customer_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
         "partner_fee_amount": null,
         "external_id": "ext_1",
-        "receiver_id": "re_000000000000",
+        "customer_id": "re_000000000000",
         "address": "0xAbC0000000000000000000000000000000000000",
         "network": "polygon"
     })
@@ -81,9 +81,9 @@ async fn quotes_create_sends_body_and_parses_response() {
             "amount_reference": "sender",
             "request_amount": 1000,
             "sender_token": "USDC",
-            "receiver_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
-            "receiver_token": "USDC",
-            "receiver_network": "polygon",
+            "customer_wallet_address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
+            "customer_token": "USDC",
+            "customer_network": "polygon",
             "cover_fees": true
         })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -184,7 +184,7 @@ async fn list_sends_pagination_and_parses_paginated_envelope() {
     assert_eq!(resp.data().len(), 1);
     assert_eq!(resp.data()[0].id, "tr_000000000000");
     assert_eq!(resp.data()[0].sender_token, Token::Usdc);
-    assert_eq!(resp.data()[0].receiver_network, Network::Polygon);
+    assert_eq!(resp.data()[0].customer_network, Network::Polygon);
     assert_eq!(resp.data()[0].first_name.as_deref(), Some("John"));
     assert!(resp.pagination().unwrap().has_more);
     assert_eq!(
@@ -213,7 +213,7 @@ async fn get_parses_full_transfer() {
     assert_eq!(transfer.id, "tr_000000000000");
     assert_eq!(transfer.status, TransactionStatus::Processing);
     assert_eq!(transfer.transfer_quote_id, "qu_000000000000");
-    assert_eq!(transfer.receiver_id, "re_000000000000");
+    assert_eq!(transfer.customer_id, "re_000000000000");
     assert_eq!(transfer.external_id.as_deref(), Some("ext_1"));
     assert_eq!(transfer.partner_fee_amount, None);
     assert_eq!(

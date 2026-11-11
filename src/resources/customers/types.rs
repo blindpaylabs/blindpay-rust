@@ -186,7 +186,7 @@ pub struct KycWarning {
 }
 
 /// A fraud warning attached to a customer.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct FraudWarning {
     /// Warning identifier.
@@ -198,9 +198,9 @@ pub struct FraudWarning {
     /// The operation that triggered the warning.
     #[serde(default)]
     pub operation: Option<String>,
-    /// The warning score.
+    /// The warning score (may be fractional).
     #[serde(default)]
-    pub score: Option<i64>,
+    pub score: Option<f64>,
 }
 
 /// Anti-money-laundering match flags for a customer.
@@ -223,12 +223,15 @@ pub struct AmlHits {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
 pub struct CustomerLimit {
-    /// Per-transaction limit, in cents.
-    pub per_transaction: i64,
-    /// Daily limit, in cents.
-    pub daily: i64,
-    /// Monthly limit, in cents.
-    pub monthly: i64,
+    /// Per-transaction limit, in cents. May be `null`.
+    #[serde(default)]
+    pub per_transaction: Option<i64>,
+    /// Daily limit, in cents. May be `null`.
+    #[serde(default)]
+    pub daily: Option<i64>,
+    /// Monthly limit, in cents. May be `null`.
+    #[serde(default)]
+    pub monthly: Option<i64>,
 }
 
 /// A customer (individual or business).
@@ -237,7 +240,7 @@ pub struct CustomerLimit {
 /// customer's [`type`](Customer::type_) and [`kyc_type`](Customer::kyc_type);
 /// variant-specific fields are absent for other variants, so they are all
 /// optional.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[non_exhaustive]
 pub struct Customer {
     /// Customer identifier (`re_` prefix).
@@ -987,8 +990,8 @@ pub struct GetCustomerLimitsResponse {
 pub struct LimitIncrease {
     /// Request identifier.
     pub id: String,
-    /// The receiver the request belongs to.
-    pub receiver_id: String,
+    /// The customer the request belongs to (prefix `re_`).
+    pub customer_id: String,
     /// The current request status.
     pub status: LimitIncreaseStatus,
     /// Requested per-transaction limit, in cents.
