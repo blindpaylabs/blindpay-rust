@@ -133,7 +133,7 @@ impl Inner {
             .map_err(|e| Error::Config(format!("failed to serialize request body: {e}")))?;
         let mutating = method != Method::GET && method != Method::HEAD;
         let key = self.resolve_idempotency_key(mutating, options)?;
-        let timeout = options.timeout.unwrap_or(self.timeout);
+        let timeout = effective_timeout(options, self.timeout)?;
         let url = self.url(path);
 
         let mut attempt: u32 = 0;
@@ -176,10 +176,10 @@ impl Inner {
                 Attempt::BodyFailed(raw, _) | Attempt::Received(raw) => raw,
             };
             if raw.status.is_success() {
-                return decode(raw);
+                return decode(raw, key);
             }
             let mut err = parse_api_error(&raw, key.clone());
-            let (retryable, auto_retry) = classify(mutating, &err);
+            let (retryable, auto_retry) = classify(mutating, key.is_some(), &err);
             err.retryable = retryable;
             if !(auto_retry && can_retry) {
                 return Err(err.into());
@@ -206,7 +206,7 @@ impl Inner {
         options: &RequestOptions,
     ) -> Result<T> {
         let url = self.url(path);
-        let timeout = options.timeout.unwrap_or(self.timeout);
+        let timeout = effective_timeout(options, self.timeout)?;
         let req = self
             .base_request(Method::POST, &url, options, timeout)
             .query(query)
@@ -227,10 +227,11 @@ impl Inner {
             Attempt::BodyFailed(raw, _) | Attempt::Received(raw) => raw,
         };
         if raw.status.is_success() {
-            return decode(raw);
+            return decode(raw, None);
         }
         let mut err = parse_api_error(&raw, None);
-        err.retryable = classify(true, &err).0;
+        // Multipart carries no key, so nothing it gets back is retryable.
+        err.retryable = classify(true, false, &err).0;
         Err(err.into())
     }
 
@@ -287,6 +288,15 @@ impl Inner {
     }
 }
 
+/// The per-attempt timeout for this call; zero is rejected (it would fail
+/// every attempt immediately).
+fn effective_timeout(options: &RequestOptions, client: Duration) -> Result<Duration> {
+    match options.timeout.unwrap_or(client) {
+        d if d.is_zero() => Err(Error::Config("timeout must be greater than zero".into())),
+        d => Ok(d),
+    }
+}
+
 /// Sends `req` and reads the whole body.
 async fn receive(req: reqwest::RequestBuilder) -> Attempt {
     let response = match req.send().await {
@@ -314,43 +324,51 @@ async fn receive(req: reqwest::RequestBuilder) -> Attempt {
 
 /// Decodes a 2xx body. An empty body (e.g. 204) decodes as `null`, then `[]`,
 /// so `()`/`Option` and list return types all succeed.
-fn decode<T: DeserializeOwned>(raw: Raw) -> Result<T> {
+fn decode<T: DeserializeOwned>(raw: Raw, idempotency_key: Option<String>) -> Result<T> {
+    let status = raw.status.as_u16();
     if raw.status == StatusCode::NO_CONTENT || raw.body.is_empty() {
         return serde_json::from_slice(b"null")
             .or_else(|_| serde_json::from_slice(b"[]"))
             .map_err(|source| Error::Decode {
                 source,
                 body: String::new(),
+                status,
+                idempotency_key,
             });
     }
     serde_json::from_slice(&raw.body).map_err(|source| Error::Decode {
         source,
         body: String::from_utf8_lossy(&raw.body).into_owned(),
+        status,
+        idempotency_key,
     })
 }
 
-/// The retry decision for an HTTP error: `(retryable flag, auto-retry?)`.
+/// The retry decision for an HTTP error: `(retryable flag, auto-retry?)`,
+/// evaluated top to bottom:
 ///
-/// - 429 and an in-flight idempotency 409: retried (the handler never ran or
+/// - A mutation without an `Idempotency-Key`: neither (a resend could run it
+///   twice).
+/// - An in-flight idempotency 409 and 429: retried (the handler never ran or
 ///   is still running under the same key).
 /// - A 5xx with a terminal error code: neither.
-/// - A mutation with any other 5xx: flagged retryable but **never** resent
-///   automatically, because the API releases the idempotency key on 5xx and a
-///   resend would run the handler again.
-/// - A `GET` with 500/502/503/504 or 408: retried. Other 5xx (501, 505, …)
-///   and other 4xx: neither.
-fn classify(mutating: bool, err: &ApiError) -> (bool, bool) {
+/// - A keyed mutation with any other 5xx: flagged retryable but **never**
+///   resent automatically, because the API releases the idempotency key on
+///   5xx and a resend would run the handler again.
+/// - A `GET` with 408/500/502/503/504: retried.
+/// - Anything else (other 4xx incl. a mutation 408, a GET 501/505/…): neither.
+fn classify(mutating: bool, has_key: bool, err: &ApiError) -> (bool, bool) {
     let terminal_code = err
         .code
         .as_deref()
         .is_some_and(|c| TERMINAL_5XX_CODES.contains(&c));
     match err.status {
+        _ if mutating && !has_key => (false, false),
         409 if err.message == "idempotency_key_in_flight" => (true, true),
         429 => (true, true),
         500..=599 if terminal_code => (false, false),
         500..=599 if mutating => (true, false),
-        408 if mutating => (true, false),
-        408 | 500 | 502 | 503 | 504 => (true, true),
+        408 | 500 | 502 | 503 | 504 if !mutating => (true, true),
         _ => (false, false),
     }
 }
@@ -440,38 +458,55 @@ mod tests {
     }
 
     #[test]
-    fn classify_follows_the_a2_table() {
+    fn classify_follows_the_retry_table() {
+        let k = true;
         let in_flight = api_error(409, None, "idempotency_key_in_flight");
-        assert_eq!(classify(true, &in_flight), (true, true));
+        assert_eq!(classify(true, k, &in_flight), (true, true));
         assert_eq!(
-            classify(true, &api_error(409, None, "conflict")),
+            classify(true, k, &api_error(409, None, "conflict")),
             (false, false)
         );
-        assert_eq!(classify(true, &api_error(429, None, "x")), (true, true));
-        assert_eq!(classify(false, &api_error(429, None, "x")), (true, true));
-        // Mutation 5xx (any): flagged retryable, never auto-retried.
+        assert_eq!(classify(true, k, &api_error(429, None, "x")), (true, true));
+        assert_eq!(
+            classify(false, false, &api_error(429, None, "x")),
+            (true, true)
+        );
+        // Keyed mutation 5xx (any): flagged retryable, never auto-retried.
         for status in [500, 501, 502, 503, 504, 505, 507] {
-            assert_eq!(classify(true, &api_error(status, None, "x")), (true, false));
-        }
-        for status in [500, 502, 503, 504] {
-            assert_eq!(classify(false, &api_error(status, None, "x")), (true, true));
-        }
-        for status in [501, 505, 507] {
             assert_eq!(
-                classify(false, &api_error(status, None, "x")),
+                classify(true, k, &api_error(status, None, "x")),
+                (true, false)
+            );
+            // Unkeyed mutation: nothing is retryable.
+            assert_eq!(
+                classify(true, false, &api_error(status, None, "x")),
+                (false, false)
+            );
+        }
+        assert_eq!(
+            classify(true, false, &api_error(429, None, "x")),
+            (false, false)
+        );
+        for status in [500, 502, 503, 504, 408] {
+            assert_eq!(
+                classify(false, false, &api_error(status, None, "x")),
+                (true, true)
+            );
+        }
+        for status in [501, 505, 507, 400, 401, 404, 422] {
+            assert_eq!(
+                classify(false, false, &api_error(status, None, "x")),
                 (false, false)
             );
         }
         let terminal = api_error(502, Some("PAYINS_CARD_PAYMENT_PENDING"), "x");
-        assert_eq!(classify(false, &terminal), (false, false));
-        assert_eq!(classify(false, &api_error(408, None, "x")), (true, true));
-        assert_eq!(classify(true, &api_error(408, None, "x")), (true, false));
-        for status in [400, 401, 404, 422] {
-            assert_eq!(
-                classify(false, &api_error(status, None, "x")),
-                (false, false)
-            );
-        }
+        assert_eq!(classify(false, false, &terminal), (false, false));
+        assert_eq!(classify(true, k, &terminal), (false, false));
+        // A mutation 408 is final and not retryable.
+        assert_eq!(
+            classify(true, k, &api_error(408, None, "x")),
+            (false, false)
+        );
     }
 
     #[test]

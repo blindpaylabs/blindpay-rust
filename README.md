@@ -152,7 +152,11 @@ let payout = blindpay
   arrives it decides, even if reading the body then fails. `Retry-After` up to 60 s is honoured; otherwise backoff is
   `min(8 s, 0.5 s × 2^attempt)` with jitter.
 - **Mutations are never retried on any 5xx**: the API releases the key on a 5xx, so a resend would
-  run the handler again. You get an error with `is_retryable() == true` and the key.
+  run the handler again. You get an error with `is_retryable() == true` and the key (a mutation
+  sent without a key, i.e. with `max_retries(0)` and no `idempotency_key`, is never retryable).
+  A mutation 408 is final too.
+- Timeouts must be greater than zero. To cancel a call, drop its future (e.g. with
+  `tokio::time::timeout`); that also ends a pending retry wait.
   **If a create or payout returns a 5xx, look the resource up (by quote, external id, or a list
   filter) before resending. Resend with the same `idempotency_key` from the error.**
 
@@ -386,6 +390,7 @@ call that could not work against the live API or adds parity with the other Blin
 | `VirtualAccount.us` required | `Option`, plus `co` / `mx` blocks |
 | `Error::Api(ApiError)` | `Error::Api(Box<ApiError>)` (fields via deref), with `code`, `description`, `errors`, `trace_id`, `request_id`, `idempotency_key`, `retryable`, `retry_after` |
 | `Error::Http(reqwest::Error)` | `Error::Http { source, idempotency_key }` |
+| `Error::Decode { source, body }` | also carries `status` (the 2xx) and `idempotency_key`; match with `Error::Decode { source, .. }` |
 | 30 s timeout, no retries | 60 s per attempt, 2 retries (see above); `.max_retries(0)` restores single-shot |
 | `svix` dependency, `verify_webhook_signature` only | native verifier; `construct_webhook_event` returns a typed `WebhookEventPayload` |
 | `CreateQuoteInput { bank_account_id: String, currency_type, cover_fees: bool, request_amount: i64, .. }` | `CreateQuoteInput::new(network, token).bank_account_id(..)` (or `.payable_id(..)`); those fields are `Option` |

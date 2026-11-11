@@ -35,6 +35,11 @@ pub enum Error {
         source: serde_json::Error,
         /// The raw response body that failed to decode, retained for debugging.
         body: String,
+        /// The (2xx) HTTP status of the response: the request succeeded.
+        status: u16,
+        /// The `Idempotency-Key` the request carried, if any. Resending with it
+        /// replays the stored response instead of running the request again.
+        idempotency_key: Option<String>,
     },
 
     /// A transport error occurred (DNS, connection, TLS, timeout, ...): no API
@@ -80,14 +85,18 @@ impl Error {
                 idempotency_key, ..
             } => idempotency_key.as_deref(),
             Error::Api(e) => e.idempotency_key.as_deref(),
+            Error::Decode {
+                idempotency_key, ..
+            } => idempotency_key.as_deref(),
             _ => None,
         }
     }
 
-    /// The HTTP status of an [`Error::Api`], if this is one.
+    /// The HTTP status of an [`Error::Api`] or [`Error::Decode`].
     pub fn status(&self) -> Option<u16> {
         match self {
             Error::Api(e) => Some(e.status),
+            Error::Decode { status, .. } => Some(*status),
             _ => None,
         }
     }

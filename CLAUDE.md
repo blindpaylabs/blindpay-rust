@@ -120,11 +120,16 @@ tests/
 - Idempotency keys: a caller key must be 1–255 visible ASCII characters, checked before sending;
   otherwise a UUIDv4 is minted before the first attempt of every JSON mutation when retries are on.
   Multipart never gets one and is sent once.
-- "No response" means a connect failure or a timeout before any status line. Only that, 429 and
-  409 `idempotency_key_in_flight` are resent for mutations. If a status arrived, it decides, even
-  when the body read failed; a mutation with **any** 5xx is flagged retryable and never resent
-  (the API releases the key on 5xx). GETs are also resent on 408/500/502/503/504; 501/505/… and
-  other 4xx are final; a 5xx with a terminal error code is final for everyone.
+- The rules are evaluated in order. A mutation without an `Idempotency-Key` (only possible with
+  `max_retries(0)`) is never resent and nothing it gets is retryable. "No response" means a
+  connect failure or a timeout before any status line; only that, 429 and 409
+  `idempotency_key_in_flight` are resent for keyed mutations. If a status arrived, it decides,
+  even when the body read failed. A 5xx with a terminal error code is final. A keyed mutation
+  with any other 5xx is flagged retryable and never resent (the API releases the key on 5xx).
+  GETs are also resent on 408/500/502/503/504. Everything else (a mutation 408, a GET 501/505,
+  other 4xx) is final and not retryable.
+- Timeouts (client, `RequestOptions`, `with_timeout`) must be > 0. Cancelling a call is dropping
+  its future, which also ends any retry wait (429 / in-flight 409 included).
 - `Retry-After` ≤ 60 s is honoured, otherwise backoff `min(8 s, 0.5 s × 2^attempt)` × [0.5, 1).
   Tests use `retry_sleep` (or `tests/common`), never real sleeps.
 - `BlindPay` is `Clone + Send + Sync` and immutable; per-request options and `with_timeout` never

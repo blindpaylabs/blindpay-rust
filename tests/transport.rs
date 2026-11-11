@@ -695,3 +695,135 @@ async fn a_key_that_isnt_a_legal_header_value_is_never_sent() {
     }
     assert!(requests(&server).await.is_empty());
 }
+
+// ---------------------------------------------------------------------------
+// Row order: an unkeyed mutation is never retryable; a mutation 408 is final
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn an_unkeyed_mutation_5xx_is_not_retryable() {
+    let server = MockServer::start().await;
+    mount_sequence(
+        &server,
+        "POST",
+        OWNERSHIP,
+        ResponseTemplate::new(503),
+        ResponseTemplate::new(503),
+    )
+    .await;
+    let (client, _) = client_with(&server, 0); // no retries -> no auto key
+    let err = client
+        .instances
+        .migrate_ownership("us_000000000000")
+        .await
+        .unwrap_err();
+    assert_eq!(err.status(), Some(503));
+    assert!(err.idempotency_key().is_none());
+    assert!(!err.is_retryable());
+    assert_eq!(requests(&server).await.len(), 1);
+}
+
+#[tokio::test]
+async fn a_mutation_408_is_neither_retried_nor_retryable() {
+    let server = MockServer::start().await;
+    mount_sequence(
+        &server,
+        "POST",
+        OWNERSHIP,
+        ResponseTemplate::new(408),
+        ResponseTemplate::new(408),
+    )
+    .await;
+    let (client, delays) = client_with(&server, 2);
+    let err = client
+        .instances
+        .migrate_ownership("us_000000000000")
+        .await
+        .unwrap_err();
+    assert_eq!(err.status(), Some(408));
+    assert!(!err.is_retryable());
+    assert_eq!(requests(&server).await.len(), 1);
+    assert!(delays.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn zero_timeouts_are_rejected_before_sending() {
+    let server = MockServer::start().await;
+    let err = BlindPay::builder("test_key", INSTANCE)
+        .timeout(Duration::ZERO)
+        .build()
+        .unwrap_err();
+    assert!(matches!(err, Error::Config(_)), "{err:?}");
+
+    let (client, _) = client_with(&server, 2);
+    let err = client
+        .instances
+        .migrate_ownership_with_options(
+            "us_000000000000",
+            &RequestOptions::new().timeout(Duration::ZERO),
+        )
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::Config(_)), "{err:?}");
+    let err = client
+        .with_timeout(Duration::ZERO)
+        .available
+        .get_rails()
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::Config(_)), "{err:?}");
+    assert!(requests(&server).await.is_empty());
+}
+
+/// Cancellation is dropping the future: a 429 / in-flight 409 wait is just an
+/// `.await` on the retry sleep, so dropping the call ends it and nothing more
+/// is sent.
+#[tokio::test]
+async fn dropping_the_call_during_a_429_wait_sends_nothing_more() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path(OWNERSHIP))
+        .respond_with(ResponseTemplate::new(429).insert_header("Retry-After", "30"))
+        .mount(&server)
+        .await;
+    let started = Arc::new(tokio::sync::Notify::new());
+    let signal = Arc::clone(&started);
+    let client = BlindPay::builder("test_key", INSTANCE)
+        .base_url(server.uri())
+        .retry_sleep(Arc::new(move |_| {
+            let signal = Arc::clone(&signal);
+            Box::pin(async move {
+                signal.notify_one();
+                std::future::pending::<()>().await;
+            })
+        }))
+        .build()
+        .unwrap();
+    let call = client.instances.migrate_ownership("us_000000000000");
+    tokio::select! {
+        _ = call => panic!("the call should be waiting out Retry-After"),
+        _ = started.notified() => {}
+    }
+    tokio::task::yield_now().await;
+    assert_eq!(requests(&server).await.len(), 1);
+}
+
+#[tokio::test]
+async fn a_2xx_decode_failure_keeps_the_status_and_key() {
+    let server = MockServer::start().await;
+    let bad = ResponseTemplate::new(201).set_body_string("not json");
+    mount_sequence(&server, "POST", OWNERSHIP, bad.clone(), bad).await;
+    let (client, _) = client_with(&server, 2);
+    let err = client
+        .instances
+        .migrate_ownership_with_options(
+            "us_000000000000",
+            &RequestOptions::new().idempotency_key("own-1"),
+        )
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::Decode { .. }), "{err:?}");
+    assert_eq!(err.status(), Some(201));
+    assert_eq!(err.idempotency_key(), Some("own-1"));
+    assert_eq!(requests(&server).await.len(), 1);
+}

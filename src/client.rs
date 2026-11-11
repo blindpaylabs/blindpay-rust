@@ -250,6 +250,11 @@ impl BlindPayBuilder {
     /// Returns [`Error::Config`] if the API key or instance ID is empty, or if
     /// the base URL cannot be parsed.
     pub fn build(self) -> Result<BlindPay> {
+        if self.timeout.is_zero() {
+            return Err(Error::Config(
+                "timeout must be greater than zero".to_string(),
+            ));
+        }
         if self.api_key.trim().is_empty() {
             return Err(Error::Config(
                 "api key not provided, get your api key on the blindpay dashboard".to_string(),
