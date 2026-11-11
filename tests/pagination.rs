@@ -197,3 +197,31 @@ async fn dropping_the_future_cancels_a_pending_retry_sleep() {
     tokio::task::yield_now().await;
     assert_eq!(server.received_requests().await.unwrap().len(), 1);
 }
+
+#[tokio::test]
+async fn with_timeout_applies_to_gets_without_touching_the_original() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(200).set_delay(std::time::Duration::from_millis(500)))
+        .mount(&server)
+        .await;
+    let client = BlindPay::builder("test_key", "in_000000000000")
+        .base_url(format!("{}/v1", server.uri()))
+        .max_retries(0)
+        .build()
+        .unwrap();
+    let fast = client.with_timeout(std::time::Duration::from_millis(50));
+    let err = fast.available.get_rails().await.unwrap_err();
+    assert!(matches!(err, Error::Http { .. }), "{err:?}");
+    // The original client keeps its 60 s default and is unaffected.
+    assert!(client.available.get_rails().await.is_ok());
+}
+
+#[test]
+fn an_instance_id_that_isnt_a_path_segment_is_rejected() {
+    for bad in ["in_1/../x", "in 1", "in_1?x=1"] {
+        let err = BlindPay::new("test_key", bad).unwrap_err();
+        assert!(matches!(err, Error::Config(_)), "{bad}: {err:?}");
+    }
+    assert!(BlindPay::new("test_key", "in_000000000000").is_ok());
+}

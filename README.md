@@ -76,6 +76,8 @@ let blindpay = BlindPay::builder("your-api-key-here", "your-instance-id-here")
 - `http_client(reqwest::Client)`: bring your own client (proxies, custom TLS). The per-attempt
   timeout still applies.
 - `retry_sleep(..)`: replace the backoff sleep (handy in tests).
+- `client.with_timeout(d)`: a view of the client with a different per-attempt timeout, for any call
+  (mutations can also pass `RequestOptions::timeout`).
 
 A built `BlindPay` is immutable and `Clone + Send + Sync`: clone it into tasks freely; clones share
 one connection pool.

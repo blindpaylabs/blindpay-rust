@@ -36,6 +36,7 @@ pub type RetrySleep =
     Arc<dyn Fn(Duration) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
 
 /// Shared, reference-counted client state. Immutable after `build()`.
+#[derive(Clone)]
 pub(crate) struct Inner {
     pub(crate) http: reqwest::Client,
     pub(crate) base_url: String,
@@ -260,6 +261,17 @@ impl BlindPayBuilder {
                     .to_string(),
             ));
         }
+        // The instance id is interpolated into every request path, so it must
+        // be a plain path segment (ids look like `in_000000000000`).
+        if !self
+            .instance_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~'))
+        {
+            return Err(Error::Config(
+                "instance id may only contain letters, digits, `-`, `_`, `.` and `~`".to_string(),
+            ));
+        }
 
         // Trim a trailing slash so request paths (which start with `/`) join
         // cleanly, and validate that the result is a well-formed URL.
@@ -291,6 +303,12 @@ impl BlindPayBuilder {
             max_retries: self.max_retries,
             sleep,
         });
+        Ok(BlindPay::from_inner(inner))
+    }
+}
+
+impl BlindPay {
+    fn from_inner(inner: Arc<Inner>) -> Self {
         let available = Available::new(Arc::clone(&inner));
         let instances = Instances::new(Arc::clone(&inner));
         let partner_fees = PartnerFees::new(Arc::clone(&inner));
@@ -305,7 +323,7 @@ impl BlindPayBuilder {
         let transfers = Transfers::new(Arc::clone(&inner));
         let upload = Upload::new(Arc::clone(&inner));
 
-        Ok(BlindPay {
+        BlindPay {
             inner,
             available,
             instances,
@@ -320,6 +338,26 @@ impl BlindPayBuilder {
             payouts,
             transfers,
             upload,
-        })
+        }
+    }
+
+    /// Returns a view of this client whose requests use `timeout` per attempt,
+    /// for any method (including `GET`s, which take no
+    /// [`RequestOptions`](crate::RequestOptions)). It shares the connection
+    /// pool and leaves `self` unchanged.
+    ///
+    /// ```no_run
+    /// # async fn run(client: blindpay::BlindPay) -> blindpay::Result<()> {
+    /// use std::time::Duration;
+    /// let payout = client.with_timeout(Duration::from_secs(5)).payouts.get("po_000000000000").await?;
+    /// # let _ = payout;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_timeout(&self, timeout: Duration) -> Self {
+        Self::from_inner(Arc::new(Inner {
+            timeout,
+            ..(*self.inner).clone()
+        }))
     }
 }
