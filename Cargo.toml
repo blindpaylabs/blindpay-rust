@@ -10,7 +10,7 @@ homepage = "https://www.blindpay.com"
 documentation = "https://docs.rs/blindpay"
 readme = "README.md"
 # Tests and their shared spec fixtures (1.2 MB) stay out of the published crate.
-exclude = ["tests/", ".api-sync/", ".github/"]
+exclude = ["tests/", ".api-sync/", ".github/", "CLAUDE.md"]
 keywords = ["blindpay", "payments", "stablecoin", "api", "sdk"]
 categories = ["api-bindings", "finance"]
 

@@ -111,7 +111,7 @@ impl BlindPay {
     ///
     /// Returns [`crate::webhooks::WebhookVerificationError`] if the signature is
     /// invalid or the inputs are malformed.
-    #[allow(clippy::unused_self)] // inherent method for parity with other SDKs (PLAN Tier 2)
+    #[allow(clippy::unused_self)] // inherent method, kept for parity with the other SDKs
     pub fn verify_webhook_signature(
         &self,
         secret: &str,
