@@ -1,7 +1,6 @@
 //! Auto-pagination (plan C5, D3/D4, Appendix A7) and client concurrency (C12).
 
 use std::path::Path;
-use std::time::Duration;
 
 use blindpay::{BlindPay, Error, Limit, ListPayoutsParams, ListTransfersParams};
 use serde_json::{Value, json};
@@ -174,15 +173,27 @@ async fn dropping_the_future_cancels_a_pending_retry_sleep() {
         .respond_with(ResponseTemplate::new(503))
         .mount(&server)
         .await;
-    // The default sleep is tokio's: a 5xx GET backs off for >= 0.25s. Dropping
-    // the request future (here via a timeout) stops it mid-sleep.
+    // A retry sleep that signals it started and then never finishes: the
+    // only way out is the caller dropping the request future.
+    let started = std::sync::Arc::new(tokio::sync::Notify::new());
+    let signal = std::sync::Arc::clone(&started);
     let client = BlindPay::builder("test_key", "in_000000000000")
         .base_url(format!("{}/v1", server.uri()))
+        .retry_sleep(std::sync::Arc::new(move |_| {
+            let signal = std::sync::Arc::clone(&signal);
+            Box::pin(async move {
+                signal.notify_one();
+                std::future::pending::<()>().await;
+            })
+        }))
         .build()
         .unwrap();
-    let started = std::time::Instant::now();
-    let res = tokio::time::timeout(Duration::from_millis(100), client.available.get_rails()).await;
-    assert!(res.is_err(), "the request should still be sleeping");
-    assert!(started.elapsed() < Duration::from_millis(200));
+    let request = client.available.get_rails();
+    tokio::select! {
+        _ = request => panic!("the request should be stuck in its retry sleep"),
+        _ = started.notified() => {}
+    }
+    // `request` is dropped here, mid-sleep; no second attempt is ever made.
+    tokio::task::yield_now().await;
     assert_eq!(server.received_requests().await.unwrap().len(), 1);
 }
