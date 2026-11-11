@@ -1,6 +1,8 @@
 //! Integration tests for the `customers` resource (and its `bank_accounts`
 //! sub-resource), backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     AccountClass, BankAccountStatus, BlindPay, CreateAchInput, CreateBusinessWithStandardKybInput,
     CreateIndividualWithStandardKycInput, CreateInternationalSwiftInput, CreatePixInput, Error,
@@ -13,10 +15,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]

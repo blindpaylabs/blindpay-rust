@@ -1,4 +1,4 @@
-//! Webhook verification (plan C6/D20): the 14 shared Svix vectors, and every
+//! Webhook verification: the 14 shared Svix vectors, and every
 //! spec-shaped webhook fixture decoded through the typed event enum.
 
 use std::path::{Path, PathBuf};

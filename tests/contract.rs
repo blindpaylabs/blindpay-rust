@@ -18,7 +18,7 @@
 //!
 //! Request-side required-ness and unmodelled spec properties are reported as
 //! warnings (run with `--nocapture` to see them). Properties deliberately left
-//! out (provider-named fields, plan §3.8) are listed with a reason under
+//! out (provider-named fields) are listed with a reason under
 //! `unmodelled` in the allowlist, which silences them.
 
 use std::collections::{BTreeMap, BTreeSet};

@@ -1,5 +1,7 @@
-//! Request bodies and queries for the inputs fixed in audit §9.4 (plan A8):
+//! Request bodies and queries for spec-driven inputs:
 //! absent optionals stay absent, and the new spec fields reach the wire.
+
+mod common;
 
 use blindpay::{
     AccountClass, BankingPartner, BlindPay, BreBGender, BreBInput, CreateEvmPayoutInput,
@@ -13,10 +15,7 @@ use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 const BASE: &str = "/v1/instances/in_000000000000";
 
 fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test_key", "in_000000000000")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .unwrap()
+    common::client(server)
 }
 
 /// Mounts a catch-all that answers 500 (mutations aren't retried on 5xx, so
@@ -67,19 +66,17 @@ async fn payin_track_sends_checkout_token_only_when_given() {
 async fn faster_payments_account_is_typed_faster_payments() {
     let server = MockServer::start().await;
     capture(&server).await;
-    let input = CreateFasterPaymentsInput {
-        name: "GBP account".into(),
-        account_class: AccountClass::Individual,
-        faster_payments_sort_code: "123456".into(),
-        faster_payments_account_number: "12345678".into(),
-        faster_payments_beneficiary_legal_name: "Jane Doe".into(),
-        faster_payments_beneficiary_address_line_1: "1 High St".into(),
-        faster_payments_beneficiary_city: "London".into(),
-        faster_payments_beneficiary_country: "GB".into(),
-        faster_payments_beneficiary_address_line_2: None,
-        faster_payments_beneficiary_state_province_region: None,
-        faster_payments_beneficiary_postal_code: Some("SW1A 1AA".into()),
-    };
+    let input = CreateFasterPaymentsInput::new(
+        "GBP account",
+        AccountClass::Individual,
+        "123456",
+        "12345678",
+        "Jane Doe",
+        "1 High St",
+        "London",
+        "GB",
+    )
+    .faster_payments_beneficiary_postal_code("SW1A 1AA");
     let _ = client(&server)
         .customers
         .bank_accounts

@@ -1,5 +1,5 @@
-//! The 18 ops added for 94/94 coverage, exercised through their real methods
-//! (plan Appendix A8): each call must hit the exact method + path (+ the
+//! The 18 ops added for 94/94 coverage, exercised through their real methods:
+//! each call must hit the exact method + path (+ the
 //! `instance_id` query where the route needs it) and decode every
 //! spec-shaped fixture variant the mock serves back.
 
@@ -299,7 +299,7 @@ async fn bodies_of_new_mutations() {
     let reqs = server.received_requests().await.unwrap();
     let body = |i: usize| -> Value { serde_json::from_slice(&reqs[i].body).unwrap() };
     assert_eq!(reqs.len(), 5);
-    // RFI answers are the whole body, not wrapped (plan C9).
+    // RFI answers are the whole body, not wrapped.
     assert_eq!(
         body(0),
         serde_json::json!({ "docs": ["https://f/1.pdf"], "source_of_funds": "salary" })

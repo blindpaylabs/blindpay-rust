@@ -1,4 +1,6 @@
-//! Auto-pagination (plan C5, D3/D4, Appendix A7) and client concurrency (C12).
+//! Auto-pagination and client concurrency.
+
+mod common;
 
 use std::path::Path;
 
@@ -10,11 +12,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 const PAYOUTS: &str = "/v1/instances/in_000000000000/payouts";
 
 fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test_key", "in_000000000000")
-        .base_url(format!("{}/v1", server.uri()))
-        .retry_sleep(std::sync::Arc::new(|_| Box::pin(async {})))
-        .build()
-        .unwrap()
+    common::client(server)
 }
 
 /// A spec-shaped payout (the `full` fixture item) with the given id.

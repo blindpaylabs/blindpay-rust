@@ -1,5 +1,7 @@
 //! Integration tests for the `available` resource, backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{BlindPay, Error, Rail, RequiredWhenOperator};
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -7,12 +9,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        // Retries back off instantly here; tests/transport.rs covers the delays.
-        .retry_sleep(std::sync::Arc::new(|_| Box::pin(async {})))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]

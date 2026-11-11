@@ -1,5 +1,5 @@
-//! Transport contract: request options, idempotency keys, the retry policy
-//! (plan Appendix A2), and error parsing (plan C4, `tests/fixtures/errors`).
+//! Transport contract: request options, idempotency keys, the retry policy,
+//! and error parsing (`tests/fixtures/errors`).
 //!
 //! Retries use a recording `retry_sleep`, so nothing really sleeps.
 
@@ -88,7 +88,7 @@ async fn mount_sequence(
 }
 
 // ---------------------------------------------------------------------------
-// Retries (A2)
+// Retries
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -375,7 +375,7 @@ async fn max_retries_zero_disables_retries_and_auto_keys() {
 }
 
 // ---------------------------------------------------------------------------
-// Request options (C2)
+// Request options
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -465,7 +465,7 @@ fn client_is_send_sync_and_clone() {
 }
 
 // ---------------------------------------------------------------------------
-// Errors (C4): the shared `tests/fixtures/errors/*.json` bodies
+// Errors: the shared `tests/fixtures/errors/*.json` bodies
 // ---------------------------------------------------------------------------
 
 fn error_fixture(name: &str) -> serde_json::Value {
