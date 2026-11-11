@@ -22,8 +22,9 @@ use crate::resources::upload::Upload;
 use crate::resources::virtual_accounts::VirtualAccounts;
 use crate::resources::wallets::Wallets;
 
-/// The default BlindPay API base URL (`https://api.blindpay.com/v1`).
-pub const DEFAULT_BASE_URL: &str = "https://api.blindpay.com/v1";
+/// The default BlindPay API base URL. Request paths add the `/v1/...` version
+/// prefix themselves.
+pub const DEFAULT_BASE_URL: &str = "https://api.blindpay.com";
 
 /// The default per-attempt timeout (60 seconds).
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
@@ -31,7 +32,9 @@ pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 /// The default number of retries after the first attempt (so 3 attempts).
 pub const DEFAULT_MAX_RETRIES: u32 = 2;
 
-/// How the client waits between retries; see [`BlindPayBuilder::retry_sleep`].
+/// How the client waits between retries. A test seam, not part of the stable
+/// API.
+#[doc(hidden)]
 pub type RetrySleep =
     Arc<dyn Fn(Duration) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
 
@@ -56,9 +59,11 @@ pub(crate) struct Inner {
 /// Per-request [`RequestOptions`](crate::RequestOptions) never change it.
 ///
 /// Requests time out after [`DEFAULT_TIMEOUT`] per attempt and are retried up
-/// to [`DEFAULT_MAX_RETRIES`] times: `GET`s on connection errors, timeouts,
-/// 408, 429 and 5xx; mutations only when no response arrived, on 429 and on an
-/// in-flight idempotency 409, always under an `Idempotency-Key`.
+/// to [`DEFAULT_MAX_RETRIES`] times: `GET`s when no response arrived
+/// (connection failure or timeout before a status) and on 408, 429, 500, 502,
+/// 503 and 504; mutations only when no response arrived, on 429 and on an
+/// in-flight idempotency 409, always under an `Idempotency-Key`. A mutation
+/// that gets any 5xx is never resent automatically.
 ///
 /// # Example
 ///
@@ -194,7 +199,10 @@ impl BlindPayBuilder {
         }
     }
 
-    /// Overrides the API base URL. Defaults to [`DEFAULT_BASE_URL`].
+    /// Overrides the API base URL (scheme + host, optionally a path prefix).
+    /// Defaults to [`DEFAULT_BASE_URL`]; requests go to `{base_url}/v1/...`.
+    /// A URL that already ends in `/v1` (the 0.2 convention) is accepted and
+    /// the suffix is dropped, so it still works.
     ///
     /// Useful for tests and proxies. The URL receives your API key, so only
     /// point it at hosts you trust.
@@ -227,17 +235,9 @@ impl BlindPayBuilder {
         self
     }
 
-    /// Overrides how the client waits between retries. Defaults to
-    /// `tokio::time::sleep`. Mainly a test seam: record the delays and return
-    /// immediately.
-    ///
-    /// ```
-    /// use std::sync::Arc;
-    /// let client = blindpay::BlindPay::builder("key", "in_000000000000")
-    ///     .retry_sleep(Arc::new(|_delay| Box::pin(async {})))
-    ///     .build()?;
-    /// # Ok::<(), blindpay::Error>(())
-    /// ```
+    /// Overrides how the client waits between retries (default
+    /// `tokio::time::sleep`). A test seam, not part of the stable API.
+    #[doc(hidden)]
     pub fn retry_sleep(mut self, sleep: RetrySleep) -> Self {
         self.sleep = Some(sleep);
         self
@@ -261,22 +261,11 @@ impl BlindPayBuilder {
                     .to_string(),
             ));
         }
-        // The instance id is interpolated into every request path, so it must
-        // be a plain path segment (ids look like `in_000000000000`).
-        if !self
-            .instance_id
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~'))
-        {
-            return Err(Error::Config(
-                "instance id may only contain letters, digits, `-`, `_`, `.` and `~`".to_string(),
-            ));
-        }
-
-        // Trim a trailing slash so request paths (which start with `/`) join
-        // cleanly, and validate that the result is a well-formed URL.
+        // Trim a trailing slash (and a legacy `/v1` suffix) so request paths,
+        // which start with `/v1/`, join cleanly; validate the URL.
         let base_url = {
             let trimmed = self.base_url.trim_end_matches('/');
+            let trimmed = trimmed.strip_suffix("/v1").unwrap_or(trimmed);
             Url::parse(trimmed).map_err(|e| Error::Config(format!("invalid base url: {e}")))?;
             trimmed.to_string()
         };

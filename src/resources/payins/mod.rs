@@ -56,7 +56,7 @@ impl Payins {
         input: &CreatePayinInput,
         options: &RequestOptions,
     ) -> Result<CreatePayinResponse> {
-        let path = format!("/instances/{}/payins/evm", self.client.instance_id);
+        let path = self.client.instance_path("/payins/evm");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -66,7 +66,7 @@ impl Payins {
     ///
     /// `GET /instances/{instance_id}/payins`
     pub async fn list(&self, params: &ListPayinsParams) -> Result<ListResponse<Payin>> {
-        let path = format!("/instances/{}/payins", self.client.instance_id);
+        let path = self.client.instance_path("/payins");
         self.client.get_query(&path, params).await
     }
 
@@ -75,7 +75,7 @@ impl Payins {
     ///
     /// `GET /instances/{instance_id}/payins`
     pub fn list_auto_paging(&self, params: &ListPayinsParams) -> Pager<Payin> {
-        let path = format!("/instances/{}/payins", self.client.instance_id);
+        let path = self.client.instance_path("/payins");
         Pager::new(Arc::clone(&self.client), path, params)
     }
 
@@ -83,11 +83,10 @@ impl Payins {
     ///
     /// `GET /instances/{instance_id}/payins/{id}`
     pub async fn get(&self, payin_id: impl AsRef<str>) -> Result<Payin> {
-        let path = format!(
-            "/instances/{}/payins/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/payins/{}",
             encode_path_segment(payin_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 

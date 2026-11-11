@@ -217,11 +217,23 @@ async fn with_timeout_applies_to_gets_without_touching_the_original() {
     assert!(client.available.get_rails().await.is_ok());
 }
 
-#[test]
-fn an_instance_id_that_isnt_a_path_segment_is_rejected() {
-    for bad in ["in_1/../x", "in 1", "in_1?x=1"] {
-        let err = BlindPay::new("test_key", bad).unwrap_err();
-        assert!(matches!(err, Error::Config(_)), "{bad}: {err:?}");
+#[tokio::test]
+async fn the_instance_id_is_percent_encoded_and_both_base_url_forms_work() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(404))
+        .mount(&server)
+        .await;
+    for base in [server.uri(), format!("{}/v1/", server.uri())] {
+        let client = BlindPay::builder("test_key", "in 1/x")
+            .base_url(base)
+            .build()
+            .unwrap();
+        let _ = client.payouts.get("po_1").await;
     }
-    assert!(BlindPay::new("test_key", "in_000000000000").is_ok());
+    let reqs = server.received_requests().await.unwrap();
+    assert_eq!(reqs.len(), 2);
+    for r in reqs {
+        assert_eq!(r.url.path(), "/v1/instances/in%201%2Fx/payouts/po_1");
+    }
 }

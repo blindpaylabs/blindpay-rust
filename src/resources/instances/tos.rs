@@ -38,7 +38,7 @@ impl Tos {
         body: &InitiateTosInput,
         options: &RequestOptions,
     ) -> Result<InitiateTosResponse> {
-        let path = format!("/e/instances/{}/tos", self.client.instance_id);
+        let path = self.client.e_instance_path("/tos");
         self.client
             .request_with(
                 reqwest::Method::POST,

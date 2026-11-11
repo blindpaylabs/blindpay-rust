@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 
 use crate::client::Inner;
 use crate::error::{ApiError, Error, Result};
+use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
 
 /// 5xx codes the spec's error table classifies as terminal: never retried.
@@ -30,6 +31,9 @@ const RESERVED_HEADERS: &[&str] = &[
     "user-agent",
 ];
 
+/// Every request path is rooted here (`https://api.blindpay.com/v1/...`).
+const API_PREFIX: &str = "/v1";
+
 /// A received response: status, headers and the full body.
 struct Raw {
     status: StatusCode,
@@ -49,6 +53,26 @@ enum Attempt {
 }
 
 impl Inner {
+    /// `/instances/{instance_id}{rest}`, with the instance id percent-encoded.
+    pub(crate) fn instance_path(&self, rest: &str) -> String {
+        format!(
+            "/instances/{}{rest}",
+            encode_path_segment(&self.instance_id)
+        )
+    }
+
+    /// `/e/instances/{instance_id}{rest}`, with the instance id percent-encoded.
+    pub(crate) fn e_instance_path(&self, rest: &str) -> String {
+        format!(
+            "/e/instances/{}{rest}",
+            encode_path_segment(&self.instance_id)
+        )
+    }
+
+    fn url(&self, path: &str) -> String {
+        format!("{}{API_PREFIX}{path}", self.base_url)
+    }
+
     /// Performs a `GET` request with no query parameters.
     pub(crate) async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         self.request::<T, (), ()>(Method::GET, path, None, None)
@@ -110,7 +134,7 @@ impl Inner {
         let mutating = method != Method::GET && method != Method::HEAD;
         let key = self.resolve_idempotency_key(mutating, options)?;
         let timeout = options.timeout.unwrap_or(self.timeout);
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
 
         let mut attempt: u32 = 0;
         loop {
@@ -181,7 +205,7 @@ impl Inner {
         form: reqwest::multipart::Form,
         options: &RequestOptions,
     ) -> Result<T> {
-        let url = format!("{}{}", self.base_url, path);
+        let url = self.url(path);
         let timeout = options.timeout.unwrap_or(self.timeout);
         let req = self
             .base_request(Method::POST, &url, options, timeout)

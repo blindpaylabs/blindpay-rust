@@ -1256,11 +1256,10 @@ impl BankAccounts {
     }
 
     fn collection_path(&self, customer_id: impl AsRef<str>) -> String {
-        format!(
-            "/instances/{}/customers/{}/bank-accounts",
-            self.client.instance_id,
+        self.client.instance_path(&format!(
+            "/customers/{}/bank-accounts",
             encode_path_segment(customer_id.as_ref())
-        )
+        ))
     }
 }
 

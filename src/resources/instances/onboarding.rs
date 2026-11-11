@@ -115,7 +115,7 @@ impl Onboarding {
     }
 
     fn path(&self, step: &str) -> String {
-        format!("/instances/{}/onboarding/{step}", self.client.instance_id)
+        self.client.instance_path(&format!("/onboarding/{step}"))
     }
 
     /// The instance's business details.

@@ -31,7 +31,7 @@ impl WebhookEndpoints {
     ///
     /// `GET /instances/{instance_id}/webhook-endpoints`
     pub async fn list(&self) -> Result<Vec<WebhookEndpoint>> {
-        let path = format!("/instances/{}/webhook-endpoints", self.client.instance_id);
+        let path = self.client.instance_path("/webhook-endpoints");
         self.client.get(&path).await
     }
 
@@ -55,7 +55,7 @@ impl WebhookEndpoints {
         body: &CreateWebhookEndpointInput,
         options: &RequestOptions,
     ) -> Result<CreateWebhookEndpointResponse> {
-        let path = format!("/instances/{}/webhook-endpoints", self.client.instance_id);
+        let path = self.client.instance_path("/webhook-endpoints");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(body), options)
             .await
@@ -78,11 +78,10 @@ impl WebhookEndpoints {
         id: impl AsRef<str>,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/webhook-endpoints/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/webhook-endpoints/{}",
             encode_path_segment(id.as_ref())
-        );
+        ));
         self.client
             .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
@@ -92,11 +91,10 @@ impl WebhookEndpoints {
     ///
     /// `GET /instances/{instance_id}/webhook-endpoints/{id}/secret`
     pub async fn get_secret(&self, id: impl AsRef<str>) -> Result<WebhookEndpointSecret> {
-        let path = format!(
-            "/instances/{}/webhook-endpoints/{}/secret",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/webhook-endpoints/{}/secret",
             encode_path_segment(id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -104,10 +102,9 @@ impl WebhookEndpoints {
     ///
     /// `GET /instances/{instance_id}/webhook-endpoints/portal-access`
     pub async fn get_portal_access_url(&self) -> Result<PortalAccess> {
-        let path = format!(
-            "/instances/{}/webhook-endpoints/portal-access",
-            self.client.instance_id
-        );
+        let path = self
+            .client
+            .instance_path("/webhook-endpoints/portal-access");
         self.client.get(&path).await
     }
 }

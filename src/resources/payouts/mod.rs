@@ -55,7 +55,7 @@ impl Payouts {
         input: &CreateEvmPayoutInput,
         options: &RequestOptions,
     ) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/evm", self.client.instance_id);
+        let path = self.client.instance_path("/payouts/evm");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -81,7 +81,7 @@ impl Payouts {
         input: &CreateSolanaPayoutInput,
         options: &RequestOptions,
     ) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/solana", self.client.instance_id);
+        let path = self.client.instance_path("/payouts/solana");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -107,7 +107,7 @@ impl Payouts {
         input: &CreateStellarPayoutInput,
         options: &RequestOptions,
     ) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/stellar", self.client.instance_id);
+        let path = self.client.instance_path("/payouts/stellar");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -133,10 +133,7 @@ impl Payouts {
         input: &AuthorizeStellarTokenInput,
         options: &RequestOptions,
     ) -> Result<AuthorizeStellarTokenResponse> {
-        let path = format!(
-            "/instances/{}/payouts/stellar/authorize",
-            self.client.instance_id
-        );
+        let path = self.client.instance_path("/payouts/stellar/authorize");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -164,11 +161,10 @@ impl Payouts {
         input: &SubmitPayoutDocumentsInput,
         options: &RequestOptions,
     ) -> Result<SubmitPayoutDocumentsResponse> {
-        let path = format!(
-            "/instances/{}/payouts/{}/documents",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/payouts/{}/documents",
             encode_path_segment(payout_id.as_ref())
-        );
+        ));
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -178,7 +174,7 @@ impl Payouts {
     ///
     /// `GET /instances/{instance_id}/payouts`
     pub async fn list(&self, params: &ListPayoutsParams) -> Result<ListResponse<Payout>> {
-        let path = format!("/instances/{}/payouts", self.client.instance_id);
+        let path = self.client.instance_path("/payouts");
         self.client.get_query(&path, params).await
     }
 
@@ -187,7 +183,7 @@ impl Payouts {
     ///
     /// `GET /instances/{instance_id}/payouts`
     pub fn list_auto_paging(&self, params: &ListPayoutsParams) -> Pager<Payout> {
-        let path = format!("/instances/{}/payouts", self.client.instance_id);
+        let path = self.client.instance_path("/payouts");
         Pager::new(Arc::clone(&self.client), path, params)
     }
 
@@ -195,11 +191,10 @@ impl Payouts {
     ///
     /// `GET /instances/{instance_id}/payouts/{id}`
     pub async fn get(&self, payout_id: impl AsRef<str>) -> Result<Payout> {
-        let path = format!(
-            "/instances/{}/payouts/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/payouts/{}",
             encode_path_segment(payout_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 

@@ -47,7 +47,7 @@ impl Quotes {
         input: &CreateQuoteInput,
         options: &RequestOptions,
     ) -> Result<Quote> {
-        let path = format!("/instances/{}/quotes", self.client.instance_id);
+        let path = self.client.instance_path("/quotes");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
@@ -70,7 +70,7 @@ impl Quotes {
         input: &GetFxRateInput,
         options: &RequestOptions,
     ) -> Result<QuoteFx> {
-        let path = format!("/instances/{}/quotes/fx", self.client.instance_id);
+        let path = self.client.instance_path("/quotes/fx");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await

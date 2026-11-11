@@ -33,11 +33,10 @@ impl CustodialWallets {
     ///
     /// `GET /instances/{instance_id}/customers/{customer_id}/wallets`
     pub async fn list(&self, customer_id: impl AsRef<str>) -> Result<Vec<Wallet>> {
-        let path = format!(
-            "/instances/{}/customers/{}/wallets",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/wallets",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -45,12 +44,11 @@ impl CustodialWallets {
     ///
     /// `GET /instances/{instance_id}/customers/{customer_id}/wallets/{id}`
     pub async fn get(&self, customer_id: impl AsRef<str>, id: impl AsRef<str>) -> Result<Wallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/wallets/{}",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -83,12 +81,11 @@ impl CustodialWallets {
     }
 
     fn deposits_path(&self, customer_id: &str, id: &str) -> String {
-        format!(
-            "/instances/{}/customers/{}/wallets/{}/deposits",
-            self.client.instance_id,
+        self.client.instance_path(&format!(
+            "/customers/{}/wallets/{}/deposits",
             encode_path_segment(customer_id),
-            encode_path_segment(id),
-        )
+            encode_path_segment(id)
+        ))
     }
 
     /// Retrieves the per-token balance of a custodial wallet.
@@ -99,12 +96,11 @@ impl CustodialWallets {
         customer_id: impl AsRef<str>,
         id: impl AsRef<str>,
     ) -> Result<WalletBalance> {
-        let path = format!(
-            "/instances/{}/customers/{}/wallets/{}/balance",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/wallets/{}/balance",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -130,11 +126,10 @@ impl CustodialWallets {
         input: &CreateWalletInput,
         options: &RequestOptions,
     ) -> Result<Wallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/wallets",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/wallets",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -162,12 +157,11 @@ impl CustodialWallets {
         id: impl AsRef<str>,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}/wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/wallets/{}",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client
             .request_with::<_, (), ()>(Method::DELETE, &path, None, None, options)
             .await

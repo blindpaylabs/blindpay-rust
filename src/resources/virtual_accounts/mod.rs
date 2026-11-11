@@ -38,11 +38,10 @@ impl VirtualAccounts {
     ///
     /// `GET /instances/{instance_id}/customers/{customer_id}/virtual-accounts`
     pub async fn list(&self, customer_id: impl AsRef<str>) -> Result<Vec<VirtualAccount>> {
-        let path = format!(
-            "/instances/{}/customers/{}/virtual-accounts",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/virtual-accounts",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -57,12 +56,11 @@ impl VirtualAccounts {
         customer_id: impl AsRef<str>,
         id: impl AsRef<str>,
     ) -> Result<Option<VirtualAccount>> {
-        let path = format!(
-            "/instances/{}/customers/{}/virtual-accounts/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/virtual-accounts/{}",
             encode_path_segment(customer_id.as_ref()),
             encode_path_segment(id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -88,11 +86,10 @@ impl VirtualAccounts {
         input: &CreateVirtualAccountInput,
         options: &RequestOptions,
     ) -> Result<VirtualAccount> {
-        let path = format!(
-            "/instances/{}/customers/{}/virtual-accounts",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/virtual-accounts",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client
             .request_with::<VirtualAccount, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -122,12 +119,11 @@ impl VirtualAccounts {
         input: &UpdateVirtualAccountInput,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}/virtual-accounts/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/virtual-accounts/{}",
             encode_path_segment(customer_id.as_ref()),
             encode_path_segment(id.as_ref())
-        );
+        ));
         self.client
             .request_with::<Success, (), _>(Method::PUT, &path, None, Some(input), options)
             .await

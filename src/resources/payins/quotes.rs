@@ -39,7 +39,7 @@ impl PayinQuotes {
         input: &CreatePayinQuoteInput,
         options: &RequestOptions,
     ) -> Result<PayinQuote> {
-        let path = format!("/instances/{}/payin-quotes", self.client.instance_id);
+        let path = self.client.instance_path("/payin-quotes");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
@@ -62,7 +62,7 @@ impl PayinQuotes {
         input: &PayinQuoteFxInput,
         options: &RequestOptions,
     ) -> Result<PayinQuoteFx> {
-        let path = format!("/instances/{}/payin-quotes/fx", self.client.instance_id);
+        let path = self.client.instance_path("/payin-quotes/fx");
         self.client
             .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await

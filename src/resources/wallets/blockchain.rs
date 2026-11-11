@@ -36,11 +36,10 @@ impl BlockchainWallets {
     ///
     /// `GET /instances/{instance_id}/customers/{customer_id}/blockchain-wallets`
     pub async fn list(&self, customer_id: impl AsRef<str>) -> Result<Vec<BlockchainWallet>> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -52,11 +51,10 @@ impl BlockchainWallets {
         &self,
         customer_id: impl AsRef<str>,
     ) -> Result<BlockchainWalletMessage> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets/sign-message",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets/sign-message",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -68,12 +66,11 @@ impl BlockchainWallets {
         customer_id: impl AsRef<str>,
         id: impl AsRef<str>,
     ) -> Result<BlockchainWallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets/{}",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -112,12 +109,11 @@ impl BlockchainWallets {
         struct Body {
             is_self_custody: bool,
         }
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets/{}",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(
                 Method::PATCH,
@@ -154,11 +150,10 @@ impl BlockchainWallets {
         input: &CreateBlockchainWalletWithAddressInput,
         options: &RequestOptions,
     ) -> Result<BlockchainWallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -188,11 +183,10 @@ impl BlockchainWallets {
         input: &CreateBlockchainWalletWithHashInput,
         options: &RequestOptions,
     ) -> Result<BlockchainWallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets",
-            self.client.instance_id,
-            encode_path_segment(customer_id.as_ref()),
-        );
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets",
+            encode_path_segment(customer_id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -220,12 +214,11 @@ impl BlockchainWallets {
         id: impl AsRef<str>,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}/blockchain-wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/blockchain-wallets/{}",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client
             .request_with::<_, (), ()>(Method::DELETE, &path, None, None, options)
             .await
@@ -256,10 +249,7 @@ impl BlockchainWallets {
         struct Body {
             address: String,
         }
-        let path = format!(
-            "/instances/{}/create-asset-trustline",
-            self.client.instance_id
-        );
+        let path = self.client.instance_path("/create-asset-trustline");
         self.client
             .request_with::<_, (), _>(
                 Method::POST,
@@ -290,7 +280,7 @@ impl BlockchainWallets {
         input: &MintUsdbStellarInput,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!("/instances/{}/mint-usdb-stellar", self.client.instance_id);
+        let path = self.client.instance_path("/mint-usdb-stellar");
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -316,7 +306,7 @@ impl BlockchainWallets {
         input: &MintUsdbSolanaInput,
         options: &RequestOptions,
     ) -> Result<MintUsdbSolanaResponse> {
-        let path = format!("/instances/{}/mint-usdb-solana", self.client.instance_id);
+        let path = self.client.instance_path("/mint-usdb-solana");
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -342,10 +332,7 @@ impl BlockchainWallets {
         input: &PrepareSolanaDelegationInput,
         options: &RequestOptions,
     ) -> Result<PrepareSolanaDelegationResponse> {
-        let path = format!(
-            "/instances/{}/prepare-delegate-solana",
-            self.client.instance_id
-        );
+        let path = self.client.instance_path("/prepare-delegate-solana");
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await

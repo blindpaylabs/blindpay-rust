@@ -33,7 +33,7 @@ impl Payables {
     }
 
     fn collection_path(&self) -> String {
-        format!("/instances/{}/payables", self.client.instance_id)
+        self.client.instance_path("/payables")
     }
 
     fn item_path(&self, id: &str) -> String {

@@ -55,7 +55,7 @@ impl Transfers {
         input: &CreateTransferInput,
         options: &RequestOptions,
     ) -> Result<CreateTransferResponse> {
-        let path = format!("/instances/{}/transfers", self.client.instance_id);
+        let path = self.client.instance_path("/transfers");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
@@ -65,7 +65,7 @@ impl Transfers {
     ///
     /// `GET /instances/{instance_id}/transfers`
     pub async fn list(&self, params: &ListTransfersParams) -> Result<ListResponse<Transfer>> {
-        let path = format!("/instances/{}/transfers", self.client.instance_id);
+        let path = self.client.instance_path("/transfers");
         self.client.get_query(&path, params).await
     }
 
@@ -74,7 +74,7 @@ impl Transfers {
     ///
     /// `GET /instances/{instance_id}/transfers`
     pub fn list_auto_paging(&self, params: &ListTransfersParams) -> Pager<Transfer> {
-        let path = format!("/instances/{}/transfers", self.client.instance_id);
+        let path = self.client.instance_path("/transfers");
         Pager::new(Arc::clone(&self.client), path, params)
     }
 
@@ -90,11 +90,9 @@ impl Transfers {
         if id.is_empty() {
             return Err(Error::Config("transfer id cannot be empty".to_string()));
         }
-        let path = format!(
-            "/instances/{}/transfers/{}",
-            self.client.instance_id,
-            encode_path_segment(id)
-        );
+        let path = self
+            .client
+            .instance_path(&format!("/transfers/{}", encode_path_segment(id)));
         self.client.get(&path).await
     }
 

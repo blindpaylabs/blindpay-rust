@@ -214,7 +214,7 @@ impl InstanceRfis {
     }
 
     fn path(&self) -> String {
-        format!("/instances/{}/rfi", self.client.instance_id)
+        self.client.instance_path("/rfi")
     }
 
     /// The instance's open RFI, or `None` when none is pending.
@@ -259,11 +259,10 @@ impl CustomerRfis {
     }
 
     fn path(&self, customer_id: &str) -> String {
-        format!(
-            "/instances/{}/customers/{}/rfi",
-            self.client.instance_id,
+        self.client.instance_path(&format!(
+            "/customers/{}/rfi",
             encode_path_segment(customer_id)
-        )
+        ))
     }
 
     /// The customer's open RFI, or `None` when none is pending.

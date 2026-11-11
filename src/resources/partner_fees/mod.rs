@@ -33,7 +33,7 @@ impl PartnerFees {
     ///
     /// `GET /instances/{instance_id}/partner-fees`
     pub async fn list(&self) -> Result<Vec<PartnerFee>> {
-        let path = format!("/instances/{}/partner-fees", self.client.instance_id);
+        let path = self.client.instance_path("/partner-fees");
         self.client.get(&path).await
     }
 
@@ -49,11 +49,9 @@ impl PartnerFees {
         if id.is_empty() {
             return Err(Error::Config("partner fee id cannot be empty".to_string()));
         }
-        let path = format!(
-            "/instances/{}/partner-fees/{}",
-            self.client.instance_id,
-            encode_path_segment(id)
-        );
+        let path = self
+            .client
+            .instance_path(&format!("/partner-fees/{}", encode_path_segment(id)));
         self.client.get(&path).await
     }
 
@@ -74,7 +72,7 @@ impl PartnerFees {
         input: &CreatePartnerFeeInput,
         options: &RequestOptions,
     ) -> Result<PartnerFee> {
-        let path = format!("/instances/{}/partner-fees", self.client.instance_id);
+        let path = self.client.instance_path("/partner-fees");
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -105,11 +103,9 @@ impl PartnerFees {
         if id.is_empty() {
             return Err(Error::Config("partner fee id cannot be empty".to_string()));
         }
-        let path = format!(
-            "/instances/{}/partner-fees/{}",
-            self.client.instance_id,
-            encode_path_segment(id)
-        );
+        let path = self
+            .client
+            .instance_path(&format!("/partner-fees/{}", encode_path_segment(id)));
         self.client
             .request_with::<_, (), ()>(Method::DELETE, &path, None, None, options)
             .await

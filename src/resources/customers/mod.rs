@@ -61,7 +61,7 @@ impl Customers {
     ///
     /// `GET /instances/{instance_id}/customers`
     pub async fn list(&self, params: &ListCustomersParams) -> Result<ListResponse<Customer>> {
-        let path = format!("/instances/{}/customers", self.client.instance_id);
+        let path = self.client.instance_path("/customers");
         self.client.get_query(&path, params).await
     }
 
@@ -70,7 +70,7 @@ impl Customers {
     ///
     /// `GET /instances/{instance_id}/customers`
     pub fn list_auto_paging(&self, params: &ListCustomersParams) -> Pager<Customer> {
-        let path = format!("/instances/{}/customers", self.client.instance_id);
+        let path = self.client.instance_path("/customers");
         Pager::new(Arc::clone(&self.client), path, params)
     }
 
@@ -172,7 +172,7 @@ impl Customers {
         body: Discriminated<'_, T>,
         options: &RequestOptions,
     ) -> Result<CreateCustomerResponse> {
-        let path = format!("/instances/{}/customers", self.client.instance_id);
+        let path = self.client.instance_path("/customers");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(&body), options)
             .await
@@ -182,11 +182,10 @@ impl Customers {
     ///
     /// `GET /instances/{instance_id}/customers/{id}`
     pub async fn get(&self, customer_id: impl AsRef<str>) -> Result<Customer> {
-        let path = format!(
-            "/instances/{}/customers/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -212,11 +211,10 @@ impl Customers {
         input: &UpdateCustomerInput,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client
             .request_with(Method::PUT, &path, None::<&()>, Some(input), options)
             .await
@@ -239,11 +237,10 @@ impl Customers {
         customer_id: impl AsRef<str>,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client
             .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
@@ -256,11 +253,10 @@ impl Customers {
         &self,
         customer_id: impl AsRef<str>,
     ) -> Result<GetCustomerLimitsResponse> {
-        let path = format!(
-            "/instances/{}/limits/customers/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/limits/customers/{}",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -271,11 +267,10 @@ impl Customers {
         &self,
         customer_id: impl AsRef<str>,
     ) -> Result<Vec<LimitIncrease>> {
-        let path = format!(
-            "/instances/{}/customers/{}/limit-increase",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/limit-increase",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
@@ -301,11 +296,10 @@ impl Customers {
         input: &RequestLimitIncreaseInput,
         options: &RequestOptions,
     ) -> Result<RequestLimitIncreaseResponse> {
-        let path = format!(
-            "/instances/{}/customers/{}/limit-increase",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/limit-increase",
             encode_path_segment(customer_id.as_ref())
-        );
+        ));
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await

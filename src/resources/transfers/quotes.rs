@@ -39,7 +39,7 @@ impl TransferQuotes {
         input: &CreateTransferQuoteInput,
         options: &RequestOptions,
     ) -> Result<TransferQuote> {
-        let path = format!("/instances/{}/transfer-quotes", self.client.instance_id);
+        let path = self.client.instance_path("/transfer-quotes");
         self.client
             .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await

@@ -11,8 +11,10 @@ mod options;
 pub mod resources;
 pub mod webhooks;
 
+#[doc(hidden)]
+pub use client::RetrySleep;
 pub use client::{
-    BlindPay, BlindPayBuilder, DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, RetrySleep,
+    BlindPay, BlindPayBuilder, DEFAULT_BASE_URL, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT,
 };
 pub use common::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Limit, ListResponse,

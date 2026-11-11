@@ -27,7 +27,7 @@ impl Fees {
     ///
     /// `GET /instances/{instance_id}/billing/fees`
     pub async fn get(&self) -> Result<Fee> {
-        let path = format!("/instances/{}/billing/fees", self.client.instance_id);
+        let path = self.client.instance_path("/billing/fees");
         self.client.get(&path).await
     }
 }

@@ -60,7 +60,7 @@ impl Instances {
     ///
     /// `GET /instances/{id}`
     pub async fn get(&self) -> Result<Instance> {
-        let path = format!("/instances/{}", self.client.instance_id);
+        let path = self.client.instance_path("");
         self.client.get(&path).await
     }
 
@@ -68,7 +68,7 @@ impl Instances {
     ///
     /// `GET /instances/{id}/members`
     pub async fn get_members(&self) -> Result<Vec<Member>> {
-        let path = format!("/instances/{}/members", self.client.instance_id);
+        let path = self.client.instance_path("/members");
         self.client.get(&path).await
     }
 
@@ -89,7 +89,7 @@ impl Instances {
         body: &UpdateInstanceInput,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!("/instances/{}", self.client.instance_id);
+        let path = self.client.instance_path("");
         self.client
             .request_with(Method::PUT, &path, None::<&()>, Some(body), options)
             .await
@@ -107,7 +107,7 @@ impl Instances {
     ///
     /// `DELETE /instances/{id}`
     pub async fn delete_with_options(&self, options: &RequestOptions) -> Result<Success> {
-        let path = format!("/instances/{}", self.client.instance_id);
+        let path = self.client.instance_path("");
         self.client
             .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
@@ -140,11 +140,10 @@ impl Instances {
             user_role: UserRole,
         }
 
-        let path = format!(
-            "/instances/{}/members/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/members/{}",
             encode_path_segment(user_id.as_ref())
-        );
+        ));
         self.client
             .request_with(
                 Method::PUT,
@@ -173,11 +172,10 @@ impl Instances {
         user_id: impl AsRef<str>,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/members/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/members/{}",
             encode_path_segment(user_id.as_ref())
-        );
+        ));
         self.client
             .request_with(Method::DELETE, &path, None::<&()>, None::<&()>, options)
             .await
@@ -205,7 +203,7 @@ impl Instances {
             user_id: String,
         }
 
-        let path = format!("/instances/{}/ownership", self.client.instance_id);
+        let path = self.client.instance_path("/ownership");
         self.client
             .request_with(
                 Method::POST,

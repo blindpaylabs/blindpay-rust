@@ -39,12 +39,11 @@ impl OfframpWallets {
         customer_id: impl AsRef<str>,
         bank_account_id: impl AsRef<str>,
     ) -> Result<Vec<OfframpWallet>> {
-        let path = format!(
-            "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/bank-accounts/{}/offramp-wallets",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(bank_account_id.as_ref()),
-        );
+            encode_path_segment(bank_account_id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -77,12 +76,11 @@ impl OfframpWallets {
         input: &CreateOfframpWalletInput,
         options: &RequestOptions,
     ) -> Result<OfframpWallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/bank-accounts/{}/offramp-wallets",
             encode_path_segment(customer_id.as_ref()),
-            encode_path_segment(bank_account_id.as_ref()),
-        );
+            encode_path_segment(bank_account_id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
             .await
@@ -97,13 +95,12 @@ impl OfframpWallets {
         bank_account_id: impl AsRef<str>,
         id: impl AsRef<str>,
     ) -> Result<OfframpWallet> {
-        let path = format!(
-            "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/bank-accounts/{}/offramp-wallets/{}",
             encode_path_segment(customer_id.as_ref()),
             encode_path_segment(bank_account_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client.get(&path).await
     }
 
@@ -140,13 +137,12 @@ impl OfframpWallets {
         input: &UpdateOfframpWalletInput,
         options: &RequestOptions,
     ) -> Result<Success> {
-        let path = format!(
-            "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/customers/{}/bank-accounts/{}/offramp-wallets/{}",
             encode_path_segment(customer_id.as_ref()),
             encode_path_segment(bank_account_id.as_ref()),
-            encode_path_segment(id.as_ref()),
-        );
+            encode_path_segment(id.as_ref())
+        ));
         self.client
             .request_with::<_, (), _>(Method::PUT, &path, None, Some(input), options)
             .await
