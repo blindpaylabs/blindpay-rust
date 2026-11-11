@@ -53,6 +53,10 @@ pub struct Fee {
     pub spei: FeeOptions,
     /// SEPA (Europe) fees.
     pub sepa: FeeOptions,
+    /// UK Faster Payments (GBP) fees. Required by the spec; optional here so
+    /// fee records that predate the rail still decode.
+    #[serde(default)]
+    pub faster_payments: Option<FeeOptions>,
     /// Tron chain fees.
     pub tron: FeeOptions,
     /// Ethereum chain fees.
@@ -73,6 +77,9 @@ pub struct Fee {
     /// ISO-8601 last-update timestamp.
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Yield fee split (raw JSON). May be `null`.
+    #[serde(default)]
+    pub r#yield: Option<serde_json::Value>,
 }
 
 #[cfg(test)]

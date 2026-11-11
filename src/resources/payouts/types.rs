@@ -519,6 +519,51 @@ pub struct Payout {
     /// Legal name of the sending instance (originator), shown on the receipt.
     #[serde(default)]
     pub sender_legal_name: Option<String>,
+    /// The destination bank account (`ba_…`). May be `null`.
+    #[serde(default)]
+    pub bank_account_id: Option<String>,
+    /// The payable this payout executes (`pb_…`). May be `null`.
+    #[serde(default)]
+    pub payable_id: Option<String>,
+    /// SEPA IBAN.
+    #[serde(default)]
+    pub sepa_iban: Option<String>,
+    /// SEPA beneficiary legal name.
+    #[serde(default)]
+    pub sepa_beneficiary_legal_name: Option<String>,
+    /// SEPA beneficiary address line 1.
+    #[serde(default)]
+    pub sepa_beneficiary_address_line_1: Option<String>,
+    /// SEPA beneficiary city.
+    #[serde(default)]
+    pub sepa_beneficiary_city: Option<String>,
+    /// SEPA beneficiary postal code.
+    #[serde(default)]
+    pub sepa_beneficiary_postal_code: Option<String>,
+    /// SEPA beneficiary country.
+    #[serde(default)]
+    pub sepa_beneficiary_country: Option<String>,
+    /// Faster Payments sort code.
+    #[serde(default)]
+    pub faster_payments_sort_code: Option<String>,
+    /// Faster Payments account number.
+    #[serde(default)]
+    pub faster_payments_account_number: Option<String>,
+    /// Faster Payments beneficiary legal name.
+    #[serde(default)]
+    pub faster_payments_beneficiary_legal_name: Option<String>,
+    /// Faster Payments beneficiary address line 1.
+    #[serde(default)]
+    pub faster_payments_beneficiary_address_line_1: Option<String>,
+    /// Faster Payments beneficiary city.
+    #[serde(default)]
+    pub faster_payments_beneficiary_city: Option<String>,
+    /// Faster Payments beneficiary postal code.
+    #[serde(default)]
+    pub faster_payments_beneficiary_postal_code: Option<String>,
+    /// Faster Payments beneficiary country.
+    #[serde(default)]
+    pub faster_payments_beneficiary_country: Option<String>,
 }
 
 /// The response returned by the chain-specific create methods
@@ -573,6 +618,9 @@ pub struct CreatePayoutResponse {
     /// Offramp wallet id (`ow_…`).
     #[serde(default)]
     pub offramp_wallet_id: Option<String>,
+    /// The payable this payout executes (`pb_…`). May be `null`.
+    #[serde(default)]
+    pub payable_id: Option<String>,
 }
 
 /// Input for `Payouts::create_evm`

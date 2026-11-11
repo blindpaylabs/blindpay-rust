@@ -36,6 +36,14 @@ open_enum! {
         Solana => "solana",
         /// Solana devnet.
         SolanaDevnet => "solana_devnet",
+        /// Tempo mainnet.
+        Tempo => "tempo",
+        /// Tempo testnet.
+        TempoTestnet => "tempo_testnet",
+        /// Arc mainnet.
+        Arc => "arc",
+        /// Arc testnet.
+        ArcTestnet => "arc_testnet",
     }
 }
 
@@ -48,6 +56,10 @@ open_enum! {
         Usdt => "USDT",
         /// BlindPay sandbox stablecoin.
         Usdb => "USDB",
+        /// Euro Coin.
+        Eurc => "EURC",
+        /// BlindPay sandbox euro stablecoin.
+        Eurb => "EURB",
     }
 }
 
@@ -66,6 +78,8 @@ open_enum! {
         Ars => "ARS",
         /// Euro.
         Eur => "EUR",
+        /// British pound.
+        Gbp => "GBP",
     }
 }
 
@@ -94,6 +108,12 @@ open_enum! {
         InternationalSwift => "international_swift",
         /// Real-Time Payments (US).
         Rtp => "rtp",
+        /// ACH pull from a Plaid-connected account.
+        AchPull => "ach_pull",
+        /// Card payment.
+        Card => "card",
+        /// BRE-B (Colombia).
+        BreB => "bre_b",
     }
 }
 
@@ -125,6 +145,8 @@ open_enum! {
         Rtp => "rtp",
         /// SEPA (European Union).
         Sepa => "sepa",
+        /// UK Faster Payments (GBP).
+        FasterPayments => "faster_payments",
     }
 }
 
@@ -145,6 +167,8 @@ open_enum! {
         AwaitingContract => "awaiting_contract",
         /// Additional compliance information requested.
         ComplianceRequest => "compliance_request",
+        /// Approved, with a pending request for information.
+        ApprovedRfi => "approved_rfi",
     }
 }
 

@@ -15,6 +15,14 @@ open_enum! {
         Hsbc => "hsbc",
         /// Cross River / CFSB.
         Cfsb => "cfsb",
+        /// Portage.
+        Portage => "portage",
+        /// Portage (G).
+        PortageG => "portage_g",
+        /// BRE-B (Colombia).
+        BreB => "bre_b",
+        /// SPEI (Mexico).
+        Spei => "spei",
     }
 }
 
@@ -428,10 +436,7 @@ mod tests {
         }))
         .unwrap();
         assert!(va.us.is_none());
-        assert_eq!(
-            va.banking_partner,
-            Some(BankingPartner::Unknown("bre_b".to_string()))
-        );
+        assert_eq!(va.banking_partner, Some(BankingPartner::BreB));
         let co = va.co.unwrap();
         assert_eq!(co.bre_b.key, "@BP000000000000");
         assert_eq!(co.beneficiary.unwrap().name, "Customer Name");

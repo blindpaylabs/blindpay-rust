@@ -109,6 +109,12 @@ pub struct Transfer {
     pub address: Option<String>,
     /// The sending wallet's blockchain network.
     pub network: Network,
+    /// Partner fee in basis points (`150` = 1.50%).
+    #[serde(default)]
+    pub partner_percentage_fee: Option<i64>,
+    /// Partner flat fee in integer cents of the sender token.
+    #[serde(default)]
+    pub partner_flat_fee: Option<i64>,
 }
 
 /// Input for `Transfers::create`.
@@ -259,6 +265,12 @@ pub struct TransferQuote {
     pub partner_fee_amount: Option<i64>,
     /// The flat fee, in the smallest unit (cents).
     pub flat_fee: i64,
+    /// Partner fee in basis points (`150` = 1.50%).
+    #[serde(default)]
+    pub partner_percentage_fee: Option<i64>,
+    /// Partner flat fee in integer cents of the sender token.
+    #[serde(default)]
+    pub partner_flat_fee: Option<i64>,
 }
 
 #[cfg(test)]

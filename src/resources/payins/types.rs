@@ -160,6 +160,9 @@ pub struct PayinQuote {
     /// Whether the quote is for an OTC transaction.
     #[serde(default)]
     pub is_otc: Option<bool>,
+    /// Card checkout details for `card` payins (raw JSON). May be `null`.
+    #[serde(default)]
+    pub card_instruction: Option<serde_json::Value>,
 }
 
 /// Input for `PayinQuotes::get_fx_rate`
@@ -559,6 +562,19 @@ pub struct Payin {
     /// PSE payer document type (`CC` or `NIT`).
     #[serde(default)]
     pub pse_document_type: Option<PseDocumentType>,
+    /// Partner fee amount in integer cents.
+    #[serde(default)]
+    pub partner_fee: Option<i64>,
+    /// Manual OTC execution status (`pending`, `concluded`, `failed`). May be `null`.
+    #[serde(default)]
+    pub manual_execution_status: Option<String>,
+    /// When the manual OTC execution concluded (an ISO 8601 string on the
+    /// wire; untyped in the spec, so kept as raw JSON). May be `null`.
+    #[serde(default)]
+    pub manual_concluded_at: Option<serde_json::Value>,
+    /// Operator who concluded the manual OTC execution. May be `null`.
+    #[serde(default)]
+    pub manual_concluded_by: Option<String>,
 }
 
 /// The response of `Payins::create_evm`

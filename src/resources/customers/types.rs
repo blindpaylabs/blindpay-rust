@@ -49,6 +49,24 @@ open_enum! {
         BusinessFinancialStatements => "business_financial_statements",
         /// Business tax return.
         BusinessTaxReturn => "business_tax_return",
+        /// Individual pay stub.
+        IndividualPayStub => "individual_pay_stub",
+        /// Individual employment letter.
+        IndividualEmploymentLetter => "individual_employment_letter",
+        /// Individual investment statement.
+        IndividualInvestmentStatement => "individual_investment_statement",
+        /// Individual crypto-exchange statement.
+        IndividualCryptoExchangeStatement => "individual_crypto_exchange_statement",
+        /// Individual blockchain-wallet statement.
+        IndividualBlockchainWalletStatement => "individual_blockchain_wallet_statement",
+        /// Business contract.
+        BusinessContract => "business_contract",
+        /// Business accounts receivable.
+        BusinessAccountsReceivable => "business_accounts_receivable",
+        /// Business merchant-processor statement.
+        BusinessMerchantProcessorStatement => "business_merchant_processor_statement",
+        /// Business shareholder loan.
+        BusinessShareholderLoan => "business_shareholder_loan",
     }
 }
 
@@ -420,6 +438,24 @@ pub struct Customer {
     /// Last-update timestamp.
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Geolocation latitude. May be `null`.
+    #[serde(default)]
+    pub latitude: Option<f64>,
+    /// Geolocation longitude. May be `null`.
+    #[serde(default)]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes. May be `null`.
+    #[serde(default)]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
+    /// Set by compliance for nested customers (fintechs/PSPs). May be `null`.
+    #[serde(default)]
+    pub is_nested: Option<bool>,
+    /// Brazilian CNAE check state (raw JSON). May be `null`.
+    #[serde(default)]
+    pub cnae_condition: Option<serde_json::Value>,
+    /// Virtual-account pre-approval state (raw JSON). May be `null`.
+    #[serde(default)]
+    pub virtual_account_preapproval: Option<serde_json::Value>,
 }
 
 /// Query parameters for listing customers.

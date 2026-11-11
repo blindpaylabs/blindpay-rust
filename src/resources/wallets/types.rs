@@ -76,6 +76,9 @@ pub struct PrepareSolanaDelegationResponse {
     /// The prepared (base64-encoded) Solana transaction, when successful.
     #[serde(default)]
     pub transaction: Option<String>,
+    /// Diagnostic details from the API (raw JSON), when present.
+    #[serde(default)]
+    pub debug: Option<serde_json::Value>,
 }
 
 /// A blockchain wallet registered for a customer, returned by the
@@ -104,6 +107,9 @@ pub struct BlockchainWallet {
     pub is_account_abstraction: Option<bool>,
     /// Identifier of the customer the wallet belongs to (prefix `re_`).
     pub customer_id: String,
+    /// Whether the customer holds the keys (mandatory for Brazilian customers; `null` = never answered). Set it with `set_self_custody`.
+    #[serde(default)]
+    pub is_self_custody: Option<bool>,
 }
 
 /// The challenge message a customer signs to register a blockchain wallet by
@@ -163,6 +169,9 @@ pub struct Wallet {
     /// When the wallet was created.
     #[serde(default)]
     pub created_at: Option<String>,
+    /// Yield status (`disabled`, `enabled`, `disabling`).
+    #[serde(default)]
+    pub yield_status: Option<String>,
 }
 
 /// Request body for creating a custodial wallet.
@@ -253,6 +262,9 @@ pub struct OfframpWallet {
     /// When the wallet was last updated. Absent on `create`.
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Partner fee charged on payouts from this wallet (`fe_…`). May be `null`.
+    #[serde(default)]
+    pub partner_fee_id: Option<String>,
 }
 
 /// Request body for creating an offramp wallet.
