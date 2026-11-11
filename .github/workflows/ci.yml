@@ -29,3 +29,48 @@ jobs:
         run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: -D warnings
+      - name: Package contents (no tests or fixtures)
+        run: |
+          cargo package --list --allow-dirty > package.txt
+          cat package.txt
+          if grep -E '^(tests/|\.api-sync/)' package.txt; then
+            echo "::error::the published crate must not ship tests or fixtures"
+            exit 1
+          fi
+
+  contract:
+    # The Rust counterpart of the other SDKs' api-sync check: serde types vs
+    # the committed spec snapshot, every fixture variant, and coverage of all
+    # surface ops. A full api-sync apply for Rust is a follow-up.
+    name: Spec contract check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Contract (Directions A/B/C)
+        run: cargo test --all-features --test contract -- --nocapture
+      - name: Spec fixtures decode (all 94 ops)
+        run: cargo test --all-features --test fixtures_decode --test new_ops --test webhooks
+
+  msrv:
+    name: MSRV (1.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85
+      - uses: Swatinem/rust-cache@v2
+      - name: Check (default features)
+        run: cargo check --all-features --locked
+      - name: Check (native-tls)
+        run: cargo check --no-default-features --features native-tls --locked
+
+  native-tls:
+    name: native-tls build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build without rustls
+        run: cargo build --no-default-features --features native-tls
