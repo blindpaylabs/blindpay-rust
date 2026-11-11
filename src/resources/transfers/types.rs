@@ -174,6 +174,12 @@ pub struct CreateTransferQuoteInput {
     /// A partner fee to apply to the quote, if any.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub partner_fee_id: Option<String>,
+    /// Partner fee in basis points (`100` = 1%).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_percentage_fee: Option<i64>,
+    /// Partner flat fee in integer cents.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_flat_fee: Option<i64>,
 }
 
 impl CreateTransferQuoteInput {
@@ -199,6 +205,8 @@ impl CreateTransferQuoteInput {
             customer_network,
             cover_fees: None,
             partner_fee_id: None,
+            partner_percentage_fee: None,
+            partner_flat_fee: None,
         }
     }
 
@@ -211,6 +219,18 @@ impl CreateTransferQuoteInput {
     /// Sets the partner fee to apply.
     pub fn partner_fee_id(mut self, partner_fee_id: impl Into<String>) -> Self {
         self.partner_fee_id = Some(partner_fee_id.into());
+        self
+    }
+
+    /// Sets `partner_percentage_fee`.
+    pub fn partner_percentage_fee(mut self, partner_percentage_fee: i64) -> Self {
+        self.partner_percentage_fee = Some(partner_percentage_fee);
+        self
+    }
+
+    /// Sets `partner_flat_fee`.
+    pub fn partner_flat_fee(mut self, partner_flat_fee: i64) -> Self {
+        self.partner_flat_fee = Some(partner_flat_fee);
         self
     }
 }
@@ -283,5 +303,109 @@ mod tests {
         let json = serde_json::to_value(&with_opts).unwrap();
         assert_eq!(json["cover_fees"], serde_json::json!(true));
         assert_eq!(json["partner_fee_id"], serde_json::json!("pf_000000000000"));
+    }
+}
+
+/// Query parameters for `Transfers::list` and `Transfers::list_auto_paging`.
+/// The transfers list is always paginated (default page size 10).
+///
+/// ```
+/// use blindpay::{Limit, ListTransfersParams, TransactionStatus};
+/// let params = ListTransfersParams::new()
+///     .limit(Limit::Fifty)
+///     .status(TransactionStatus::Completed);
+/// ```
+#[derive(Debug, Clone, Default, Serialize)]
+#[non_exhaustive]
+pub struct ListTransfersParams {
+    /// Maximum number of items to return.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<crate::common::Limit>,
+    /// Cursor: return items after this transfer id (`next_page`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub starting_after: Option<String>,
+    /// Cursor: return items before this transfer id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ending_before: Option<String>,
+    /// Filter by customer id (`re_…`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub customer_id: Option<String>,
+    /// Filter by source wallet id (`bl_…`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
+    /// Filter by status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<crate::common::TransactionStatus>,
+    /// Filter by network.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
+    /// Filter by token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<crate::common::Token>,
+}
+
+impl ListTransfersParams {
+    /// Creates empty list parameters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `limit`: maximum number of items to return.
+    pub fn limit(mut self, limit: crate::common::Limit) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Sets `starting_after`: cursor: return items after this transfer id (`next_page`).
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return items before this transfer id.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
+
+    /// Sets `customer_id`: filter by customer id (`re_…`).
+    pub fn customer_id(mut self, customer_id: impl Into<String>) -> Self {
+        self.customer_id = Some(customer_id.into());
+        self
+    }
+
+    /// Sets `wallet_id`: filter by source wallet id (`bl_…`).
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
+        self
+    }
+
+    /// Sets `status`: filter by status.
+    pub fn status(mut self, status: crate::common::TransactionStatus) -> Self {
+        self.status = Some(status);
+        self
+    }
+
+    /// Sets `network`: filter by network.
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Sets `token`: filter by token.
+    pub fn token(mut self, token: crate::common::Token) -> Self {
+        self.token = Some(token);
+        self
+    }
+}
+
+impl From<crate::common::PaginationParams> for ListTransfersParams {
+    fn from(p: crate::common::PaginationParams) -> Self {
+        Self {
+            limit: p.limit,
+            starting_after: p.starting_after,
+            ending_before: p.ending_before,
+            ..Self::default()
+        }
     }
 }

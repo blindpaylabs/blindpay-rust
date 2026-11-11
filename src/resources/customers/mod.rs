@@ -8,18 +8,20 @@ mod types;
 
 pub use bank_accounts::{
     AchCopDocument, BankAccount, BankAccountStatus, BankAccounts, CreateAchCopBitsoInput,
-    CreateAchInput, CreateInternationalSwiftInput, CreatePixInput, CreatePixSafeInput,
-    CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
+    CreateAchInput, CreateFasterPaymentsInput, CreateInternationalSwiftInput, CreatePixInput,
+    CreatePixSafeInput, CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
     CreateTransfersBitsoInput, CreateWireInput, ListBankAccountsParams, RecipientRelationship,
     SpeiProtocol, SwiftPaymentCode,
 };
 pub use types::{
-    AmlHits, BusinessType, CreateBusinessWithStandardKybInput, CreateCustomerResponse,
+    AdditionalInfoItem, AdditionalInfoLabel, AmlHits, BusinessType,
+    CreateBusinessWithStandardKybInput, CreateCustomerResponse,
     CreateIndividualWithEnhancedKycInput, CreateIndividualWithStandardKycInput, Customer,
     CustomerLimit, CustomerLimits, FraudWarning, GetCustomerLimitsResponse, IdentificationDocument,
-    KycType, KycWarning, LimitIncrease, LimitIncreaseStatus, LimitWindow, ListCustomersParams,
-    Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType, RequestLimitIncreaseInput,
-    RequestLimitIncreaseResponse, SupportingDocumentType, UpdateCustomerInput,
+    KycType, KycWarning, LimitIncrease, LimitIncreaseStatus, LimitIncreaseSupportingDocument,
+    LimitWindow, ListCustomersParams, Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType,
+    RequestLimitIncreaseInput, RequestLimitIncreaseResponse, SupportingDocumentType,
+    UpdateCustomerInput,
 };
 
 use std::sync::Arc;

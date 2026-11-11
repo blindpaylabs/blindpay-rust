@@ -91,16 +91,27 @@ impl Payins {
         self.client.get(&path).await
     }
 
-    /// Retrieves a payin via its public, unauthenticated tracking endpoint.
+    /// Retrieves a payin via its public tracking endpoint. `checkout_token`
+    /// is the hosted-checkout token, when the payin has one.
     ///
     /// `GET /e/payins/{id}`
     ///
-    /// This `/e/` route is the obfuscated, end-customer tracking endpoint: it is
-    /// served without instance scoping and is not gated by the API key (the SDK
-    /// still sends the bearer header). Use [`get`](Payins::get) for the
-    /// authenticated, instance-scoped lookup.
-    pub async fn get_track(&self, payin_id: impl AsRef<str>) -> Result<Payin> {
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Payins::get) instead. Kept for completeness.
+    pub async fn get_track(
+        &self,
+        payin_id: impl AsRef<str>,
+        checkout_token: Option<&str>,
+    ) -> Result<Payin> {
+        #[derive(serde::Serialize)]
+        struct Query<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            checkout_token: Option<&'a str>,
+        }
         let path = format!("/e/payins/{}", encode_path_segment(payin_id.as_ref()));
-        self.client.get(&path).await
+        self.client
+            .get_query(&path, &Query { checkout_token })
+            .await
     }
 }

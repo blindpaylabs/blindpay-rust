@@ -290,8 +290,10 @@ pub struct Payout {
     pub id: String,
     /// Overall payout status.
     pub status: TransactionStatus,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Signed transaction, for chains that require client-side signing.
     #[serde(default)]
     pub signed_transaction: Option<String>,
@@ -531,8 +533,10 @@ pub struct CreatePayoutResponse {
     pub id: String,
     /// Overall payout status.
     pub status: TransactionStatus,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Billing fee amount in cents.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
@@ -577,8 +581,13 @@ pub struct CreatePayoutResponse {
 pub struct CreateEvmPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateEvmPayoutInput {
@@ -586,8 +595,26 @@ impl CreateEvmPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
+            wallet_id: None,
         }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
+        }
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
+        self
     }
 }
 
@@ -597,11 +624,16 @@ impl CreateEvmPayoutInput {
 pub struct CreateSolanaPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Client-signed transaction, when the flow requires it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_transaction: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateSolanaPayoutInput {
@@ -609,14 +641,32 @@ impl CreateSolanaPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
             signed_transaction: None,
+            wallet_id: None,
+        }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
         }
     }
 
     /// Sets the signed transaction.
     pub fn signed_transaction(mut self, signed_transaction: impl Into<String>) -> Self {
         self.signed_transaction = Some(signed_transaction.into());
+        self
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
         self
     }
 }
@@ -627,11 +677,16 @@ impl CreateSolanaPayoutInput {
 pub struct CreateStellarPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Client-signed transaction, when the flow requires it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_transaction: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateStellarPayoutInput {
@@ -639,14 +694,32 @@ impl CreateStellarPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
             signed_transaction: None,
+            wallet_id: None,
+        }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
         }
     }
 
     /// Sets the signed transaction.
     pub fn signed_transaction(mut self, signed_transaction: impl Into<String>) -> Self {
         self.signed_transaction = Some(signed_transaction.into());
+        self
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
         self
     }
 }
@@ -657,8 +730,13 @@ impl CreateStellarPayoutInput {
 pub struct AuthorizeStellarTokenInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl AuthorizeStellarTokenInput {
@@ -666,8 +744,26 @@ impl AuthorizeStellarTokenInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
+            wallet_id: None,
         }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
+        }
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
+        self
     }
 }
 

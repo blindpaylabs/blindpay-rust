@@ -257,6 +257,9 @@ pub struct CreateOfframpWalletInput {
     pub external_id: Option<String>,
     /// The blockchain network for the wallet.
     pub network: Network,
+    /// Partner fee to apply (`fe_…`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_fee_id: Option<String>,
 }
 
 #[cfg(test)]
@@ -335,6 +338,7 @@ mod tests {
         let input = CreateOfframpWalletInput {
             external_id: None,
             network: Network::Base,
+            partner_fee_id: None,
         };
         let json = serde_json::to_value(&input).unwrap();
         assert_eq!(json, serde_json::json!({ "network": "base" }));

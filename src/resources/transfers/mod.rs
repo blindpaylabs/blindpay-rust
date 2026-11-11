@@ -6,8 +6,8 @@ mod types;
 
 pub use quotes::TransferQuotes;
 pub use types::{
-    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, Transfer, TransferQuote,
-    TransferTrackingStep, TransferTrackingTransactionMonitoring,
+    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, ListTransfersParams,
+    Transfer, TransferQuote, TransferTrackingStep, TransferTrackingTransactionMonitoring,
 };
 
 use std::sync::Arc;
@@ -15,7 +15,7 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::client::Inner;
-use crate::common::{ListResponse, Pager, PaginationParams};
+use crate::common::{ListResponse, Pager};
 use crate::error::{Error, Result};
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -64,7 +64,7 @@ impl Transfers {
     /// Lists transfers for the instance. Always paginated.
     ///
     /// `GET /instances/{instance_id}/transfers`
-    pub async fn list(&self, params: &PaginationParams) -> Result<ListResponse<Transfer>> {
+    pub async fn list(&self, params: &ListTransfersParams) -> Result<ListResponse<Transfer>> {
         let path = format!("/instances/{}/transfers", self.client.instance_id);
         self.client.get_query(&path, params).await
     }
@@ -73,7 +73,7 @@ impl Transfers {
     /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
     ///
     /// `GET /instances/{instance_id}/transfers`
-    pub fn list_auto_paging(&self, params: &PaginationParams) -> Pager<Transfer> {
+    pub fn list_auto_paging(&self, params: &ListTransfersParams) -> Pager<Transfer> {
         let path = format!("/instances/{}/transfers", self.client.instance_id);
         Pager::new(Arc::clone(&self.client), path, params)
     }
@@ -98,9 +98,13 @@ impl Transfers {
         self.client.get(&path).await
     }
 
-    /// Retrieves a transfer through the unauthenticated tracking endpoint.
+    /// Retrieves a transfer via its public tracking endpoint.
     ///
     /// `GET /e/transfers/{id}`
+    ///
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Transfers::get) instead. Kept for completeness.
     ///
     /// # Errors
     ///

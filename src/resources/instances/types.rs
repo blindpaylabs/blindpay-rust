@@ -67,6 +67,27 @@ pub struct UpdateInstanceInput {
     /// Whether a passkey is required for members.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub require_passkey: Option<bool>,
+    /// Logo shown in hosted flows.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    /// Accent colour for hosted flows (hex).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accent_color: Option<String>,
+    /// When non-empty, RFI emails go only to these addresses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compliance_emails: Option<Vec<String>>,
+    /// Link to your own terms of service.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_tos_link: Option<String>,
+    /// Screenshot URL of your terms of service.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_tos_screenshot: Option<String>,
+    /// Whether customers receive RFI emails.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customer_rfi_emails_enabled: Option<bool>,
+    /// Accept the partner ToS terms (only `true` is accepted).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_tos_terms_accepted: Option<bool>,
 }
 
 impl UpdateInstanceInput {
@@ -77,7 +98,56 @@ impl UpdateInstanceInput {
             customer_invite_redirect_url: None,
             email_notifications: None,
             require_passkey: None,
+            logo_url: None,
+            accent_color: None,
+            compliance_emails: None,
+            partner_tos_link: None,
+            partner_tos_screenshot: None,
+            customer_rfi_emails_enabled: None,
+            partner_tos_terms_accepted: None,
         }
+    }
+
+    /// Sets `logo_url`.
+    pub fn logo_url(mut self, logo_url: impl Into<String>) -> Self {
+        self.logo_url = Some(logo_url.into());
+        self
+    }
+
+    /// Sets `accent_color`.
+    pub fn accent_color(mut self, accent_color: impl Into<String>) -> Self {
+        self.accent_color = Some(accent_color.into());
+        self
+    }
+
+    /// Sets `compliance_emails`.
+    pub fn compliance_emails(mut self, compliance_emails: Vec<String>) -> Self {
+        self.compliance_emails = Some(compliance_emails);
+        self
+    }
+
+    /// Sets `partner_tos_link`.
+    pub fn partner_tos_link(mut self, partner_tos_link: impl Into<String>) -> Self {
+        self.partner_tos_link = Some(partner_tos_link.into());
+        self
+    }
+
+    /// Sets `partner_tos_screenshot`.
+    pub fn partner_tos_screenshot(mut self, partner_tos_screenshot: impl Into<String>) -> Self {
+        self.partner_tos_screenshot = Some(partner_tos_screenshot.into());
+        self
+    }
+
+    /// Sets `customer_rfi_emails_enabled`.
+    pub fn customer_rfi_emails_enabled(mut self, customer_rfi_emails_enabled: bool) -> Self {
+        self.customer_rfi_emails_enabled = Some(customer_rfi_emails_enabled);
+        self
+    }
+
+    /// Sets `partner_tos_terms_accepted`.
+    pub fn partner_tos_terms_accepted(mut self, partner_tos_terms_accepted: bool) -> Self {
+        self.partner_tos_terms_accepted = Some(partner_tos_terms_accepted);
+        self
     }
 }
 
@@ -209,10 +279,10 @@ mod tests {
         );
 
         let full = UpdateInstanceInput {
-            name: "Acme".to_string(),
             customer_invite_redirect_url: Some("https://example.com".to_string()),
             email_notifications: Some(false),
             require_passkey: Some(true),
+            ..UpdateInstanceInput::new("Acme")
         };
         assert_eq!(
             serde_json::to_value(&full).unwrap(),

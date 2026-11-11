@@ -26,17 +26,18 @@ pub use resources::available::{
     RequiredWhenOperator, SwiftCodeBankDetail,
 };
 pub use resources::customers::{
-    AchCopDocument, AmlHits, BankAccount, BankAccountStatus, BankAccounts, BusinessType,
-    CreateAchCopBitsoInput, CreateAchInput, CreateBusinessWithStandardKybInput,
-    CreateCustomerResponse, CreateIndividualWithEnhancedKycInput,
-    CreateIndividualWithStandardKycInput, CreateInternationalSwiftInput, CreatePixInput,
-    CreatePixSafeInput, CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
-    CreateTransfersBitsoInput, CreateWireInput, Customer, CustomerLimit, CustomerLimits, Customers,
-    FraudWarning, GetCustomerLimitsResponse, IdentificationDocument, KycType, KycWarning,
-    LimitIncrease, LimitIncreaseStatus, LimitWindow, ListBankAccountsParams, ListCustomersParams,
-    Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType, RecipientRelationship,
-    RequestLimitIncreaseInput, RequestLimitIncreaseResponse, SpeiProtocol, SupportingDocumentType,
-    SwiftPaymentCode, UpdateCustomerInput,
+    AchCopDocument, AdditionalInfoItem, AdditionalInfoLabel, AmlHits, BankAccount,
+    BankAccountStatus, BankAccounts, BusinessType, CreateAchCopBitsoInput, CreateAchInput,
+    CreateBusinessWithStandardKybInput, CreateCustomerResponse, CreateFasterPaymentsInput,
+    CreateIndividualWithEnhancedKycInput, CreateIndividualWithStandardKycInput,
+    CreateInternationalSwiftInput, CreatePixInput, CreatePixSafeInput, CreateRtpInput,
+    CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput, CreateTransfersBitsoInput,
+    CreateWireInput, Customer, CustomerLimit, CustomerLimits, Customers, FraudWarning,
+    GetCustomerLimitsResponse, IdentificationDocument, KycType, KycWarning, LimitIncrease,
+    LimitIncreaseStatus, LimitIncreaseSupportingDocument, LimitWindow, ListBankAccountsParams,
+    ListCustomersParams, Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType,
+    RecipientRelationship, RequestLimitIncreaseInput, RequestLimitIncreaseResponse, SpeiProtocol,
+    SupportingDocumentType, SwiftPaymentCode, UpdateCustomerInput,
 };
 pub use resources::fees::{Fee, FeeOptions, Fees};
 pub use resources::instances::{
@@ -65,15 +66,17 @@ pub use resources::quotes::{
     CreateQuoteInput, GetFxRateInput, Quote, QuoteContract, QuoteContractNetwork, QuoteFx, Quotes,
 };
 pub use resources::transfers::{
-    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, Transfer, TransferQuote,
-    TransferQuotes, TransferTrackingStep, TransferTrackingTransactionMonitoring, Transfers,
+    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, ListTransfersParams,
+    Transfer, TransferQuote, TransferQuotes, TransferTrackingStep,
+    TransferTrackingTransactionMonitoring, Transfers,
 };
 pub use resources::upload::{Upload, UploadBucket, UploadResponse};
 pub use resources::virtual_accounts::{
-    BankingPartner, CoBreBDetails, CoVirtualAccountDetails, CreateVirtualAccountInput,
-    MxSpeiDetails, MxVirtualAccountDetails, SoleProprietorDocType, UpdateVirtualAccountInput,
-    UsAddress, UsBankCoordinates, UsSwiftIntermediaryBank, UsVirtualAccountDetails, VirtualAccount,
-    VirtualAccountBeneficiary, VirtualAccountWallet, VirtualAccounts,
+    BankingPartner, BreBGender, BreBInput, CoBreBDetails, CoVirtualAccountDetails,
+    CreateVirtualAccountInput, MxSpeiDetails, MxVirtualAccountDetails, SoleProprietorDocType,
+    UpdateVirtualAccountInput, UsAddress, UsBankCoordinates, UsSwiftIntermediaryBank,
+    UsVirtualAccountDetails, VirtualAccount, VirtualAccountBeneficiary, VirtualAccountWallet,
+    VirtualAccounts,
 };
 pub use resources::wallets::{
     BlockchainWallet, BlockchainWalletMessage, BlockchainWallets, CreateAssetTrustlineResponse,

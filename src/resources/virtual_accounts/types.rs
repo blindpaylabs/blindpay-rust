@@ -201,6 +201,37 @@ pub struct VirtualAccount {
     /// The embedded blockchain wallet. Absent or `null` when no wallet is linked.
     #[serde(default)]
     pub blockchain_wallet: Option<VirtualAccountWallet>,
+    /// The owning customer (`re_…`).
+    #[serde(default)]
+    pub customer_id: Option<String>,
+    /// Partner fee applied to deposits (`fe_…`). May be `null`.
+    #[serde(default)]
+    pub partner_fee_id: Option<String>,
+}
+
+open_enum! {
+    /// Account-holder gender, required by BRE-B virtual accounts.
+    pub enum BreBGender {
+        /// Male.
+        Male => "male",
+        /// Female.
+        Female => "female",
+    }
+}
+
+/// BRE-B details for a `bre_b` virtual account (spec `CreateVirtualAccountIn.bre_b`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct BreBInput {
+    /// Account-holder gender.
+    pub gender: BreBGender,
+}
+
+impl BreBInput {
+    /// Creates the BRE-B details.
+    pub fn new(gender: BreBGender) -> Self {
+        Self { gender }
+    }
 }
 
 /// Body for creating a virtual account.
@@ -218,6 +249,12 @@ pub struct CreateVirtualAccountInput {
     /// URL of the uploaded sole-proprietor document.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sole_proprietor_doc_file: Option<String>,
+    /// Partner fee to apply to deposits (`fe_…`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_fee_id: Option<String>,
+    /// BRE-B details, required for `bre_b` virtual accounts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bre_b: Option<BreBInput>,
 }
 
 impl CreateVirtualAccountInput {
@@ -234,7 +271,21 @@ impl CreateVirtualAccountInput {
             blockchain_wallet_id: blockchain_wallet_id.into(),
             sole_proprietor_doc_type: None,
             sole_proprietor_doc_file: None,
+            partner_fee_id: None,
+            bre_b: None,
         }
+    }
+
+    /// Sets `partner_fee_id`.
+    pub fn partner_fee_id(mut self, partner_fee_id: impl Into<String>) -> Self {
+        self.partner_fee_id = Some(partner_fee_id.into());
+        self
+    }
+
+    /// Sets `bre_b`.
+    pub fn bre_b(mut self, bre_b: BreBInput) -> Self {
+        self.bre_b = Some(bre_b);
+        self
     }
 }
 
@@ -245,6 +296,9 @@ pub struct UpdateVirtualAccountInput {
     pub token: Token,
     /// The blockchain wallet identifier (`bw_…`) funds settle to.
     pub blockchain_wallet_id: String,
+    /// Partner fee to apply to deposits (`fe_…`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_fee_id: Option<String>,
 }
 
 impl UpdateVirtualAccountInput {
@@ -253,7 +307,14 @@ impl UpdateVirtualAccountInput {
         Self {
             token,
             blockchain_wallet_id: blockchain_wallet_id.into(),
+            partner_fee_id: None,
         }
+    }
+
+    /// Sets `partner_fee_id`.
+    pub fn partner_fee_id(mut self, partner_fee_id: impl Into<String>) -> Self {
+        self.partner_fee_id = Some(partner_fee_id.into());
+        self
     }
 }
 

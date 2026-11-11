@@ -62,7 +62,7 @@ async fn create_evm_posts_quote_and_wallet_and_parses_response() {
 
     assert_eq!(payout.id, "pa_000000000000");
     assert_eq!(payout.status, TransactionStatus::Processing);
-    assert_eq!(payout.sender_wallet_address, "0x123456789");
+    assert_eq!(payout.sender_wallet_address.as_deref(), Some("0x123456789"));
     assert_eq!(payout.billing_fee_amount, Some(100));
     assert_eq!(payout.partner_fee, Some(-25000));
     assert_eq!(payout.customer_id.as_deref(), Some("re_000000000000"));

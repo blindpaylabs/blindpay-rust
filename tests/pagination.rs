@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use blindpay::{BlindPay, Error, Limit, ListPayoutsParams, PaginationParams};
+use blindpay::{BlindPay, Error, Limit, ListPayoutsParams, ListTransfersParams};
 use serde_json::{Value, json};
 use wiremock::matchers::{method, path, query_param, query_param_is_missing};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -85,7 +85,7 @@ async fn keeps_the_callers_limit_and_collects_all() {
         .await;
     let all = client(&server)
         .transfers
-        .list_auto_paging(&PaginationParams::new().limit(Limit::Ten))
+        .list_auto_paging(&ListTransfersParams::new().limit(Limit::Ten))
         .collect_all()
         .await
         .unwrap();

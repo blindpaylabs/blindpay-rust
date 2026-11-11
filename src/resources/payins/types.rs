@@ -79,7 +79,8 @@ pub struct CreatePayinQuoteInput {
     /// Which side the `request_amount` is denominated in.
     pub currency_type: CurrencyType,
     /// If `true`, the sender covers the fees; otherwise the receiver does.
-    pub cover_fees: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_fees: Option<bool>,
     /// Requested amount in cents (minimum 500).
     pub request_amount: i64,
     /// Payin payment method.
@@ -95,6 +96,9 @@ pub struct CreatePayinQuoteInput {
     /// Whether this quote is for an OTC (over-the-counter) transaction.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_otc: Option<bool>,
+    /// A customer bank account (`ba_…`) that funds the payin (pull-based methods).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub funding_bank_account_id: Option<String>,
 }
 
 impl Default for CreatePayinQuoteInput {
@@ -103,14 +107,23 @@ impl Default for CreatePayinQuoteInput {
             blockchain_wallet_id: None,
             wallet_id: None,
             currency_type: CurrencyType::Sender,
-            cover_fees: false,
+            cover_fees: None,
             request_amount: 0,
             payment_method: PaymentMethod::Pix,
             token: Token::Usdc,
             partner_fee_id: None,
             payer_rules: None,
             is_otc: None,
+            funding_bank_account_id: None,
         }
+    }
+}
+
+impl CreatePayinQuoteInput {
+    /// Sets the customer bank account (`ba_…`) that funds the payin.
+    pub fn funding_bank_account_id(mut self, funding_bank_account_id: impl Into<String>) -> Self {
+        self.funding_bank_account_id = Some(funding_bank_account_id.into());
+        self
     }
 }
 
@@ -738,7 +751,7 @@ mod tests {
         let input = CreatePayinQuoteInput {
             blockchain_wallet_id: Some("bw_123".to_string()),
             currency_type: CurrencyType::Sender,
-            cover_fees: true,
+            cover_fees: Some(true),
             request_amount: 1000,
             payment_method: PaymentMethod::Pix,
             token: Token::Usdc,

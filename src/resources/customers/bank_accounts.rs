@@ -349,6 +349,36 @@ pub struct BankAccount {
     /// Creation timestamp.
     #[serde(default)]
     pub created_at: Option<String>,
+    /// SWIFT intermediary bank routing number.
+    #[serde(default)]
+    pub swift_intermediary_bank_routing_number: Option<String>,
+    /// Faster Payments sort code.
+    #[serde(default)]
+    pub faster_payments_sort_code: Option<String>,
+    /// Faster Payments account number.
+    #[serde(default)]
+    pub faster_payments_account_number: Option<String>,
+    /// Faster Payments beneficiary legal name.
+    #[serde(default)]
+    pub faster_payments_beneficiary_legal_name: Option<String>,
+    /// Faster Payments beneficiary address line 1.
+    #[serde(default)]
+    pub faster_payments_beneficiary_address_line_1: Option<String>,
+    /// Faster Payments beneficiary address line 2.
+    #[serde(default)]
+    pub faster_payments_beneficiary_address_line_2: Option<String>,
+    /// Faster Payments beneficiary city.
+    #[serde(default)]
+    pub faster_payments_beneficiary_city: Option<String>,
+    /// Faster Payments beneficiary state/province/region.
+    #[serde(default)]
+    pub faster_payments_beneficiary_state_province_region: Option<String>,
+    /// Faster Payments beneficiary postal code.
+    #[serde(default)]
+    pub faster_payments_beneficiary_postal_code: Option<String>,
+    /// Faster Payments beneficiary country.
+    #[serde(default)]
+    pub faster_payments_beneficiary_country: Option<Country>,
 }
 
 /// Query parameters for listing bank accounts.
@@ -711,6 +741,9 @@ pub struct CreateInternationalSwiftInput {
     /// Date of birth.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub date_of_birth: Option<String>,
+    /// SWIFT intermediary bank routing number.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub swift_intermediary_bank_routing_number: Option<String>,
 }
 
 /// Input for [`BankAccounts::create_sepa`].
@@ -740,6 +773,37 @@ pub struct CreateSepaInput {
     /// SEPA beneficiary state / province / region.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sepa_beneficiary_state_province_region: Option<String>,
+}
+
+/// Input for [`BankAccounts::create_faster_payments`] (UK Faster Payments, GBP;
+/// spec `CreateFasterPaymentsAccountIn`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CreateFasterPaymentsInput {
+    /// Display name for the account.
+    pub name: String,
+    /// Account class.
+    pub account_class: AccountClass,
+    /// Six-digit sort code.
+    pub faster_payments_sort_code: String,
+    /// Eight-digit account number.
+    pub faster_payments_account_number: String,
+    /// Beneficiary legal name.
+    pub faster_payments_beneficiary_legal_name: String,
+    /// Beneficiary first address line.
+    pub faster_payments_beneficiary_address_line_1: String,
+    /// Beneficiary city.
+    pub faster_payments_beneficiary_city: String,
+    /// Beneficiary country.
+    pub faster_payments_beneficiary_country: Country,
+    /// Beneficiary second address line.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub faster_payments_beneficiary_address_line_2: Option<String>,
+    /// Beneficiary state / province / region.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub faster_payments_beneficiary_state_province_region: Option<String>,
+    /// Beneficiary postal code (omit if the beneficiary has none).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub faster_payments_beneficiary_postal_code: Option<String>,
 }
 
 /// Handle for the `bank-accounts` sub-resource (`customers.bank_accounts`).
@@ -1090,6 +1154,32 @@ impl BankAccounts {
         options: &RequestOptions,
     ) -> Result<BankAccount> {
         self.create(customer_id, "sepa", input, options).await
+    }
+
+    /// Creates a UK Faster Payments (GBP) bank account.
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_faster_payments(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateFasterPaymentsInput,
+    ) -> Result<BankAccount> {
+        self.create_faster_payments_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_faster_payments`], with per-request
+    /// [`RequestOptions`] (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts`
+    pub async fn create_faster_payments_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreateFasterPaymentsInput,
+        options: &RequestOptions,
+    ) -> Result<BankAccount> {
+        self.create(customer_id, "faster_payments", input, options)
+            .await
     }
 
     async fn create<T: Serialize>(

@@ -203,14 +203,13 @@ impl Payouts {
         self.client.get(&path).await
     }
 
-    /// Retrieves a payout via its public, unauthenticated tracking endpoint.
+    /// Retrieves a payout via its public tracking endpoint.
     ///
     /// `GET /e/payouts/{id}`
     ///
-    /// This `/e/` route is the end-customer tracking endpoint: it is served
-    /// without instance scoping and is not gated by the API key (the SDK still
-    /// sends the bearer header). Use [`get`](Payouts::get) for the
-    /// authenticated, instance-scoped lookup.
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Payouts::get) instead. Kept for completeness.
     pub async fn get_track(&self, payout_id: impl AsRef<str>) -> Result<Payout> {
         let path = format!("/e/payouts/{}", encode_path_segment(payout_id.as_ref()));
         self.client.get(&path).await
