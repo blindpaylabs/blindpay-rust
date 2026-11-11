@@ -3,9 +3,11 @@
 //! Everything here is re-exported from the crate root, so e.g. [`crate::Network`]
 //! and [`crate::common::Network`] name the same type.
 
+mod pager;
 mod pagination;
 mod scalars;
 
+pub use pager::Pager;
 pub use pagination::{Limit, ListResponse, Offset, Pagination, PaginationParams};
 pub use scalars::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Network, PaymentMethod,

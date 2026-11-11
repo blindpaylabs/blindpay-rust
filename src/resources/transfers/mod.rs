@@ -15,7 +15,7 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::client::Inner;
-use crate::common::{ListResponse, PaginationParams};
+use crate::common::{ListResponse, Pager, PaginationParams};
 use crate::error::{Error, Result};
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -67,6 +67,15 @@ impl Transfers {
     pub async fn list(&self, params: &PaginationParams) -> Result<ListResponse<Transfer>> {
         let path = format!("/instances/{}/transfers", self.client.instance_id);
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every transfer matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/transfers`
+    pub fn list_auto_paging(&self, params: &PaginationParams) -> Pager<Transfer> {
+        let path = format!("/instances/{}/transfers", self.client.instance_id);
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single transfer by ID.

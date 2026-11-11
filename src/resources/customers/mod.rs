@@ -28,7 +28,7 @@ use reqwest::Method;
 use serde::Serialize;
 
 use crate::client::Inner;
-use crate::common::{ListResponse, Success};
+use crate::common::{ListResponse, Pager, Success};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -57,6 +57,15 @@ impl Customers {
     pub async fn list(&self, params: &ListCustomersParams) -> Result<ListResponse<Customer>> {
         let path = format!("/instances/{}/customers", self.client.instance_id);
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every customer matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/customers`
+    pub fn list_auto_paging(&self, params: &ListCustomersParams) -> Pager<Customer> {
+        let path = format!("/instances/{}/customers", self.client.instance_id);
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Creates an individual customer with standard KYC.

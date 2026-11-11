@@ -16,8 +16,8 @@ pub use client::{
 };
 pub use common::{
     AccountClass, AccountType, Country, Currency, CurrencyType, KycStatus, Limit, ListResponse,
-    Network, Offset, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail, Success,
-    Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
+    Network, Offset, Pager, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail,
+    Success, Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
 pub use error::{ApiError, Error, Result};
 pub use options::RequestOptions;

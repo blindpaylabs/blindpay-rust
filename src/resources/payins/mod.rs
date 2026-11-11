@@ -15,7 +15,7 @@ pub use types::{
 use std::sync::Arc;
 
 use crate::client::Inner;
-use crate::common::ListResponse;
+use crate::common::{ListResponse, Pager};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -68,6 +68,15 @@ impl Payins {
     pub async fn list(&self, params: &ListPayinsParams) -> Result<ListResponse<Payin>> {
         let path = format!("/instances/{}/payins", self.client.instance_id);
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every payin matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/payins`
+    pub fn list_auto_paging(&self, params: &ListPayinsParams) -> Pager<Payin> {
+        let path = format!("/instances/{}/payins", self.client.instance_id);
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single payin by id.

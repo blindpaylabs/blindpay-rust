@@ -612,7 +612,8 @@ pub struct ListPayinsParams {
     /// Maximum number of items to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<crate::common::Limit>,
-    /// Number of items to skip.
+    /// Deprecated: ignored by the API (no list handler reads it); use
+    /// `starting_after`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<crate::common::Offset>,
     /// Cursor: return items after this object id.
@@ -660,6 +661,7 @@ impl ListPayinsParams {
     }
 
     /// Sets the number of items to skip.
+    #[deprecated(note = "ignored by the API; use `starting_after`")]
     pub fn offset(mut self, offset: crate::common::Offset) -> Self {
         self.offset = Some(offset);
         self
@@ -680,6 +682,48 @@ impl ListPayinsParams {
     /// Filters by customer display name.
     pub fn customer_name(mut self, customer_name: impl Into<String>) -> Self {
         self.customer_name = Some(customer_name.into());
+        self
+    }
+
+    /// Sets `starting_after`: cursor: return items after this object id.
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return items before this object id.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
+
+    /// Sets `bank_account_id`: filter by bank account id (`ba_…`).
+    pub fn bank_account_id(mut self, bank_account_id: impl Into<String>) -> Self {
+        self.bank_account_id = Some(bank_account_id.into());
+        self
+    }
+
+    /// Sets `country`: filter by country.
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.country = Some(country.into());
+        self
+    }
+
+    /// Sets `payment_method`: filter by payment method.
+    pub fn payment_method(mut self, payment_method: PaymentMethod) -> Self {
+        self.payment_method = Some(payment_method);
+        self
+    }
+
+    /// Sets `network`: filter by destination network.
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Sets `token`: filter by token.
+    pub fn token(mut self, token: Token) -> Self {
+        self.token = Some(token);
         self
     }
 }

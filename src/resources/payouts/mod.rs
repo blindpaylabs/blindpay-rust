@@ -20,7 +20,7 @@ pub use types::{
 use std::sync::Arc;
 
 use crate::client::Inner;
-use crate::common::ListResponse;
+use crate::common::{ListResponse, Pager};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
@@ -180,6 +180,15 @@ impl Payouts {
     pub async fn list(&self, params: &ListPayoutsParams) -> Result<ListResponse<Payout>> {
         let path = format!("/instances/{}/payouts", self.client.instance_id);
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every payout matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/payouts`
+    pub fn list_auto_paging(&self, params: &ListPayoutsParams) -> Pager<Payout> {
+        let path = format!("/instances/{}/payouts", self.client.instance_id);
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single payout by id.
