@@ -6,8 +6,8 @@ mod types;
 
 pub use quotes::TransferQuotes;
 pub use types::{
-    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, Transfer, TransferQuote,
-    TransferTrackingStep, TransferTrackingTransactionMonitoring,
+    CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, ListTransfersParams,
+    Transfer, TransferQuote, TransferTrackingStep, TransferTrackingTransactionMonitoring,
 };
 
 use std::sync::Arc;
@@ -15,9 +15,10 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::client::Inner;
-use crate::common::{ListResponse, PaginationParams};
+use crate::common::{ListResponse, Pager};
 use crate::error::{Error, Result};
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `transfers` resource.
 ///
@@ -41,18 +42,40 @@ impl Transfers {
     ///
     /// `POST /instances/{instance_id}/transfers`
     pub async fn create(&self, input: &CreateTransferInput) -> Result<CreateTransferResponse> {
-        let path = format!("/instances/{}/transfers", self.client.instance_id);
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/transfers`
+    pub async fn create_with_options(
+        &self,
+        input: &CreateTransferInput,
+        options: &RequestOptions,
+    ) -> Result<CreateTransferResponse> {
+        let path = self.client.instance_path("/transfers");
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 
     /// Lists transfers for the instance. Always paginated.
     ///
     /// `GET /instances/{instance_id}/transfers`
-    pub async fn list(&self, params: &PaginationParams) -> Result<ListResponse<Transfer>> {
-        let path = format!("/instances/{}/transfers", self.client.instance_id);
+    pub async fn list(&self, params: &ListTransfersParams) -> Result<ListResponse<Transfer>> {
+        let path = self.client.instance_path("/transfers");
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every transfer matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/transfers`
+    pub fn list_auto_paging(&self, params: &ListTransfersParams) -> Pager<Transfer> {
+        let path = self.client.instance_path("/transfers");
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single transfer by ID.
@@ -67,17 +90,19 @@ impl Transfers {
         if id.is_empty() {
             return Err(Error::Config("transfer id cannot be empty".to_string()));
         }
-        let path = format!(
-            "/instances/{}/transfers/{}",
-            self.client.instance_id,
-            encode_path_segment(id)
-        );
+        let path = self
+            .client
+            .instance_path(&format!("/transfers/{}", encode_path_segment(id)));
         self.client.get(&path).await
     }
 
-    /// Retrieves a transfer through the unauthenticated tracking endpoint.
+    /// Retrieves a transfer via its public tracking endpoint.
     ///
     /// `GET /e/transfers/{id}`
+    ///
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Transfers::get) instead. Kept for completeness.
     ///
     /// # Errors
     ///

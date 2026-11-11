@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::client::Inner;
 use crate::error::Result;
+use crate::options::RequestOptions;
 use crate::resources::instances::types::{InitiateTosInput, InitiateTosResponse};
 
 /// Handle for the terms-of-service sub-resource, reached via
@@ -24,9 +25,28 @@ impl Tos {
     ///
     /// `POST /e/instances/{instance_id}/tos`
     pub async fn initiate(&self, body: &InitiateTosInput) -> Result<InitiateTosResponse> {
-        let path = format!("/e/instances/{}/tos", self.client.instance_id);
+        self.initiate_with_options(body, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::initiate`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /e/instances/{instance_id}/tos`
+    pub async fn initiate_with_options(
+        &self,
+        body: &InitiateTosInput,
+        options: &RequestOptions,
+    ) -> Result<InitiateTosResponse> {
+        let path = self.client.e_instance_path("/tos");
         self.client
-            .request(reqwest::Method::POST, &path, None::<&()>, Some(body))
+            .request_with(
+                reqwest::Method::POST,
+                &path,
+                None::<&()>,
+                Some(body),
+                options,
+            )
             .await
     }
 }

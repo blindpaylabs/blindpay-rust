@@ -68,7 +68,8 @@ pub struct PaginationParams {
     /// Maximum number of items to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<Limit>,
-    /// Number of items to skip.
+    /// Deprecated: ignored by the API (no list handler reads it); use
+    /// `starting_after`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<Offset>,
     /// Cursor: return items after this object ID.
@@ -92,6 +93,7 @@ impl PaginationParams {
     }
 
     /// Sets the number of items to skip.
+    #[deprecated(note = "ignored by the API; use `starting_after`")]
     pub fn offset(mut self, offset: Offset) -> Self {
         self.offset = Some(offset);
         self
@@ -116,10 +118,11 @@ impl PaginationParams {
 pub struct Pagination {
     /// Whether more items are available after this page.
     pub has_more: bool,
-    /// Object ID of the first item in the next page, if any.
+    /// The cursor for the next page (the id of this page's last item) when
+    /// `has_more`; pass it back as `starting_after`.
     #[serde(default)]
     pub next_page: Option<String>,
-    /// Object ID of the first item in the previous page, if any.
+    /// The cursor this page was requested with, if any.
     #[serde(default)]
     pub prev_page: Option<String>,
 }
@@ -131,8 +134,7 @@ pub struct Pagination {
 /// pagination parameters were sent). Use [`data`](ListResponse::data) /
 /// [`into_data`](ListResponse::into_data) to read the items uniformly and
 /// [`pagination`](ListResponse::pagination) for the metadata when present.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ListResponse<T> {
     /// The paginated envelope form.
     Paginated {
@@ -167,6 +169,35 @@ impl<T> ListResponse<T> {
         match self {
             ListResponse::Paginated { pagination, .. } => Some(pagination),
             ListResponse::Bare(_) => None,
+        }
+    }
+}
+
+/// Decodes the envelope when the body is an object and the bare array
+/// otherwise, so an item that fails to decode reports its real field error
+/// (an untagged enum would only say "did not match any variant").
+impl<'de, T: serde::de::DeserializeOwned> Deserialize<'de> for ListResponse<T> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error as _;
+
+        #[derive(Deserialize)]
+        struct Envelope<T> {
+            data: Vec<T>,
+            pagination: Pagination,
+        }
+
+        match serde_json::Value::deserialize(deserializer)? {
+            value @ serde_json::Value::Object(_) => {
+                let Envelope { data, pagination } =
+                    serde_json::from_value(value).map_err(D::Error::custom)?;
+                Ok(ListResponse::Paginated { data, pagination })
+            }
+            value @ serde_json::Value::Array(_) => serde_json::from_value(value)
+                .map(ListResponse::Bare)
+                .map_err(D::Error::custom),
+            other => Err(D::Error::custom(format!(
+                "expected a list or a {{data, pagination}} envelope, got {other}"
+            ))),
         }
     }
 }
@@ -210,5 +241,23 @@ mod tests {
         assert!(paged.pagination().unwrap().has_more);
         assert_eq!(paged.pagination().unwrap().next_page.as_deref(), Some("x"));
         assert!(paged.pagination().unwrap().prev_page.is_none());
+    }
+
+    #[test]
+    fn list_response_surfaces_the_item_error() {
+        #[derive(Debug, Deserialize)]
+        #[allow(dead_code)]
+        struct Item {
+            id: String,
+        }
+        let err = serde_json::from_str::<ListResponse<Item>>(r#"[{"id":1}]"#).unwrap_err();
+        assert!(err.to_string().contains("expected a string"), "{err}");
+        let err = serde_json::from_str::<ListResponse<Item>>(
+            r#"{"data":[{}],"pagination":{"has_more":false}}"#,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("missing field `id`"), "{err}");
+        let err = serde_json::from_str::<ListResponse<Item>>("3").unwrap_err();
+        assert!(err.to_string().contains("envelope"), "{err}");
     }
 }

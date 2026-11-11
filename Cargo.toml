@@ -2,14 +2,15 @@
 name = "blindpay"
 version = "0.2.0"
 edition = "2024"
+rust-version = "1.85"
 description = "Official Rust SDK for the BlindPay payments API."
 license = "MIT"
 repository = "https://github.com/blindpaylabs/blindpay-rust"
 homepage = "https://www.blindpay.com"
 documentation = "https://docs.rs/blindpay"
 readme = "README.md"
-# The shared spec fixtures (1.2 MB) are test-only; keep them out of the crate.
-exclude = ["tests/fixtures/"]
+# Tests and their shared spec fixtures (1.2 MB) stay out of the published crate.
+exclude = ["tests/", ".api-sync/", ".github/", "CLAUDE.md"]
 keywords = ["blindpay", "payments", "stablecoin", "api", "sdk"]
 categories = ["api-bindings", "finance"]
 
@@ -23,12 +24,22 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "mul
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
-svix = "1"
 http = "1"
+# Native Svix webhook verification (plan D20).
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+# Already in the tree via reqwest; used directly for retry sleeps (plan A5).
+tokio = { version = "1", features = ["time"] }
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "net", "io-util"] }
 wiremock = "0.6"
+# tests/contract.rs parses src/ to check serde types against the spec.
+syn = { version = "2", features = ["full"] }
+quote = "1"
+proc-macro2 = "1"
 
 [package.metadata.docs.rs]
 all-features = true

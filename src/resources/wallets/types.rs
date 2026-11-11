@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::{Network, Token};
+use crate::common::{Network, Token, open_enum};
 
 /// Response from `BlockchainWallets::create_asset_trustline`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -76,6 +76,9 @@ pub struct PrepareSolanaDelegationResponse {
     /// The prepared (base64-encoded) Solana transaction, when successful.
     #[serde(default)]
     pub transaction: Option<String>,
+    /// Diagnostic details from the API (raw JSON), when present.
+    #[serde(default)]
+    pub debug: Option<serde_json::Value>,
 }
 
 /// A blockchain wallet registered for a customer, returned by the
@@ -104,6 +107,9 @@ pub struct BlockchainWallet {
     pub is_account_abstraction: Option<bool>,
     /// Identifier of the customer the wallet belongs to (prefix `re_`).
     pub customer_id: String,
+    /// Whether the customer holds the keys (mandatory for Brazilian customers; `null` = never answered). Set it with `set_self_custody`.
+    #[serde(default)]
+    pub is_self_custody: Option<bool>,
 }
 
 /// The challenge message a customer signs to register a blockchain wallet by
@@ -163,6 +169,9 @@ pub struct Wallet {
     /// When the wallet was created.
     #[serde(default)]
     pub created_at: Option<String>,
+    /// Yield status.
+    #[serde(default)]
+    pub yield_status: Option<YieldStatus>,
 }
 
 /// Request body for creating a custodial wallet.
@@ -207,6 +216,12 @@ pub struct WalletBalance {
     /// USDB balance.
     #[serde(rename = "USDB")]
     pub usdb: WalletTokenBalance,
+    /// EURC balance, on networks that support it.
+    #[serde(rename = "EURC", default)]
+    pub eurc: Option<WalletTokenBalance>,
+    /// EURB balance, on networks that support it.
+    #[serde(rename = "EURB", default)]
+    pub eurb: Option<WalletTokenBalance>,
 }
 
 /// An offramp wallet attached to a bank account, returned by the
@@ -247,6 +262,9 @@ pub struct OfframpWallet {
     /// When the wallet was last updated. Absent on `create`.
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Partner fee charged on payouts from this wallet (`fe_…`). May be `null`.
+    #[serde(default)]
+    pub partner_fee_id: Option<String>,
 }
 
 /// Request body for creating an offramp wallet.
@@ -257,6 +275,9 @@ pub struct CreateOfframpWalletInput {
     pub external_id: Option<String>,
     /// The blockchain network for the wallet.
     pub network: Network,
+    /// Partner fee to apply (`fe_…`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partner_fee_id: Option<String>,
 }
 
 #[cfg(test)]
@@ -335,8 +356,176 @@ mod tests {
         let input = CreateOfframpWalletInput {
             external_id: None,
             network: Network::Base,
+            partner_fee_id: None,
         };
         let json = serde_json::to_value(&input).unwrap();
         assert_eq!(json, serde_json::json!({ "network": "base" }));
+    }
+}
+
+/// Body for `OfframpWallets::update` (spec `UpdateOfframpWalletIn`).
+///
+/// `partner_fee_id` is tri-state: leave it unset to keep the current fee,
+/// set it to `Some(id)` to change it, or `None`
+/// ([`clear_partner_fee`](Self::clear_partner_fee)) to remove it (sent as
+/// `null`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct UpdateOfframpWalletInput {
+    /// The partner fee: absent = unchanged, `Some(None)` = clear (`null`),
+    /// `Some(Some(id))` = set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub partner_fee_id: Option<Option<String>>,
+}
+
+impl UpdateOfframpWalletInput {
+    /// Creates an update that changes nothing.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the partner fee (`fe_…`).
+    pub fn partner_fee_id(mut self, partner_fee_id: impl Into<String>) -> Self {
+        self.partner_fee_id = Some(Some(partner_fee_id.into()));
+        self
+    }
+
+    /// Removes the partner fee (sends `"partner_fee_id": null`).
+    pub fn clear_partner_fee(mut self) -> Self {
+        self.partner_fee_id = Some(None);
+        self
+    }
+}
+
+open_enum! {
+    /// Whether a custodial wallet earns yield.
+    pub enum YieldStatus {
+        /// Not earning yield.
+        Disabled => "disabled",
+        /// Earning yield.
+        Enabled => "enabled",
+        /// Being switched off.
+        Disabling => "disabling",
+    }
+}
+
+open_enum! {
+    /// The status of a custodial-wallet deposit.
+    pub enum WalletDepositStatus {
+        /// Being checked.
+        Processing => "processing",
+        /// Credited.
+        Completed => "completed",
+        /// Held for review.
+        OnHold => "on_hold",
+        /// Returned to the sender.
+        Refunded => "refunded",
+    }
+}
+
+/// A deposit into a custodial wallet (spec `WalletDepositOut`).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct WalletDeposit {
+    /// Deposit id (`wd_…`).
+    pub id: String,
+    /// Wallet id (`bl_…`).
+    pub wallet_id: String,
+    /// Network.
+    pub network: Network,
+    /// Token.
+    pub token: Token,
+    /// Amount in integer cents.
+    pub amount: i64,
+    /// Exact amount in token units, as a decimal string. May be `null`.
+    #[serde(default)]
+    pub token_amount: Option<String>,
+    /// Status.
+    pub status: WalletDepositStatus,
+    /// On-chain transaction hash.
+    pub transaction_hash: String,
+    /// Sender address. May be `null`.
+    #[serde(default)]
+    pub sender_address: Option<String>,
+    /// When it arrived (ISO 8601).
+    pub created_at: String,
+}
+
+/// Page size for `CustodialWallets::get_deposits` (the deposits list accepts
+/// a different set of sizes than the other lists).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum DepositsLimit {
+    /// 5 items.
+    #[serde(rename = "5")]
+    Five,
+    /// 10 items (the default).
+    #[serde(rename = "10")]
+    Ten,
+    /// 50 items.
+    #[serde(rename = "50")]
+    Fifty,
+    /// 100 items.
+    #[serde(rename = "100")]
+    OneHundred,
+    /// 200 items.
+    #[serde(rename = "200")]
+    TwoHundred,
+}
+
+/// Query parameters for `CustodialWallets::get_deposits` and its auto-pager.
+#[derive(Debug, Clone, Default, Serialize)]
+#[non_exhaustive]
+pub struct ListWalletDepositsParams {
+    /// Page size.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<DepositsLimit>,
+    /// Cursor: return deposits after this id (`next_page`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub starting_after: Option<String>,
+    /// Cursor: return deposits before this id.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ending_before: Option<String>,
+    /// Filter by token.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<Token>,
+    /// Filter by status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<WalletDepositStatus>,
+}
+
+impl ListWalletDepositsParams {
+    /// Creates empty list parameters.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets `limit`: page size.
+    pub fn limit(mut self, limit: DepositsLimit) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    /// Sets `starting_after`: cursor: return deposits after this id (`next_page`).
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return deposits before this id.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
+
+    /// Sets `token`: filter by token.
+    pub fn token(mut self, token: Token) -> Self {
+        self.token = Some(token);
+        self
+    }
+
+    /// Sets `status`: filter by status.
+    pub fn status(mut self, status: WalletDepositStatus) -> Self {
+        self.status = Some(status);
+        self
     }
 }

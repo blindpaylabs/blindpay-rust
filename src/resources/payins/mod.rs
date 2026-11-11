@@ -6,18 +6,20 @@ mod types;
 pub use quotes::PayinQuotes;
 pub use types::{
     BlindpayBankAccount, BlindpayBankDetails, BlindpayBankParty, CreatePayinInput,
-    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, PayerRules, Payin, PayinQuote,
-    PayinQuoteFx, PayinQuoteFxInput, PayinTrackingComplete, PayinTrackingPartnerFee,
-    PayinTrackingPayment, PayinTrackingTransaction, PayinTransactionStatus, PseDocumentType,
-    PseInstruction, SwiftReceivingBank, TedInstruction, TransfersInstruction,
+    CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, ManualExecutionStatus,
+    PayerRules, Payin, PayinQuote, PayinQuoteFx, PayinQuoteFxInput, PayinTrackingComplete,
+    PayinTrackingPartnerFee, PayinTrackingPayment, PayinTrackingTransaction,
+    PayinTransactionStatus, PseDocumentType, PseInstruction, SwiftReceivingBank, TedInstruction,
+    TransfersInstruction,
 };
 
 use std::sync::Arc;
 
 use crate::client::Inner;
-use crate::common::ListResponse;
+use crate::common::{ListResponse, Pager};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `payins` resource.
 ///
@@ -42,9 +44,22 @@ impl Payins {
     ///
     /// `POST /instances/{instance_id}/payins/evm`
     pub async fn create_evm(&self, input: &CreatePayinInput) -> Result<CreatePayinResponse> {
-        let path = format!("/instances/{}/payins/evm", self.client.instance_id);
+        self.create_evm_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_evm`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payins/evm`
+    pub async fn create_evm_with_options(
+        &self,
+        input: &CreatePayinInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayinResponse> {
+        let path = self.client.instance_path("/payins/evm");
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -52,32 +67,51 @@ impl Payins {
     ///
     /// `GET /instances/{instance_id}/payins`
     pub async fn list(&self, params: &ListPayinsParams) -> Result<ListResponse<Payin>> {
-        let path = format!("/instances/{}/payins", self.client.instance_id);
+        let path = self.client.instance_path("/payins");
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every payin matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/payins`
+    pub fn list_auto_paging(&self, params: &ListPayinsParams) -> Pager<Payin> {
+        let path = self.client.instance_path("/payins");
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single payin by id.
     ///
     /// `GET /instances/{instance_id}/payins/{id}`
     pub async fn get(&self, payin_id: impl AsRef<str>) -> Result<Payin> {
-        let path = format!(
-            "/instances/{}/payins/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/payins/{}",
             encode_path_segment(payin_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
-    /// Retrieves a payin via its public, unauthenticated tracking endpoint.
+    /// Retrieves a payin via its public tracking endpoint. `checkout_token`
+    /// is the hosted-checkout token, when the payin has one.
     ///
     /// `GET /e/payins/{id}`
     ///
-    /// This `/e/` route is the obfuscated, end-customer tracking endpoint: it is
-    /// served without instance scoping and is not gated by the API key (the SDK
-    /// still sends the bearer header). Use [`get`](Payins::get) for the
-    /// authenticated, instance-scoped lookup.
-    pub async fn get_track(&self, payin_id: impl AsRef<str>) -> Result<Payin> {
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Payins::get) instead. Kept for completeness.
+    pub async fn get_track(
+        &self,
+        payin_id: impl AsRef<str>,
+        checkout_token: Option<&str>,
+    ) -> Result<Payin> {
+        #[derive(serde::Serialize)]
+        struct Query<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            checkout_token: Option<&'a str>,
+        }
         let path = format!("/e/payins/{}", encode_path_segment(payin_id.as_ref()));
-        self.client.get(&path).await
+        self.client
+            .get_query(&path, &Query { checkout_token })
+            .await
     }
 }

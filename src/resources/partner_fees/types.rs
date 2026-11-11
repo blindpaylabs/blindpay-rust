@@ -31,12 +31,15 @@ pub struct PartnerFee {
     /// Whether the fee is tied to a virtual account set. Absent on the
     /// `get`/`create` responses.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub virtual_account_set: Option<bool>,
     /// Creation timestamp. Absent on the `get`/`create` responses.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub created_at: Option<String>,
     /// Last-update timestamp. Absent on the `get`/`create` responses.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub updated_at: Option<String>,
 }
 
@@ -82,6 +85,7 @@ impl CreatePartnerFeeInput {
 }
 
 #[cfg(test)]
+#[allow(deprecated)] // asserts the deprecated stale fields still decode
 mod tests {
     use super::*;
 

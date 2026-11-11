@@ -1,4 +1,7 @@
+#![allow(deprecated)] // exercises the deprecated `virtual_account_set` field
 //! Integration tests for the `partner_fees` resource, backed by a mock HTTP server.
+
+mod common;
 
 use blindpay::{BlindPay, CreatePartnerFeeInput, Error};
 use wiremock::matchers::{body_json, header, method, path};
@@ -7,10 +10,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]

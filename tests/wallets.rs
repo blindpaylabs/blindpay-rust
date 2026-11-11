@@ -1,6 +1,8 @@
 //! Integration tests for the `wallets` resources (blockchain, custodial, and
 //! offramp), backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     BlindPay, CreateBlockchainWalletWithAddressInput, CreateBlockchainWalletWithHashInput,
     CreateOfframpWalletInput, CreateWalletInput, Error, MintUsdbSolanaInput, MintUsdbStellarInput,
@@ -10,10 +12,7 @@ use wiremock::matchers::{body_json, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 fn user_agent() -> String {
@@ -555,6 +554,7 @@ async fn offramp_create_sends_body_and_parses_create_shape() {
     let input = CreateOfframpWalletInput {
         external_id: Some("ext_456".to_string()),
         network: Network::Base,
+        partner_fee_id: None,
     };
     let wallet = client(&server)
         .await
@@ -623,6 +623,7 @@ async fn offramp_create_non_success_returns_api_error() {
     let input = CreateOfframpWalletInput {
         external_id: None,
         network: Network::Stellar,
+        partner_fee_id: None,
     };
     let err = client(&server)
         .await

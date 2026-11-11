@@ -1,0 +1,72 @@
+{
+  "_comment": "Exceptions for tests/contract.rs, each with a reason; stale entries fail the test. `direction_a`: Rust wire fields deliberately not in the spec. `unmodelled`: spec properties deliberately not modelled (silences the warning).",
+  "direction_a": [
+    {
+      "rust": "Payout",
+      "field": "tracking_partner_fee",
+      "reason": "Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "field": "tracking_partner_fee",
+      "reason": "Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "Payin",
+      "field": "tracking_partner_fee",
+      "reason": "Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "field": "tracking_partner_fee",
+      "reason": "Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "Customer",
+      "field": "individual_holding_doc_front_file",
+      "reason": "Not in CustomerOut; the route's Zod output schema omits it (api-contract customer.schema.ts:1393). Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "Customer",
+      "field": "aiprise_validation_key",
+      "reason": "Not in CustomerOut; the route's Zod output schema omits it (api-contract customer.schema.ts:1393). Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "virtual_account_set",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "created_at",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    },
+    {
+      "rust": "PartnerFee",
+      "field": "updated_at",
+      "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Not in the spec; kept as a #[deprecated] Option, removed in the next breaking release."
+    }
+  ],
+  "unmodelled": [
+    {
+      "rust": "CustomerRfi",
+      "field": "customer_aiprise_session_id",
+      "reason": "Provider-named field: not modelled in the public surface; pending a blindpay-v2 decision."
+    },
+    {
+      "rust": "CustomerRfi",
+      "field": "customer_aiprise_user_profile_id",
+      "reason": "Provider-named field: not modelled in the public surface; pending a blindpay-v2 decision."
+    },
+    {
+      "rust": "RfiField",
+      "field": "aiprise_document_type",
+      "reason": "Provider-named field: not modelled in the public surface; pending a blindpay-v2 decision."
+    },
+    {
+      "rust": "BankAccount",
+      "field": "plaid_connected_at",
+      "reason": "Provider-named (Plaid) timestamp; left out pending a ruling on provider names (Plaid is also in the create_plaid_link method name)."
+    }
+  ]
+}

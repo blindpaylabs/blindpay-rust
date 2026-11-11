@@ -1,5 +1,7 @@
 //! Integration tests for the `payouts` resource, backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     AuthorizeStellarTokenInput, BlindPay, CreateEvmPayoutInput, CreateSolanaPayoutInput,
     CreateStellarPayoutInput, Error, Limit, ListPayoutsParams, PayoutCompleteStatus,
@@ -12,10 +14,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 fn create_out_body() -> serde_json::Value {
@@ -62,7 +61,7 @@ async fn create_evm_posts_quote_and_wallet_and_parses_response() {
 
     assert_eq!(payout.id, "pa_000000000000");
     assert_eq!(payout.status, TransactionStatus::Processing);
-    assert_eq!(payout.sender_wallet_address, "0x123456789");
+    assert_eq!(payout.sender_wallet_address.as_deref(), Some("0x123456789"));
     assert_eq!(payout.billing_fee_amount, Some(100));
     assert_eq!(payout.partner_fee, Some(-25000));
     assert_eq!(payout.customer_id.as_deref(), Some("re_000000000000"));

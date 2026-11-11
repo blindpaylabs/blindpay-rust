@@ -20,9 +20,10 @@ pub use types::{
 use std::sync::Arc;
 
 use crate::client::Inner;
-use crate::common::ListResponse;
+use crate::common::{ListResponse, Pager};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
+use crate::options::RequestOptions;
 
 /// Handle for the `payouts` resource.
 ///
@@ -41,9 +42,22 @@ impl Payouts {
     ///
     /// `POST /instances/{instance_id}/payouts/evm`
     pub async fn create_evm(&self, input: &CreateEvmPayoutInput) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/evm", self.client.instance_id);
+        self.create_evm_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_evm`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/evm`
+    pub async fn create_evm_with_options(
+        &self,
+        input: &CreateEvmPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
+        let path = self.client.instance_path("/payouts/evm");
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -54,9 +68,22 @@ impl Payouts {
         &self,
         input: &CreateSolanaPayoutInput,
     ) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/solana", self.client.instance_id);
+        self.create_solana_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_solana`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/solana`
+    pub async fn create_solana_with_options(
+        &self,
+        input: &CreateSolanaPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
+        let path = self.client.instance_path("/payouts/solana");
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -67,9 +94,22 @@ impl Payouts {
         &self,
         input: &CreateStellarPayoutInput,
     ) -> Result<CreatePayoutResponse> {
-        let path = format!("/instances/{}/payouts/stellar", self.client.instance_id);
+        self.create_stellar_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_stellar`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/stellar`
+    pub async fn create_stellar_with_options(
+        &self,
+        input: &CreateStellarPayoutInput,
+        options: &RequestOptions,
+    ) -> Result<CreatePayoutResponse> {
+        let path = self.client.instance_path("/payouts/stellar");
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -80,12 +120,22 @@ impl Payouts {
         &self,
         input: &AuthorizeStellarTokenInput,
     ) -> Result<AuthorizeStellarTokenResponse> {
-        let path = format!(
-            "/instances/{}/payouts/stellar/authorize",
-            self.client.instance_id
-        );
+        self.authorize_stellar_token_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::authorize_stellar_token`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/stellar/authorize`
+    pub async fn authorize_stellar_token_with_options(
+        &self,
+        input: &AuthorizeStellarTokenInput,
+        options: &RequestOptions,
+    ) -> Result<AuthorizeStellarTokenResponse> {
+        let path = self.client.instance_path("/payouts/stellar/authorize");
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -97,13 +147,26 @@ impl Payouts {
         payout_id: impl AsRef<str>,
         input: &SubmitPayoutDocumentsInput,
     ) -> Result<SubmitPayoutDocumentsResponse> {
-        let path = format!(
-            "/instances/{}/payouts/{}/documents",
-            self.client.instance_id,
+        self.submit_documents_with_options(payout_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::submit_documents`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/payouts/{id}/documents`
+    pub async fn submit_documents_with_options(
+        &self,
+        payout_id: impl AsRef<str>,
+        input: &SubmitPayoutDocumentsInput,
+        options: &RequestOptions,
+    ) -> Result<SubmitPayoutDocumentsResponse> {
+        let path = self.client.instance_path(&format!(
+            "/payouts/{}/documents",
             encode_path_segment(payout_id.as_ref())
-        );
+        ));
         self.client
-            .request::<_, (), _>(reqwest::Method::POST, &path, None, Some(input))
+            .request_with::<_, (), _>(reqwest::Method::POST, &path, None, Some(input), options)
             .await
     }
 
@@ -111,30 +174,37 @@ impl Payouts {
     ///
     /// `GET /instances/{instance_id}/payouts`
     pub async fn list(&self, params: &ListPayoutsParams) -> Result<ListResponse<Payout>> {
-        let path = format!("/instances/{}/payouts", self.client.instance_id);
+        let path = self.client.instance_path("/payouts");
         self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every payout matching `params`, page by page (see [`Pager`]).
+    /// Sends `limit` (100 unless set) and follows `pagination.next_page`.
+    ///
+    /// `GET /instances/{instance_id}/payouts`
+    pub fn list_auto_paging(&self, params: &ListPayoutsParams) -> Pager<Payout> {
+        let path = self.client.instance_path("/payouts");
+        Pager::new(Arc::clone(&self.client), path, params)
     }
 
     /// Retrieves a single payout by id.
     ///
     /// `GET /instances/{instance_id}/payouts/{id}`
     pub async fn get(&self, payout_id: impl AsRef<str>) -> Result<Payout> {
-        let path = format!(
-            "/instances/{}/payouts/{}",
-            self.client.instance_id,
+        let path = self.client.instance_path(&format!(
+            "/payouts/{}",
             encode_path_segment(payout_id.as_ref())
-        );
+        ));
         self.client.get(&path).await
     }
 
-    /// Retrieves a payout via its public, unauthenticated tracking endpoint.
+    /// Retrieves a payout via its public tracking endpoint.
     ///
     /// `GET /e/payouts/{id}`
     ///
-    /// This `/e/` route is the end-customer tracking endpoint: it is served
-    /// without instance scoping and is not gated by the API key (the SDK still
-    /// sends the bearer header). Use [`get`](Payouts::get) for the
-    /// authenticated, instance-scoped lookup.
+    /// Public tracking endpoint for BlindPay's web and iOS apps: server-side
+    /// calls get **401 in production** (it only admits the app origin).
+    /// Use [`get`](Payouts::get) instead. Kept for completeness.
     pub async fn get_track(&self, payout_id: impl AsRef<str>) -> Result<Payout> {
         let path = format!("/e/payouts/{}", encode_path_segment(payout_id.as_ref()));
         self.client.get(&path).await

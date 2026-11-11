@@ -5,16 +5,36 @@ use serde::{Deserialize, Serialize};
 use crate::common::{Currency, CurrencyType, Network, Token};
 
 /// Body for `Quotes::create` (`POST /instances/{instance_id}/quotes`).
+///
+/// Quote either a bank-account payout (`bank_account_id`) or a payable
+/// (`payable_id`): set exactly one (the API returns 400 otherwise; not
+/// validated client-side).
+///
+/// ```
+/// use blindpay::{CreateQuoteInput, CurrencyType, Network, Token};
+/// let input = CreateQuoteInput::new(Network::Base, Token::Usdc)
+///     .bank_account_id("ba_000000000000")
+///     .currency_type(CurrencyType::Sender)
+///     .request_amount(10_000) // cents: 100.00
+///     .cover_fees(false);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CreateQuoteInput {
-    /// The bank account that will receive the payout.
-    pub bank_account_id: String,
+    /// The bank account that will receive the payout (`ba_…`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bank_account_id: Option<String>,
+    /// The payable to quote (`pb_…`), instead of `bank_account_id`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payable_id: Option<String>,
     /// Which side of the quote `request_amount` is denominated in.
-    pub currency_type: CurrencyType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency_type: Option<CurrencyType>,
     /// If `true`, the sender covers the fees; if `false`, the receiver does.
-    pub cover_fees: bool,
-    /// Requested amount in the smallest unit (cents). Minimum `500`.
-    pub request_amount: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_fees: Option<bool>,
+    /// Requested amount in integer cents (`10000` = 100.00). Minimum `500`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request_amount: Option<i64>,
     /// The network the payout will be settled on.
     pub network: Network,
     /// The stablecoin token used for the payout.
@@ -25,6 +45,76 @@ pub struct CreateQuoteInput {
     /// Optional partner fee to apply to the quote.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partner_fee_id: Option<String>,
+    /// Where to refund the stablecoins if the payout fails.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refund_wallet_address: Option<String>,
+}
+
+impl CreateQuoteInput {
+    /// Creates a quote body for `network` and `token`; set the rest with the
+    /// chainable setters.
+    pub fn new(network: Network, token: Token) -> Self {
+        Self {
+            bank_account_id: None,
+            payable_id: None,
+            currency_type: None,
+            cover_fees: None,
+            request_amount: None,
+            network,
+            token,
+            description: None,
+            partner_fee_id: None,
+            refund_wallet_address: None,
+        }
+    }
+
+    /// Sets the receiving bank account (`ba_…`).
+    pub fn bank_account_id(mut self, bank_account_id: impl Into<String>) -> Self {
+        self.bank_account_id = Some(bank_account_id.into());
+        self
+    }
+
+    /// Sets the payable to quote (`pb_…`).
+    pub fn payable_id(mut self, payable_id: impl Into<String>) -> Self {
+        self.payable_id = Some(payable_id.into());
+        self
+    }
+
+    /// Sets which side `request_amount` is denominated in.
+    pub fn currency_type(mut self, currency_type: CurrencyType) -> Self {
+        self.currency_type = Some(currency_type);
+        self
+    }
+
+    /// Sets who covers the fees.
+    pub fn cover_fees(mut self, cover_fees: bool) -> Self {
+        self.cover_fees = Some(cover_fees);
+        self
+    }
+
+    /// Sets the requested amount in integer cents.
+    pub fn request_amount(mut self, request_amount: i64) -> Self {
+        self.request_amount = Some(request_amount);
+        self
+    }
+
+    /// Sets the memo/description.
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
+
+    /// Sets the partner fee (`fe_…`).
+    pub fn partner_fee_id(mut self, partner_fee_id: impl Into<String>) -> Self {
+        self.partner_fee_id = Some(partner_fee_id.into());
+        self
+    }
+
+    /// Sets the refund wallet address.
+    pub fn refund_wallet_address(mut self, refund_wallet_address: impl Into<String>) -> Self {
+        self.refund_wallet_address = Some(refund_wallet_address.into());
+        self
+    }
 }
 
 /// The blockchain network referenced by a [`QuoteContract`].
@@ -139,17 +229,18 @@ mod tests {
 
     #[test]
     fn create_quote_input_skips_optional_fields() {
-        let input = CreateQuoteInput {
-            bank_account_id: "ba_123".to_string(),
-            currency_type: CurrencyType::Sender,
-            cover_fees: true,
-            request_amount: 1000,
-            network: Network::Sepolia,
-            token: Token::Usdc,
-            description: None,
-            partner_fee_id: None,
-        };
+        let input = CreateQuoteInput::new(Network::Sepolia, Token::Usdc)
+            .bank_account_id("ba_123")
+            .currency_type(CurrencyType::Sender)
+            .cover_fees(true)
+            .request_amount(1000);
         let value = serde_json::to_value(&input).unwrap();
+        assert!(value.get("payable_id").is_none());
+        let payable = CreateQuoteInput::new(Network::Base, Token::Usdc).payable_id("pb_1");
+        assert_eq!(
+            serde_json::to_value(&payable).unwrap(),
+            serde_json::json!({ "payable_id": "pb_1", "network": "base", "token": "USDC" })
+        );
         assert_eq!(value["request_amount"], 1000);
         assert_eq!(value["token"], "USDC");
         assert!(value.get("description").is_none());

@@ -49,6 +49,24 @@ open_enum! {
         BusinessFinancialStatements => "business_financial_statements",
         /// Business tax return.
         BusinessTaxReturn => "business_tax_return",
+        /// Individual pay stub.
+        IndividualPayStub => "individual_pay_stub",
+        /// Individual employment letter.
+        IndividualEmploymentLetter => "individual_employment_letter",
+        /// Individual investment statement.
+        IndividualInvestmentStatement => "individual_investment_statement",
+        /// Individual crypto-exchange statement.
+        IndividualCryptoExchangeStatement => "individual_crypto_exchange_statement",
+        /// Individual blockchain-wallet statement.
+        IndividualBlockchainWalletStatement => "individual_blockchain_wallet_statement",
+        /// Business contract.
+        BusinessContract => "business_contract",
+        /// Business accounts receivable.
+        BusinessAccountsReceivable => "business_accounts_receivable",
+        /// Business merchant-processor statement.
+        BusinessMerchantProcessorStatement => "business_merchant_processor_statement",
+        /// Business shareholder loan.
+        BusinessShareholderLoan => "business_shareholder_loan",
     }
 }
 
@@ -356,6 +374,7 @@ pub struct Customer {
     pub selfie_file: Option<String>,
     /// Front image of the individual holding their document (enhanced KYC).
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub individual_holding_doc_front_file: Option<String>,
     /// Purpose of transactions.
     #[serde(default)]
@@ -404,6 +423,7 @@ pub struct Customer {
     pub tos_id: Option<String>,
     /// AiPrise validation key.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub aiprise_validation_key: Option<String>,
     /// Anti-money-laundering screening status.
     #[serde(default)]
@@ -420,6 +440,24 @@ pub struct Customer {
     /// Last-update timestamp.
     #[serde(default)]
     pub updated_at: Option<String>,
+    /// Geolocation latitude. May be `null`.
+    #[serde(default)]
+    pub latitude: Option<f64>,
+    /// Geolocation longitude. May be `null`.
+    #[serde(default)]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes. May be `null`.
+    #[serde(default)]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
+    /// Set by compliance for nested customers (fintechs/PSPs). May be `null`.
+    #[serde(default)]
+    pub is_nested: Option<bool>,
+    /// Brazilian CNAE check state (raw JSON). May be `null`.
+    #[serde(default)]
+    pub cnae_condition: Option<serde_json::Value>,
+    /// Virtual-account pre-approval state (raw JSON). May be `null`.
+    #[serde(default)]
+    pub virtual_account_preapproval: Option<serde_json::Value>,
 }
 
 /// Query parameters for listing customers.
@@ -428,7 +466,8 @@ pub struct ListCustomersParams {
     /// Maximum number of items to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<crate::common::Limit>,
-    /// Number of items to skip.
+    /// Deprecated: ignored by the API (no list handler reads it); use
+    /// `starting_after`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<crate::common::Offset>,
     /// Cursor: return items after this object ID.
@@ -470,6 +509,7 @@ impl ListCustomersParams {
     }
 
     /// Sets the number of items to skip.
+    #[deprecated(note = "ignored by the API; use `starting_after`")]
     pub fn offset(mut self, offset: crate::common::Offset) -> Self {
         self.offset = Some(offset);
         self
@@ -510,6 +550,18 @@ impl ListCustomersParams {
         self.country = Some(country.into());
         self
     }
+
+    /// Sets `starting_after`: cursor: return items after this object ID.
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return items before this object ID.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
 }
 
 /// The response returned by the create-customer endpoints.
@@ -525,7 +577,7 @@ pub struct CreateCustomerResponse {
 /// Input for [`super::Customers::create_individual_with_standard_kyc`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateIndividualWithStandardKycInput {
     /// Country.
     pub country: Country,
@@ -615,12 +667,21 @@ pub struct CreateIndividualWithStandardKycInput {
     /// Estimated annual revenue band.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_annual_revenue: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
 /// Input for [`super::Customers::create_individual_with_enhanced_kyc`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateIndividualWithEnhancedKycInput {
     /// Country.
     pub country: Country,
@@ -716,12 +777,21 @@ pub struct CreateIndividualWithEnhancedKycInput {
     /// Estimated annual revenue band.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_annual_revenue: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
 /// Input for [`super::Customers::create_business_with_standard_kyb`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateBusinessWithStandardKybInput {
     /// Country.
     pub country: Country,
@@ -820,10 +890,25 @@ pub struct CreateBusinessWithStandardKybInput {
     /// Occupation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub occupation: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
-/// Input for [`super::Customers::update`]; every field is optional.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+/// Input for [`super::Customers::update`]. `email` and `country` are
+/// required by the API (`UpdateCustomerIn`); everything else is optional.
+///
+/// ```
+/// use blindpay::UpdateCustomerInput;
+/// let input = UpdateCustomerInput::new("new@example.com", "US");
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct UpdateCustomerInput {
     /// Account purpose.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -849,15 +934,13 @@ pub struct UpdateCustomerInput {
     /// City.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub city: Option<String>,
-    /// Country.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub country: Option<Country>,
+    /// Country (ISO 3166-1 alpha-2). Required.
+    pub country: Country,
     /// Date of birth (ISO 8601).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub date_of_birth: Option<String>,
-    /// Email address.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
+    /// Email address. Required.
+    pub email: String,
     /// Estimated annual revenue band.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_annual_revenue: Option<String>,
@@ -954,6 +1037,88 @@ pub struct UpdateCustomerInput {
     /// Occupation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub occupation: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
+}
+
+impl UpdateCustomerInput {
+    /// Creates an update with the two required fields; set the rest directly
+    /// (`UpdateCustomerInput { city: Some(..), ..UpdateCustomerInput::new(..) }`).
+    pub fn new(email: impl Into<String>, country: impl Into<Country>) -> Self {
+        Self {
+            email: email.into(),
+            country: country.into(),
+            account_purpose: None,
+            address_line_1: None,
+            address_line_2: None,
+            alternate_name: None,
+            business_description: None,
+            business_industry: None,
+            business_type: None,
+            city: None,
+            date_of_birth: None,
+            estimated_annual_revenue: None,
+            external_id: None,
+            first_name: None,
+            formation_date: None,
+            id_doc_back_file: None,
+            id_doc_country: None,
+            id_doc_front_file: None,
+            id_doc_type: None,
+            image_url: None,
+            incorporation_doc_file: None,
+            ip_address: None,
+            last_name: None,
+            legal_name: None,
+            owners: None,
+            phone_number: None,
+            postal_code: None,
+            proof_of_address_doc_file: None,
+            proof_of_address_doc_type: None,
+            proof_of_ownership_doc_file: None,
+            publicly_traded: None,
+            purpose_of_transactions: None,
+            purpose_of_transactions_explanation: None,
+            selfie_file: None,
+            source_of_funds_doc_file: None,
+            source_of_funds_doc_type: None,
+            source_of_wealth: None,
+            state_province_region: None,
+            tax_id: None,
+            tos_id: None,
+            website: None,
+            account_purpose_other: None,
+            occupation: None,
+            latitude: None,
+            longitude: None,
+            additional_info: None,
+        }
+    }
+
+    /// Sets `latitude`.
+    pub fn latitude(mut self, latitude: f64) -> Self {
+        self.latitude = Some(latitude);
+        self
+    }
+
+    /// Sets `longitude`.
+    pub fn longitude(mut self, longitude: f64) -> Self {
+        self.longitude = Some(longitude);
+        self
+    }
+
+    /// Sets `additional_info`.
+    pub fn additional_info(mut self, additional_info: Vec<AdditionalInfoItem>) -> Self {
+        self.additional_info = Some(additional_info);
+        self
+    }
 }
 
 /// One side (payin or payout) of a customer's aggregate limits.
@@ -1018,6 +1183,9 @@ pub struct LimitIncrease {
     /// URL of the supporting document.
     #[serde(default)]
     pub supporting_document_file: Option<String>,
+    /// Supporting documents.
+    #[serde(default)]
+    pub supporting_documents: Option<Vec<LimitIncreaseSupportingDocument>>,
     /// Creation timestamp.
     #[serde(default)]
     pub created_at: Option<String>,
@@ -1035,10 +1203,128 @@ pub struct RequestLimitIncreaseInput {
     pub daily: i64,
     /// Requested monthly limit, in cents.
     pub monthly: i64,
-    /// The supporting document's type.
-    pub supporting_document_type: SupportingDocumentType,
-    /// URL of the supporting document.
-    pub supporting_document_file: String,
+    /// A single supporting document's type (legacy single-document form;
+    /// prefer `supporting_documents`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supporting_document_type: Option<SupportingDocumentType>,
+    /// URL of that single supporting document.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supporting_document_file: Option<String>,
+    /// Supporting documents (type + file URL each).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supporting_documents: Option<Vec<LimitIncreaseSupportingDocument>>,
+}
+
+impl RequestLimitIncreaseInput {
+    /// Creates a request for the given limits, in integer cents.
+    pub fn new(per_transaction: i64, daily: i64, monthly: i64) -> Self {
+        Self {
+            per_transaction,
+            daily,
+            monthly,
+            supporting_document_type: None,
+            supporting_document_file: None,
+            supporting_documents: None,
+        }
+    }
+
+    /// Adds a supporting document.
+    pub fn supporting_document(
+        mut self,
+        document_type: SupportingDocumentType,
+        file: impl Into<String>,
+    ) -> Self {
+        self.supporting_documents
+            .get_or_insert_with(Vec::new)
+            .push(LimitIncreaseSupportingDocument::new(document_type, file));
+        self
+    }
+}
+
+/// A limit-increase supporting document (spec `LimitIncreaseSupportingDocument`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct LimitIncreaseSupportingDocument {
+    /// The document's type.
+    #[serde(rename = "type")]
+    pub document_type: SupportingDocumentType,
+    /// URL of the document.
+    pub file: String,
+}
+
+impl LimitIncreaseSupportingDocument {
+    /// Creates a supporting document.
+    pub fn new(document_type: SupportingDocumentType, file: impl Into<String>) -> Self {
+        Self {
+            document_type,
+            file: file.into(),
+        }
+    }
+}
+
+open_enum! {
+    /// The category of an [`AdditionalInfoItem`].
+    pub enum AdditionalInfoLabel {
+        /// IRS EIN confirmation letter.
+        EinLetter => "EIN_LETTER",
+        /// A document from a KYC provider.
+        KycProviderDocument => "KYC_PROVIDER_DOCUMENT",
+        /// A flow-of-funds explanation.
+        FlowOfFunds => "FLOW_OF_FUNDS",
+        /// Bank statement.
+        BankStatement => "BANK_STATEMENT",
+        /// Tax return.
+        TaxReturn => "TAX_RETURN",
+        /// Audited financials.
+        AuditedFinancials => "AUDITED_FINANCIALS",
+        /// Operating agreement.
+        OperatingAgreement => "OPERATING_AGREEMENT",
+        /// Board resolution.
+        BoardResolution => "BOARD_RESOLUTION",
+        /// Certificate of good standing.
+        CertificateOfGoodStanding => "CERTIFICATE_OF_GOOD_STANDING",
+        /// Business license.
+        BusinessLicense => "BUSINESS_LICENSE",
+        /// Money-services-business license.
+        MsbLicense => "MSB_LICENSE",
+        /// Power of attorney.
+        PowerOfAttorney => "POWER_OF_ATTORNEY",
+        /// Trust deed.
+        TrustDeed => "TRUST_DEED",
+        /// Shareholder registry.
+        ShareholderRegistry => "SHAREHOLDER_REGISTRY",
+        /// Beneficial owner declaration.
+        BeneficialOwnerDeclaration => "BENEFICIAL_OWNER_DECLARATION",
+        /// Compliance questionnaire.
+        ComplianceQuestionnaire => "COMPLIANCE_QUESTIONNAIRE",
+        /// Proof of employment.
+        ProofOfEmployment => "PROOF_OF_EMPLOYMENT",
+        /// Reference letter.
+        ReferenceLetter => "REFERENCE_LETTER",
+        /// Anything else.
+        Other => "OTHER",
+    }
+}
+
+/// An extra customer document or note (spec `AdditionalInfoItem`): `value`
+/// is a URL to re-host or a free-text description.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct AdditionalInfoItem {
+    /// The category.
+    pub label: AdditionalInfoLabel,
+    /// A URL or free text.
+    pub value: String,
+}
+
+impl AdditionalInfoItem {
+    /// Creates an item.
+    pub fn new(label: AdditionalInfoLabel, value: impl Into<String>) -> Self {
+        Self {
+            label,
+            value: value.into(),
+        }
+    }
 }
 
 /// The response returned by [`super::Customers::request_limit_increase`].

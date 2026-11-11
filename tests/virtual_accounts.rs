@@ -1,6 +1,8 @@
 //! Integration tests for the `virtual_accounts` resource, backed by a mock
 //! HTTP server.
 
+mod common;
+
 use blindpay::{
     BankingPartner, BlindPay, CreateVirtualAccountInput, Error, KycStatus, Network, Token,
     UpdateVirtualAccountInput,
@@ -9,10 +11,7 @@ use wiremock::matchers::{body_json, header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 fn virtual_account_json() -> serde_json::Value {

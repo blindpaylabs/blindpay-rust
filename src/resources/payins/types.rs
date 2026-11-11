@@ -9,6 +9,18 @@ use crate::common::{
 };
 
 open_enum! {
+    /// The state of a payin created while manual OTC execution was on.
+    pub enum ManualExecutionStatus {
+        /// An operator still has to execute it.
+        Pending => "pending",
+        /// Executed.
+        Concluded => "concluded",
+        /// Execution failed.
+        Failed => "failed",
+    }
+}
+
+open_enum! {
     /// The payer document type for PSE (Colombian) payins.
     pub enum PseDocumentType {
         /// Cédula de Ciudadanía.
@@ -79,7 +91,8 @@ pub struct CreatePayinQuoteInput {
     /// Which side the `request_amount` is denominated in.
     pub currency_type: CurrencyType,
     /// If `true`, the sender covers the fees; otherwise the receiver does.
-    pub cover_fees: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_fees: Option<bool>,
     /// Requested amount in cents (minimum 500).
     pub request_amount: i64,
     /// Payin payment method.
@@ -95,6 +108,9 @@ pub struct CreatePayinQuoteInput {
     /// Whether this quote is for an OTC (over-the-counter) transaction.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_otc: Option<bool>,
+    /// A customer bank account (`ba_…`) that funds the payin (pull-based methods).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub funding_bank_account_id: Option<String>,
 }
 
 impl Default for CreatePayinQuoteInput {
@@ -103,14 +119,23 @@ impl Default for CreatePayinQuoteInput {
             blockchain_wallet_id: None,
             wallet_id: None,
             currency_type: CurrencyType::Sender,
-            cover_fees: false,
+            cover_fees: None,
             request_amount: 0,
             payment_method: PaymentMethod::Pix,
             token: Token::Usdc,
             partner_fee_id: None,
             payer_rules: None,
             is_otc: None,
+            funding_bank_account_id: None,
         }
+    }
+}
+
+impl CreatePayinQuoteInput {
+    /// Sets the customer bank account (`ba_…`) that funds the payin.
+    pub fn funding_bank_account_id(mut self, funding_bank_account_id: impl Into<String>) -> Self {
+        self.funding_bank_account_id = Some(funding_bank_account_id.into());
+        self
     }
 }
 
@@ -147,6 +172,9 @@ pub struct PayinQuote {
     /// Whether the quote is for an OTC transaction.
     #[serde(default)]
     pub is_otc: Option<bool>,
+    /// Card checkout details for `card` payins (raw JSON). May be `null`.
+    #[serde(default)]
+    pub card_instruction: Option<serde_json::Value>,
 }
 
 /// Input for `PayinQuotes::get_fx_rate`
@@ -458,6 +486,7 @@ pub struct Payin {
     pub tracking_complete: PayinTrackingComplete,
     /// Partner-fee settlement tracking, when applicable.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Creation timestamp.
     #[serde(default)]
@@ -546,6 +575,19 @@ pub struct Payin {
     /// PSE payer document type (`CC` or `NIT`).
     #[serde(default)]
     pub pse_document_type: Option<PseDocumentType>,
+    /// Partner fee amount in integer cents.
+    #[serde(default)]
+    pub partner_fee: Option<i64>,
+    /// Manual OTC execution status. May be `null`.
+    #[serde(default)]
+    pub manual_execution_status: Option<ManualExecutionStatus>,
+    /// When the manual OTC execution concluded (an ISO 8601 string on the
+    /// wire; untyped in the spec, so kept as raw JSON). May be `null`.
+    #[serde(default)]
+    pub manual_concluded_at: Option<serde_json::Value>,
+    /// Operator who concluded the manual OTC execution. May be `null`.
+    #[serde(default)]
+    pub manual_concluded_by: Option<String>,
 }
 
 /// The response of `Payins::create_evm`
@@ -580,6 +622,7 @@ pub struct CreatePayinResponse {
     pub tracking_transaction: PayinTrackingTransaction,
     /// Partner-fee settlement tracking, when applicable.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Billing fee amount in cents, if any.
     #[serde(default)]
@@ -612,7 +655,8 @@ pub struct ListPayinsParams {
     /// Maximum number of items to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<crate::common::Limit>,
-    /// Number of items to skip.
+    /// Deprecated: ignored by the API (no list handler reads it); use
+    /// `starting_after`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<crate::common::Offset>,
     /// Cursor: return items after this object id.
@@ -660,6 +704,7 @@ impl ListPayinsParams {
     }
 
     /// Sets the number of items to skip.
+    #[deprecated(note = "ignored by the API; use `starting_after`")]
     pub fn offset(mut self, offset: crate::common::Offset) -> Self {
         self.offset = Some(offset);
         self
@@ -682,6 +727,48 @@ impl ListPayinsParams {
         self.customer_name = Some(customer_name.into());
         self
     }
+
+    /// Sets `starting_after`: cursor: return items after this object id.
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return items before this object id.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
+
+    /// Sets `bank_account_id`: filter by bank account id (`ba_…`).
+    pub fn bank_account_id(mut self, bank_account_id: impl Into<String>) -> Self {
+        self.bank_account_id = Some(bank_account_id.into());
+        self
+    }
+
+    /// Sets `country`: filter by country.
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.country = Some(country.into());
+        self
+    }
+
+    /// Sets `payment_method`: filter by payment method.
+    pub fn payment_method(mut self, payment_method: PaymentMethod) -> Self {
+        self.payment_method = Some(payment_method);
+        self
+    }
+
+    /// Sets `network`: filter by destination network.
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Sets `token`: filter by token.
+    pub fn token(mut self, token: Token) -> Self {
+        self.token = Some(token);
+        self
+    }
 }
 
 #[cfg(test)]
@@ -694,7 +781,7 @@ mod tests {
         let input = CreatePayinQuoteInput {
             blockchain_wallet_id: Some("bw_123".to_string()),
             currency_type: CurrencyType::Sender,
-            cover_fees: true,
+            cover_fees: Some(true),
             request_amount: 1000,
             payment_method: PaymentMethod::Pix,
             token: Token::Usdc,

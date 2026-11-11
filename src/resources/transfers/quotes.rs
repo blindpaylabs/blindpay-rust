@@ -6,6 +6,7 @@ use reqwest::Method;
 
 use crate::client::Inner;
 use crate::error::Result;
+use crate::options::RequestOptions;
 use crate::resources::transfers::types::{CreateTransferQuoteInput, TransferQuote};
 
 /// Handle for the `transfers.quotes` sub-resource.
@@ -25,9 +26,22 @@ impl TransferQuotes {
     ///
     /// `POST /instances/{instance_id}/transfer-quotes`
     pub async fn create(&self, input: &CreateTransferQuoteInput) -> Result<TransferQuote> {
-        let path = format!("/instances/{}/transfer-quotes", self.client.instance_id);
+        self.create_with_options(input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/transfer-quotes`
+    pub async fn create_with_options(
+        &self,
+        input: &CreateTransferQuoteInput,
+        options: &RequestOptions,
+    ) -> Result<TransferQuote> {
+        let path = self.client.instance_path("/transfer-quotes");
         self.client
-            .request(Method::POST, &path, None::<&()>, Some(input))
+            .request_with(Method::POST, &path, None::<&()>, Some(input), options)
             .await
     }
 }

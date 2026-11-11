@@ -36,6 +36,14 @@ open_enum! {
         Solana => "solana",
         /// Solana devnet.
         SolanaDevnet => "solana_devnet",
+        /// Tempo mainnet.
+        Tempo => "tempo",
+        /// Tempo testnet.
+        TempoTestnet => "tempo_testnet",
+        /// Arc mainnet.
+        Arc => "arc",
+        /// Arc testnet.
+        ArcTestnet => "arc_testnet",
     }
 }
 
@@ -48,6 +56,10 @@ open_enum! {
         Usdt => "USDT",
         /// BlindPay sandbox stablecoin.
         Usdb => "USDB",
+        /// Euro Coin.
+        Eurc => "EURC",
+        /// BlindPay sandbox euro stablecoin.
+        Eurb => "EURB",
     }
 }
 
@@ -66,6 +78,8 @@ open_enum! {
         Ars => "ARS",
         /// Euro.
         Eur => "EUR",
+        /// British pound.
+        Gbp => "GBP",
     }
 }
 
@@ -94,6 +108,12 @@ open_enum! {
         InternationalSwift => "international_swift",
         /// Real-Time Payments (US).
         Rtp => "rtp",
+        /// ACH pull from a Plaid-connected account.
+        AchPull => "ach_pull",
+        /// Card payment.
+        Card => "card",
+        /// BRE-B (Colombia).
+        BreB => "bre_b",
     }
 }
 
@@ -125,6 +145,8 @@ open_enum! {
         Rtp => "rtp",
         /// SEPA (European Union).
         Sepa => "sepa",
+        /// UK Faster Payments (GBP).
+        FasterPayments => "faster_payments",
     }
 }
 
@@ -145,6 +167,8 @@ open_enum! {
         AwaitingContract => "awaiting_contract",
         /// Additional compliance information requested.
         ComplianceRequest => "compliance_request",
+        /// Approved, with a pending request for information.
+        ApprovedRfi => "approved_rfi",
     }
 }
 
@@ -202,12 +226,6 @@ open_enum! {
     /// A webhook event type. Wire values are dotted camelCase (e.g.
     /// `bankAccount.new`), so they're matched verbatim.
     pub enum WebhookEvent {
-        /// A receiver (legacy customer) was created.
-        ReceiverNew => "receiver.new",
-        /// A receiver was updated.
-        ReceiverUpdate => "receiver.update",
-        /// A receiver was deleted.
-        ReceiverDelete => "receiver.delete",
         /// A customer was created.
         CustomerNew => "customer.new",
         /// A customer was updated.
@@ -226,6 +244,8 @@ open_enum! {
         PayoutPartnerFee => "payout.partnerFee",
         /// A blockchain wallet was created.
         BlockchainWalletNew => "blockchainWallet.new",
+        /// A blockchain wallet was updated (e.g. self-custody set).
+        BlockchainWalletUpdate => "blockchainWallet.update",
         /// A payin was created.
         PayinNew => "payin.new",
         /// A payin was updated.
@@ -252,8 +272,16 @@ open_enum! {
         TransferComplete => "transfer.complete",
         /// A custodial wallet was created.
         WalletNew => "wallet.new",
+        /// A custodial wallet was updated.
+        WalletUpdate => "wallet.update",
         /// A custodial wallet received an inbound transfer.
         WalletInbound => "wallet.inbound",
+        /// A payable was created.
+        PayableNew => "payable.new",
+        /// A payable was updated.
+        PayableUpdate => "payable.update",
+        /// A payable completed.
+        PayableComplete => "payable.complete",
     }
 }
 

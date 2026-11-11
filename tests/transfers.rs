@@ -1,8 +1,10 @@
 //! Integration tests for the `transfers` resource, backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
-    BlindPay, CreateTransferInput, CreateTransferQuoteInput, CurrencyType, Error, Network,
-    PaginationParams, Token, TrackingStatus, TransactionStatus,
+    BlindPay, CreateTransferInput, CreateTransferQuoteInput, CurrencyType, Error, Network, Token,
+    TrackingStatus, TransactionStatus,
 };
 use wiremock::matchers::{body_json, header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -10,10 +12,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 fn tracking_step() -> serde_json::Value {
@@ -167,6 +166,8 @@ async fn list_sends_pagination_and_parses_paginated_envelope() {
     Mock::given(method("GET"))
         .and(path("/v1/instances/in_test/transfers"))
         .and(query_param("limit", "50"))
+        .and(query_param("status", "completed"))
+        .and(query_param("customer_id", "re_000000000000"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "data": [transfer_body()],
             "pagination": {
@@ -178,7 +179,10 @@ async fn list_sends_pagination_and_parses_paginated_envelope() {
         .mount(&server)
         .await;
 
-    let params = PaginationParams::new().limit(blindpay::Limit::Fifty);
+    let params = blindpay::ListTransfersParams::new()
+        .limit(blindpay::Limit::Fifty)
+        .status(blindpay::TransactionStatus::Completed)
+        .customer_id("re_000000000000");
     let resp = client(&server).await.transfers.list(&params).await.unwrap();
 
     assert_eq!(resp.data().len(), 1);

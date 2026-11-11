@@ -290,8 +290,10 @@ pub struct Payout {
     pub id: String,
     /// Overall payout status.
     pub status: TransactionStatus,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Signed transaction, for chains that require client-side signing.
     #[serde(default)]
     pub signed_transaction: Option<String>,
@@ -316,6 +318,7 @@ pub struct Payout {
     pub tracking_complete: Option<PayoutTrackingComplete>,
     /// Partner-fee tracking leg.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayoutTrackingPartnerFee>,
     /// Documents tracking leg.
     #[serde(default)]
@@ -517,6 +520,51 @@ pub struct Payout {
     /// Legal name of the sending instance (originator), shown on the receipt.
     #[serde(default)]
     pub sender_legal_name: Option<String>,
+    /// The destination bank account (`ba_…`). May be `null`.
+    #[serde(default)]
+    pub bank_account_id: Option<String>,
+    /// The payable this payout executes (`pb_…`). May be `null`.
+    #[serde(default)]
+    pub payable_id: Option<String>,
+    /// SEPA IBAN.
+    #[serde(default)]
+    pub sepa_iban: Option<String>,
+    /// SEPA beneficiary legal name.
+    #[serde(default)]
+    pub sepa_beneficiary_legal_name: Option<String>,
+    /// SEPA beneficiary address line 1.
+    #[serde(default)]
+    pub sepa_beneficiary_address_line_1: Option<String>,
+    /// SEPA beneficiary city.
+    #[serde(default)]
+    pub sepa_beneficiary_city: Option<String>,
+    /// SEPA beneficiary postal code.
+    #[serde(default)]
+    pub sepa_beneficiary_postal_code: Option<String>,
+    /// SEPA beneficiary country.
+    #[serde(default)]
+    pub sepa_beneficiary_country: Option<Country>,
+    /// Faster Payments sort code.
+    #[serde(default)]
+    pub faster_payments_sort_code: Option<String>,
+    /// Faster Payments account number.
+    #[serde(default)]
+    pub faster_payments_account_number: Option<String>,
+    /// Faster Payments beneficiary legal name.
+    #[serde(default)]
+    pub faster_payments_beneficiary_legal_name: Option<String>,
+    /// Faster Payments beneficiary address line 1.
+    #[serde(default)]
+    pub faster_payments_beneficiary_address_line_1: Option<String>,
+    /// Faster Payments beneficiary city.
+    #[serde(default)]
+    pub faster_payments_beneficiary_city: Option<String>,
+    /// Faster Payments beneficiary postal code.
+    #[serde(default)]
+    pub faster_payments_beneficiary_postal_code: Option<String>,
+    /// Faster Payments beneficiary country.
+    #[serde(default)]
+    pub faster_payments_beneficiary_country: Option<Country>,
 }
 
 /// The response returned by the chain-specific create methods
@@ -531,8 +579,10 @@ pub struct CreatePayoutResponse {
     pub id: String,
     /// Overall payout status.
     pub status: TransactionStatus,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Billing fee amount in cents.
     #[serde(default)]
     pub billing_fee_amount: Option<i64>,
@@ -553,6 +603,7 @@ pub struct CreatePayoutResponse {
     pub tracking_transaction: Option<PayoutTrackingTransaction>,
     /// Partner-fee tracking leg.
     #[serde(default)]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayoutTrackingPartnerFee>,
     /// Liquidity tracking leg.
     #[serde(default)]
@@ -569,6 +620,9 @@ pub struct CreatePayoutResponse {
     /// Offramp wallet id (`ow_…`).
     #[serde(default)]
     pub offramp_wallet_id: Option<String>,
+    /// The payable this payout executes (`pb_…`). May be `null`.
+    #[serde(default)]
+    pub payable_id: Option<String>,
 }
 
 /// Input for `Payouts::create_evm`
@@ -577,8 +631,13 @@ pub struct CreatePayoutResponse {
 pub struct CreateEvmPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateEvmPayoutInput {
@@ -586,8 +645,26 @@ impl CreateEvmPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
+            wallet_id: None,
         }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
+        }
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
+        self
     }
 }
 
@@ -597,11 +674,16 @@ impl CreateEvmPayoutInput {
 pub struct CreateSolanaPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Client-signed transaction, when the flow requires it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_transaction: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateSolanaPayoutInput {
@@ -609,14 +691,32 @@ impl CreateSolanaPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
             signed_transaction: None,
+            wallet_id: None,
+        }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
         }
     }
 
     /// Sets the signed transaction.
     pub fn signed_transaction(mut self, signed_transaction: impl Into<String>) -> Self {
         self.signed_transaction = Some(signed_transaction.into());
+        self
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
         self
     }
 }
@@ -627,11 +727,16 @@ impl CreateSolanaPayoutInput {
 pub struct CreateStellarPayoutInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
     /// Client-signed transaction, when the flow requires it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_transaction: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl CreateStellarPayoutInput {
@@ -639,14 +744,32 @@ impl CreateStellarPayoutInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
             signed_transaction: None,
+            wallet_id: None,
+        }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
         }
     }
 
     /// Sets the signed transaction.
     pub fn signed_transaction(mut self, signed_transaction: impl Into<String>) -> Self {
         self.signed_transaction = Some(signed_transaction.into());
+        self
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
         self
     }
 }
@@ -657,8 +780,13 @@ impl CreateStellarPayoutInput {
 pub struct AuthorizeStellarTokenInput {
     /// Quote id to consume (`qu_…`).
     pub quote_id: String,
-    /// Sender wallet address.
-    pub sender_wallet_address: String,
+    /// The sender wallet address. Provide exactly one of this or `wallet_id`
+    /// (the API returns 400 otherwise; not validated client-side).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender_wallet_address: Option<String>,
+    /// A BlindPay-managed wallet to pay from (`bl_…`), instead of `sender_wallet_address`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet_id: Option<String>,
 }
 
 impl AuthorizeStellarTokenInput {
@@ -666,8 +794,26 @@ impl AuthorizeStellarTokenInput {
     pub fn new(quote_id: impl Into<String>, sender_wallet_address: impl Into<String>) -> Self {
         Self {
             quote_id: quote_id.into(),
-            sender_wallet_address: sender_wallet_address.into(),
+            sender_wallet_address: Some(sender_wallet_address.into()),
+            wallet_id: None,
         }
+    }
+
+    /// Creates the input for a payout funded from a BlindPay-managed wallet
+    /// (`bl_…`) instead of a sender wallet address.
+    pub fn from_wallet(quote_id: impl Into<String>, wallet_id: impl Into<String>) -> Self {
+        Self {
+            sender_wallet_address: None,
+            wallet_id: Some(wallet_id.into()),
+            ..Self::new(quote_id, String::new())
+        }
+    }
+
+    /// Sets `wallet_id`. Clear `sender_wallet_address` too (or use
+    /// `from_wallet`): the API accepts exactly one of them.
+    pub fn wallet_id(mut self, wallet_id: impl Into<String>) -> Self {
+        self.wallet_id = Some(wallet_id.into());
+        self
     }
 }
 
@@ -712,7 +858,8 @@ pub struct ListPayoutsParams {
     /// Maximum number of items to return.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<crate::common::Limit>,
-    /// Number of items to skip.
+    /// Deprecated: ignored by the API (no list handler reads it); use
+    /// `starting_after`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<crate::common::Offset>,
     /// Cursor: return items after this object id.
@@ -760,6 +907,7 @@ impl ListPayoutsParams {
     }
 
     /// Sets the number of items to skip.
+    #[deprecated(note = "ignored by the API; use `starting_after`")]
     pub fn offset(mut self, offset: crate::common::Offset) -> Self {
         self.offset = Some(offset);
         self
@@ -786,6 +934,42 @@ impl ListPayoutsParams {
     /// Filters by payment rail.
     pub fn payment_method(mut self, rail: Rail) -> Self {
         self.payment_method = Some(rail);
+        self
+    }
+
+    /// Sets `starting_after`: cursor: return items after this object id.
+    pub fn starting_after(mut self, starting_after: impl Into<String>) -> Self {
+        self.starting_after = Some(starting_after.into());
+        self
+    }
+
+    /// Sets `ending_before`: cursor: return items before this object id.
+    pub fn ending_before(mut self, ending_before: impl Into<String>) -> Self {
+        self.ending_before = Some(ending_before.into());
+        self
+    }
+
+    /// Sets `bank_account_id`: filter by bank account id (`ba_…`).
+    pub fn bank_account_id(mut self, bank_account_id: impl Into<String>) -> Self {
+        self.bank_account_id = Some(bank_account_id.into());
+        self
+    }
+
+    /// Sets `country`: filter by country.
+    pub fn country(mut self, country: impl Into<String>) -> Self {
+        self.country = Some(country.into());
+        self
+    }
+
+    /// Sets `network`: filter by destination network.
+    pub fn network(mut self, network: Network) -> Self {
+        self.network = Some(network);
+        self
+    }
+
+    /// Sets `token`: filter by token.
+    pub fn token(mut self, token: Token) -> Self {
+        self.token = Some(token);
         self
     }
 }

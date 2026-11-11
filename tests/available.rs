@@ -1,5 +1,7 @@
 //! Integration tests for the `available` resource, backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{BlindPay, Error, Rail, RequiredWhenOperator};
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -7,10 +9,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]
@@ -272,7 +271,7 @@ async fn error_body_without_message_synthesizes_message() {
         Error::Api(api) => {
             assert_eq!(api.status, 500);
             // No `message` field in the body, so the message is synthesized...
-            assert!(api.message.starts_with("HTTP 500 error"));
+            assert!(api.message.starts_with("HTTP 500"));
             // ...but the raw body is always retained.
             assert!(api.raw_body.contains("oops"));
         }

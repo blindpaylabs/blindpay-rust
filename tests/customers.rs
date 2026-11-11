@@ -1,6 +1,8 @@
 //! Integration tests for the `customers` resource (and its `bank_accounts`
 //! sub-resource), backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     AccountClass, BankAccountStatus, BlindPay, CreateAchInput, CreateBusinessWithStandardKybInput,
     CreateIndividualWithStandardKycInput, CreateInternationalSwiftInput, CreatePixInput, Error,
@@ -13,10 +15,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]
@@ -202,17 +201,16 @@ async fn update_customer_sends_put_and_returns_success() {
     let server = MockServer::start().await;
     Mock::given(method("PUT"))
         .and(path("/v1/instances/in_test/customers/re_123"))
-        .and(body_json(serde_json::json!({ "email": "new@example.com" })))
+        .and(body_json(
+            serde_json::json!({ "email": "new@example.com", "country": "US" }),
+        ))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::json!({ "success": true })),
         )
         .mount(&server)
         .await;
 
-    let input = UpdateCustomerInput {
-        email: Some("new@example.com".to_string()),
-        ..Default::default()
-    };
+    let input = UpdateCustomerInput::new("new@example.com", "US");
     let resp = client(&server)
         .await
         .customers
@@ -315,8 +313,9 @@ async fn request_limit_increase_sends_body_and_parses_id() {
             "per_transaction": 50000,
             "daily": 100000,
             "monthly": 500000,
-            "supporting_document_type": "individual_tax_return",
-            "supporting_document_file": "https://example.com/tax.pdf"
+            "supporting_documents": [
+                { "type": "individual_tax_return", "file": "https://example.com/tax.pdf" }
+            ]
         })))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::json!({ "id": "rl_456" })),
@@ -324,13 +323,10 @@ async fn request_limit_increase_sends_body_and_parses_id() {
         .mount(&server)
         .await;
 
-    let input = RequestLimitIncreaseInput {
-        per_transaction: 50000,
-        daily: 100000,
-        monthly: 500000,
-        supporting_document_type: SupportingDocumentType::IndividualTaxReturn,
-        supporting_document_file: "https://example.com/tax.pdf".to_string(),
-    };
+    let input = RequestLimitIncreaseInput::new(50000, 100000, 500000).supporting_document(
+        SupportingDocumentType::IndividualTaxReturn,
+        "https://example.com/tax.pdf",
+    );
     let resp = client(&server)
         .await
         .customers
@@ -921,6 +917,7 @@ async fn create_international_swift_bank_account_sends_typed_fields() {
         phone_number: None,
         tax_id: None,
         date_of_birth: None,
+        swift_intermediary_bank_routing_number: None,
     };
     let account = client(&server)
         .await

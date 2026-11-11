@@ -1,6 +1,8 @@
 //! Integration tests for the `payins` resource and its `quotes` sub-resource,
 //! backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     AccountClass, BlindPay, CreatePayinInput, CreatePayinQuoteInput, Currency, CurrencyType, Error,
     Limit, ListPayinsParams, PayerRules, PayinQuoteFxInput, PaymentMethod, PseDocumentType, Token,
@@ -12,10 +14,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]
@@ -54,7 +53,7 @@ async fn create_quote_sends_body_and_parses_response() {
     let input = CreatePayinQuoteInput {
         blockchain_wallet_id: Some("bw_123".to_string()),
         currency_type: CurrencyType::Sender,
-        cover_fees: true,
+        cover_fees: Some(true),
         request_amount: 1000,
         payment_method: PaymentMethod::Pix,
         token: Token::Usdc,
@@ -452,7 +451,7 @@ async fn get_track_uses_unauthenticated_e_route() {
     let payin = client(&server)
         .await
         .payins
-        .get_track("pi_000000000000")
+        .get_track("pi_000000000000", None)
         .await
         .unwrap();
 
@@ -517,7 +516,7 @@ async fn create_quote_non_success_returns_api_error() {
 
     let input = CreatePayinQuoteInput {
         currency_type: CurrencyType::Sender,
-        cover_fees: false,
+        cover_fees: Some(false),
         request_amount: 100,
         payment_method: PaymentMethod::Pix,
         token: Token::Usdc,

@@ -1,5 +1,7 @@
 //! Integration tests for the `quotes` resource, backed by a mock HTTP server.
 
+mod common;
+
 use blindpay::{
     BlindPay, CreateQuoteInput, Currency, CurrencyType, Error, GetFxRateInput, Network, Token,
 };
@@ -9,10 +11,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// Builds a client pointed at the mock server. The mock's `/v1` prefix mirrors
 /// the production base URL's path.
 async fn client(server: &MockServer) -> BlindPay {
-    BlindPay::builder("test-api-key", "in_test")
-        .base_url(format!("{}/v1", server.uri()))
-        .build()
-        .expect("client should build")
+    common::client_for(server, "test-api-key", "in_test")
 }
 
 #[tokio::test]
@@ -61,16 +60,15 @@ async fn create_sends_body_and_parses_quote() {
     let quote = client(&server)
         .await
         .quotes
-        .create(&CreateQuoteInput {
-            bank_account_id: "ba_123".to_string(),
-            currency_type: CurrencyType::Sender,
-            cover_fees: true,
-            request_amount: 1000,
-            network: Network::Sepolia,
-            token: Token::Usdc,
-            description: Some("memo".to_string()),
-            partner_fee_id: Some("pf_123".to_string()),
-        })
+        .create(
+            &CreateQuoteInput::new(Network::Sepolia, Token::Usdc)
+                .bank_account_id("ba_123")
+                .currency_type(CurrencyType::Sender)
+                .cover_fees(true)
+                .request_amount(1000)
+                .description("memo")
+                .partner_fee_id("pf_123"),
+        )
         .await
         .unwrap();
 
@@ -119,16 +117,13 @@ async fn create_omits_optional_fields_when_absent() {
     let quote = client(&server)
         .await
         .quotes
-        .create(&CreateQuoteInput {
-            bank_account_id: "ba_123".to_string(),
-            currency_type: CurrencyType::Receiver,
-            cover_fees: false,
-            request_amount: 500,
-            network: Network::Stellar,
-            token: Token::Usdc,
-            description: None,
-            partner_fee_id: None,
-        })
+        .create(
+            &CreateQuoteInput::new(Network::Stellar, Token::Usdc)
+                .bank_account_id("ba_123")
+                .currency_type(CurrencyType::Receiver)
+                .cover_fees(false)
+                .request_amount(500),
+        )
         .await
         .unwrap();
 
@@ -227,16 +222,13 @@ async fn create_non_success_returns_api_error() {
     let err = client(&server)
         .await
         .quotes
-        .create(&CreateQuoteInput {
-            bank_account_id: "ba_123".to_string(),
-            currency_type: CurrencyType::Sender,
-            cover_fees: true,
-            request_amount: 1000,
-            network: Network::Sepolia,
-            token: Token::Usdc,
-            description: None,
-            partner_fee_id: None,
-        })
+        .create(
+            &CreateQuoteInput::new(Network::Sepolia, Token::Usdc)
+                .bank_account_id("ba_123")
+                .currency_type(CurrencyType::Sender)
+                .cover_fees(true)
+                .request_amount(1000),
+        )
         .await
         .unwrap_err();
 

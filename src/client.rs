@@ -1,5 +1,7 @@
 //! The BlindPay API client and its builder.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -11,6 +13,7 @@ use crate::resources::customers::Customers;
 use crate::resources::fees::Fees;
 use crate::resources::instances::Instances;
 use crate::resources::partner_fees::PartnerFees;
+use crate::resources::payables::Payables;
 use crate::resources::payins::Payins;
 use crate::resources::payouts::Payouts;
 use crate::resources::quotes::Quotes;
@@ -19,25 +22,48 @@ use crate::resources::upload::Upload;
 use crate::resources::virtual_accounts::VirtualAccounts;
 use crate::resources::wallets::Wallets;
 
-/// The default BlindPay API base URL (`https://api.blindpay.com/v1`).
-pub const DEFAULT_BASE_URL: &str = "https://api.blindpay.com/v1";
+/// The default BlindPay API base URL. Request paths add the `/v1/...` version
+/// prefix themselves.
+pub const DEFAULT_BASE_URL: &str = "https://api.blindpay.com";
 
-/// The default per-request timeout (30 seconds).
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
+/// The default per-attempt timeout (60 seconds).
+pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// Shared, reference-counted client state.
+/// The default number of retries after the first attempt (so 3 attempts).
+pub const DEFAULT_MAX_RETRIES: u32 = 2;
+
+/// How the client waits between retries. A test seam, not part of the stable
+/// API.
+#[doc(hidden)]
+pub type RetrySleep =
+    Arc<dyn Fn(Duration) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+
+/// Shared, reference-counted client state. Immutable after `build()`.
+#[derive(Clone)]
 pub(crate) struct Inner {
     pub(crate) http: reqwest::Client,
     pub(crate) base_url: String,
     pub(crate) api_key: String,
     pub(crate) instance_id: String,
     pub(crate) user_agent: String,
+    pub(crate) timeout: Duration,
+    pub(crate) max_retries: u32,
+    pub(crate) sleep: RetrySleep,
 }
 
 /// A client for the BlindPay API.
 ///
 /// `BlindPay` is cheap to clone — its internal state is reference-counted, so
-/// clones share the same connection pool and configuration.
+/// clones share the same connection pool and configuration. A built client is
+/// immutable and `Send + Sync`: share it across tasks and threads freely.
+/// Per-request [`RequestOptions`](crate::RequestOptions) never change it.
+///
+/// Requests time out after [`DEFAULT_TIMEOUT`] per attempt and are retried up
+/// to [`DEFAULT_MAX_RETRIES`] times: `GET`s when no response arrived
+/// (connection failure or timeout before a status) and on 408, 429, 500, 502,
+/// 503 and 504; mutations only when no response arrived, on 429 and on an
+/// in-flight idempotency 409, always under an `Idempotency-Key`. A mutation
+/// that gets any 5xx is never resent automatically.
 ///
 /// # Example
 ///
@@ -69,6 +95,8 @@ pub struct BlindPay {
     pub virtual_accounts: VirtualAccounts,
     /// The `quotes` resource: payout quotes and FX rates.
     pub quotes: Quotes,
+    /// The `payables` resource: bills a customer pays through a payout.
+    pub payables: Payables,
     /// The `payins` resource: pay-ins and their quotes.
     pub payins: Payins,
     /// The `payouts` resource: payouts and their tracking.
@@ -89,7 +117,7 @@ impl BlindPay {
     ///
     /// Returns [`crate::webhooks::WebhookVerificationError`] if the signature is
     /// invalid or the inputs are malformed.
-    #[allow(clippy::unused_self)] // inherent method for parity with other SDKs (PLAN Tier 2)
+    #[allow(clippy::unused_self)] // inherent method, kept for parity with the other SDKs
     pub fn verify_webhook_signature(
         &self,
         secret: &str,
@@ -141,7 +169,21 @@ pub struct BlindPayBuilder {
     instance_id: String,
     base_url: String,
     timeout: Duration,
+    max_retries: u32,
     http_client: Option<reqwest::Client>,
+    sleep: Option<RetrySleep>,
+}
+
+impl std::fmt::Debug for BlindPayBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlindPayBuilder")
+            .field("base_url", &self.base_url)
+            .field("instance_id", &self.instance_id)
+            .field("api_key", &"<redacted>")
+            .field("timeout", &self.timeout)
+            .field("max_retries", &self.max_retries)
+            .finish_non_exhaustive()
+    }
 }
 
 impl BlindPayBuilder {
@@ -151,29 +193,53 @@ impl BlindPayBuilder {
             instance_id,
             base_url: DEFAULT_BASE_URL.to_string(),
             timeout: DEFAULT_TIMEOUT,
+            max_retries: DEFAULT_MAX_RETRIES,
             http_client: None,
+            sleep: None,
         }
     }
 
-    /// Overrides the API base URL. Defaults to [`DEFAULT_BASE_URL`].
+    /// Overrides the API base URL (scheme + host, optionally a path prefix).
+    /// Defaults to [`DEFAULT_BASE_URL`]; requests go to `{base_url}/v1/...`.
+    /// A URL that already ends in `/v1` (the 0.2 convention) is accepted and
+    /// the suffix is dropped, so it still works.
+    ///
+    /// Useful for tests and proxies. The URL receives your API key, so only
+    /// point it at hosts you trust.
     pub fn base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
     }
 
-    /// Overrides the per-request timeout. Defaults to [`DEFAULT_TIMEOUT`].
-    ///
-    /// Ignored when a custom client is supplied via [`Self::http_client`].
+    /// Overrides the per-attempt timeout. Defaults to [`DEFAULT_TIMEOUT`].
+    /// Applies to a custom [`Self::http_client`] too; override it per call with
+    /// [`RequestOptions::timeout`](crate::RequestOptions::timeout).
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
 
+    /// Sets how many times a failed request is retried. Defaults to
+    /// [`DEFAULT_MAX_RETRIES`]; `0` disables retries (and automatic
+    /// idempotency keys).
+    pub fn max_retries(mut self, max_retries: u32) -> Self {
+        self.max_retries = max_retries;
+        self
+    }
+
     /// Supplies a fully configured [`reqwest::Client`] (for proxies, custom TLS,
-    /// connection pooling, etc.). When set, [`Self::timeout`] is ignored —
-    /// configure the timeout on your own client.
+    /// connection pooling, test transports, etc.). The SDK still sets a
+    /// per-request timeout from [`Self::timeout`].
     pub fn http_client(mut self, http_client: reqwest::Client) -> Self {
         self.http_client = Some(http_client);
+        self
+    }
+
+    /// Overrides how the client waits between retries (default
+    /// `tokio::time::sleep`). A test seam, not part of the stable API.
+    #[doc(hidden)]
+    pub fn retry_sleep(mut self, sleep: RetrySleep) -> Self {
+        self.sleep = Some(sleep);
         self
     }
 
@@ -184,6 +250,11 @@ impl BlindPayBuilder {
     /// Returns [`Error::Config`] if the API key or instance ID is empty, or if
     /// the base URL cannot be parsed.
     pub fn build(self) -> Result<BlindPay> {
+        if self.timeout.is_zero() {
+            return Err(Error::Config(
+                "timeout must be greater than zero".to_string(),
+            ));
+        }
         if self.api_key.trim().is_empty() {
             return Err(Error::Config(
                 "api key not provided, get your api key on the blindpay dashboard".to_string(),
@@ -195,11 +266,11 @@ impl BlindPayBuilder {
                     .to_string(),
             ));
         }
-
-        // Trim a trailing slash so request paths (which start with `/`) join
-        // cleanly, and validate that the result is a well-formed URL.
+        // Trim a trailing slash (and a legacy `/v1` suffix) so request paths,
+        // which start with `/v1/`, join cleanly; validate the URL.
         let base_url = {
             let trimmed = self.base_url.trim_end_matches('/');
+            let trimmed = trimmed.strip_suffix("/v1").unwrap_or(trimmed);
             Url::parse(trimmed).map_err(|e| Error::Config(format!("invalid base url: {e}")))?;
             trimmed.to_string()
         };
@@ -207,10 +278,12 @@ impl BlindPayBuilder {
         let http = match self.http_client {
             Some(client) => client,
             None => reqwest::Client::builder()
-                .timeout(self.timeout)
                 .build()
-                .map_err(Error::Http)?,
+                .map_err(|e| Error::Config(format!("failed to build http client: {e}")))?,
         };
+        let sleep = self
+            .sleep
+            .unwrap_or_else(|| Arc::new(|delay| Box::pin(tokio::time::sleep(delay))));
 
         let user_agent = format!("blindpay-rust/{}", env!("CARGO_PKG_VERSION"));
 
@@ -220,7 +293,16 @@ impl BlindPayBuilder {
             api_key: self.api_key,
             instance_id: self.instance_id,
             user_agent,
+            timeout: self.timeout,
+            max_retries: self.max_retries,
+            sleep,
         });
+        Ok(BlindPay::from_inner(inner))
+    }
+}
+
+impl BlindPay {
+    fn from_inner(inner: Arc<Inner>) -> Self {
         let available = Available::new(Arc::clone(&inner));
         let instances = Instances::new(Arc::clone(&inner));
         let partner_fees = PartnerFees::new(Arc::clone(&inner));
@@ -229,12 +311,13 @@ impl BlindPayBuilder {
         let wallets = Wallets::new(Arc::clone(&inner));
         let virtual_accounts = VirtualAccounts::new(Arc::clone(&inner));
         let quotes = Quotes::new(Arc::clone(&inner));
+        let payables = Payables::new(Arc::clone(&inner));
         let payins = Payins::new(Arc::clone(&inner));
         let payouts = Payouts::new(Arc::clone(&inner));
         let transfers = Transfers::new(Arc::clone(&inner));
         let upload = Upload::new(Arc::clone(&inner));
 
-        Ok(BlindPay {
+        BlindPay {
             inner,
             available,
             instances,
@@ -244,10 +327,31 @@ impl BlindPayBuilder {
             wallets,
             virtual_accounts,
             quotes,
+            payables,
             payins,
             payouts,
             transfers,
             upload,
-        })
+        }
+    }
+
+    /// Returns a view of this client whose requests use `timeout` per attempt,
+    /// for any method (including `GET`s, which take no
+    /// [`RequestOptions`](crate::RequestOptions)). It shares the connection
+    /// pool and leaves `self` unchanged.
+    ///
+    /// ```no_run
+    /// # async fn run(client: blindpay::BlindPay) -> blindpay::Result<()> {
+    /// use std::time::Duration;
+    /// let payout = client.with_timeout(Duration::from_secs(5)).payouts.get("po_000000000000").await?;
+    /// # let _ = payout;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_timeout(&self, timeout: Duration) -> Self {
+        Self::from_inner(Arc::new(Inner {
+            timeout,
+            ..(*self.inner).clone()
+        }))
     }
 }
