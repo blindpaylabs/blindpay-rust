@@ -1,6 +1,6 @@
 //! Integration tests for the `upload` resource, backed by a mock HTTP server.
 
-use blindpay::{BlindPay, Error, UploadBucket};
+use blindpay::{BlindPay, Error, UploadBucket, UploadFile};
 use wiremock::matchers::{header, header_regex, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -33,8 +33,8 @@ async fn upload_sends_multipart_and_parses_file_url() {
         .await
         .upload
         .upload(
-            "document.pdf",
-            b"test content".to_vec(),
+            UploadFile::new("document.pdf", b"test content".to_vec())
+                .content_type("application/pdf"),
             UploadBucket::Onboarding,
         )
         .await
@@ -64,7 +64,10 @@ async fn upload_does_not_set_json_content_type() {
     let response = client(&server)
         .await
         .upload
-        .upload("avatar.png", b"\x89PNG".to_vec(), UploadBucket::Avatar)
+        .upload(
+            UploadFile::new("avatar.png", b"\x89PNG".to_vec()),
+            UploadBucket::Avatar,
+        )
         .await
         .unwrap();
 
@@ -89,7 +92,10 @@ async fn upload_non_success_returns_api_error() {
     let err = client(&server)
         .await
         .upload
-        .upload("bad.pdf", b"oops".to_vec(), UploadBucket::LimitIncrease)
+        .upload(
+            UploadFile::new("bad.pdf", b"oops".to_vec()),
+            UploadBucket::LimitIncrease,
+        )
         .await
         .unwrap_err();
 

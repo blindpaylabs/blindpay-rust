@@ -234,12 +234,13 @@ version doesn't know decode to `WebhookEventPayload::Unknown` with the raw JSON.
 use blindpay::{AnalyzeDocumentType, BlindPay, UploadBucket, UploadFile};
 
 # async fn run(blindpay: BlindPay, pdf: Vec<u8>) -> blindpay::Result<()> {
-let uploaded = blindpay.upload.upload("statement.pdf", pdf.clone(), UploadBucket::Documents).await?;
+let file = UploadFile::new("statement.pdf", pdf).content_type("application/pdf");
+let uploaded = blindpay.upload.upload(file.clone(), UploadBucket::Documents).await?;
 let signed = blindpay.upload.presign(&uploaded.file_url).await?; // temporary URL
 let check = blindpay
     .upload
     .analyze(
-        UploadFile::new("statement.pdf", pdf).content_type("application/pdf"),
+        file,
         AnalyzeDocumentType::BankStatement,
         Some(&serde_json::json!({ "full_name": "Jane Doe" })),
     )
@@ -385,6 +386,9 @@ call that could not work against the live API or adds parity with the other Blin
 | `RequestLimitIncreaseInput { supporting_document_type, supporting_document_file, .. }` | `RequestLimitIncreaseInput::new(per_tx, daily, monthly).supporting_document(kind, url)` |
 | `transfers.list(&PaginationParams)` | `transfers.list(&ListTransfersParams)` (`From<PaginationParams>` provided) |
 | `payins.get_track(id)` | `payins.get_track(id, checkout_token: Option<&str>)` |
+| `upload.upload(file_name, bytes, bucket)` | `upload.upload(UploadFile::new(file_name, bytes).content_type(..), bucket)` |
+| Stale response fields (`tracking_partner_fee` on payouts/payins, `PartnerFee.created_at`, …) | deprecated (not in the API spec); removed in a later release |
+| Any `instance_id` string | must be a plain path segment (`in_…`); others are rejected by `build()` |
 | `WebhookEvent::Receiver*` | removed (the API no longer sends them); new `payable.*`, `wallet.update`, `blockchainWallet.update` events |
 | `.offset(..)` on list params | deprecated: the API ignores it; use `starting_after` |
 

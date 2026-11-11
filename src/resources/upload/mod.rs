@@ -36,38 +36,32 @@ impl Upload {
         Self { client }
     }
 
-    /// Uploads a file to the given storage `bucket` and returns its public URL.
+    /// Uploads a file to the given storage `bucket` and returns its URL.
     ///
-    /// The file is sent as multipart `file` + `bucket` form fields; the client's
-    /// instance id is sent as the `instance_id` query parameter.
+    /// The file is sent as the multipart `file` field (with its name and
+    /// content type) next to a `bucket` field; the client's instance id is
+    /// sent as the `instance_id` query parameter. Sent once (multipart is
+    /// never retried).
     ///
     /// `POST /upload?instance_id={instance_id}`
-    pub async fn upload(
-        &self,
-        file_name: impl Into<String>,
-        file: impl Into<Vec<u8>>,
-        bucket: UploadBucket,
-    ) -> Result<UploadResponse> {
-        self.upload_with_options(file_name, file, bucket, &RequestOptions::default())
+    pub async fn upload(&self, file: UploadFile, bucket: UploadBucket) -> Result<UploadResponse> {
+        self.upload_with_options(file, bucket, &RequestOptions::default())
             .await
     }
 
     /// Like [`Self::upload`], with per-request [`RequestOptions`]
-    /// (idempotency key, timeout, extra headers).
+    /// (timeout, extra headers; multipart requests carry no idempotency key).
     ///
     /// `POST /upload?instance_id={instance_id}`
     pub async fn upload_with_options(
         &self,
-        file_name: impl Into<String>,
-        file: impl Into<Vec<u8>>,
+        file: UploadFile,
         bucket: UploadBucket,
         options: &RequestOptions,
     ) -> Result<UploadResponse> {
-        let part = Part::bytes(file.into()).file_name(file_name.into());
         let form = Form::new()
-            .part("file", part)
+            .part("file", file_part(file)?)
             .text("bucket", bucket.as_str().to_string());
-
         self.client
             .post_multipart_with(
                 "/upload",
@@ -162,5 +156,16 @@ impl Upload {
                 options,
             )
             .await
+    }
+}
+
+/// The multipart `file` part: bytes, file name and (optional) content type.
+fn file_part(file: UploadFile) -> Result<Part> {
+    let part = Part::bytes(file.bytes).file_name(file.file_name);
+    match &file.content_type {
+        Some(content_type) => part
+            .mime_str(content_type)
+            .map_err(|e| crate::error::Error::Config(format!("invalid content type: {e}"))),
+        None => Ok(part),
     }
 }
