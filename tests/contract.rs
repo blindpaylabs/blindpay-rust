@@ -17,7 +17,9 @@
 //!   have caught `receiver_id`.
 //!
 //! Request-side required-ness and unmodelled spec properties are reported as
-//! warnings (run with `--nocapture` to see them).
+//! warnings (run with `--nocapture` to see them). Properties deliberately left
+//! out (provider-named fields, plan §3.8) are listed with a reason under
+//! `unmodelled` in the allowlist, which silences them.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -469,9 +471,18 @@ fn load_mappings(spec: &Spec) -> Vec<Mapping> {
 
 /// `(rust type, wire field)` pairs exempt from Direction A, with reasons.
 fn load_allowlist() -> BTreeMap<(String, String), String> {
-    load_json(".api-sync/contract-allowlist.json")["direction_a"]
+    load_allow_section("direction_a")
+}
+
+/// `(rust type, field)` pairs: spec properties deliberately left unmodelled.
+fn load_unmodelled() -> BTreeMap<(String, String), String> {
+    load_allow_section("unmodelled")
+}
+
+fn load_allow_section(section: &str) -> BTreeMap<(String, String), String> {
+    load_json(".api-sync/contract-allowlist.json")[section]
         .as_array()
-        .expect("contract-allowlist.json has `direction_a`")
+        .unwrap_or_else(|| panic!("contract-allowlist.json has `{section}`"))
         .iter()
         .map(|e| {
             let reason = e["reason"].as_str().unwrap_or_default();
@@ -497,6 +508,8 @@ fn contract_check() {
     let spec = Spec::load();
     let mappings = load_mappings(&spec);
     let allowlist = load_allowlist();
+    let unmodelled = load_unmodelled();
+    let mut used_unmodelled: BTreeSet<(String, String)> = BTreeSet::new();
     let mut used_allow: BTreeSet<(String, String)> = BTreeSet::new();
     let mut errors: Vec<String> = Vec::new();
     let mut warnings: Vec<String> = Vec::new();
@@ -556,6 +569,14 @@ fn contract_check() {
                 .keys()
                 .map(String::as_str)
                 .filter(|k| !modelled.contains(k))
+                .filter(|k| {
+                    let key = (s.name.clone(), (*k).to_string());
+                    let known = unmodelled.contains_key(&key);
+                    if known {
+                        used_unmodelled.insert(key);
+                    }
+                    !known
+                })
                 .collect();
             if !missing.is_empty() {
                 warnings.push(format!(
@@ -616,6 +637,12 @@ fn contract_check() {
         ));
     }
 
+    for stale in unmodelled.keys().filter(|k| !used_unmodelled.contains(*k)) {
+        errors.push(format!(
+            "unmodelled entry {}.{} is modelled now (or unmapped); remove it",
+            stale.0, stale.1
+        ));
+    }
     for stale in allowlist.keys().filter(|k| !used_allow.contains(*k)) {
         errors.push(format!(
             "allowlist entry {}.{} no longer matches anything; remove it",

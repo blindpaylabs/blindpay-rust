@@ -77,6 +77,58 @@ impl BlockchainWallets {
         self.client.get(&path).await
     }
 
+    /// Records whether a wallet is self-custodied (mandatory for Brazilian
+    /// customers). It can be set only once: a second call returns
+    /// `409 WALLETS_SELF_CUSTODY_ALREADY_SET`.
+    ///
+    /// `PATCH /instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}`
+    pub async fn set_self_custody(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        is_self_custody: bool,
+    ) -> Result<BlockchainWallet> {
+        self.set_self_custody_with_options(
+            customer_id,
+            id,
+            is_self_custody,
+            &RequestOptions::default(),
+        )
+        .await
+    }
+
+    /// Like [`Self::set_self_custody`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PATCH /instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}`
+    pub async fn set_self_custody_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        is_self_custody: bool,
+        options: &RequestOptions,
+    ) -> Result<BlockchainWallet> {
+        #[derive(serde::Serialize)]
+        struct Body {
+            is_self_custody: bool,
+        }
+        let path = format!(
+            "/instances/{}/customers/{}/blockchain-wallets/{}",
+            self.client.instance_id,
+            encode_path_segment(customer_id.as_ref()),
+            encode_path_segment(id.as_ref()),
+        );
+        self.client
+            .request_with::<_, (), _>(
+                Method::PATCH,
+                &path,
+                None,
+                Some(&Body { is_self_custody }),
+                options,
+            )
+            .await
+    }
+
     /// Registers an account-abstraction blockchain wallet by address.
     ///
     /// Sets `is_account_abstraction: true`. Use this for non-EVM networks

@@ -30,22 +30,29 @@ pub use resources::customers::{
     BankAccountStatus, BankAccounts, BusinessType, CreateAchCopBitsoInput, CreateAchInput,
     CreateBusinessWithStandardKybInput, CreateCustomerResponse, CreateFasterPaymentsInput,
     CreateIndividualWithEnhancedKycInput, CreateIndividualWithStandardKycInput,
-    CreateInternationalSwiftInput, CreatePixInput, CreatePixSafeInput, CreateRtpInput,
-    CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput, CreateTransfersBitsoInput,
-    CreateWireInput, Customer, CustomerLimit, CustomerLimits, Customers, FraudWarning,
-    GetCustomerLimitsResponse, IdentificationDocument, KycType, KycWarning, LimitIncrease,
-    LimitIncreaseStatus, LimitIncreaseSupportingDocument, LimitWindow, ListBankAccountsParams,
-    ListCustomersParams, Owner, OwnerRole, OwnerTaxType, ProofOfAddressDocType,
-    RecipientRelationship, RequestLimitIncreaseInput, RequestLimitIncreaseResponse, SpeiProtocol,
-    SupportingDocumentType, SwiftPaymentCode, UpdateCustomerInput,
+    CreateInternationalSwiftInput, CreatePixInput, CreatePixSafeInput, CreatePlaidLinkInput,
+    CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
+    CreateTransfersBitsoInput, CreateWireInput, Customer, CustomerLimit, CustomerLimits, Customers,
+    FraudWarning, GetCustomerLimitsResponse, IdentificationDocument, KycType, KycWarning,
+    LimitIncrease, LimitIncreaseStatus, LimitIncreaseSupportingDocument, LimitWindow,
+    ListBankAccountsParams, ListCustomersParams, Owner, OwnerRole, OwnerTaxType, PlaidLink,
+    ProofOfAddressDocType, RecipientRelationship, RequestLimitIncreaseInput,
+    RequestLimitIncreaseResponse, SpeiProtocol, SupportingDocumentType, SwiftPaymentCode,
+    UpdateCustomerInput,
 };
 pub use resources::fees::{Fee, FeeOptions, Fees};
 pub use resources::instances::{
     CreateWebhookEndpointInput, CreateWebhookEndpointResponse, InitiateTosInput,
-    InitiateTosResponse, Instances, Member, PortalAccess, Tos, UpdateInstanceInput, UserRole,
-    WebhookEndpoint, WebhookEndpointSecret, WebhookEndpoints,
+    InitiateTosResponse, Instance, InstanceType, Instances, Member, Onboarding,
+    OnboardingBusinessDetails, OnboardingBusinessProfile, OnboardingOwnershipDocuments,
+    OnboardingStep, PortalAccess, Tos, UpdateInstanceInput, UserRole, WebhookEndpoint,
+    WebhookEndpointSecret, WebhookEndpoints,
 };
 pub use resources::partner_fees::{CreatePartnerFeeInput, PartnerFee, PartnerFees};
+pub use resources::payables::{
+    CreatePayableInput, LastAttemptStatus, ListPayablesParams, Payable, PayableLineItem,
+    PayableParty, PayableStatus, PayableType, Payables,
+};
 pub use resources::payins::{
     BlindpayBankAccount, BlindpayBankDetails, BlindpayBankParty, CreatePayinInput,
     CreatePayinQuoteInput, CreatePayinResponse, ListPayinsParams, PayerRules, Payin, PayinQuote,
@@ -65,12 +72,19 @@ pub use resources::payouts::{
 pub use resources::quotes::{
     CreateQuoteInput, GetFxRateInput, Quote, QuoteContract, QuoteContractNetwork, QuoteFx, Quotes,
 };
+pub use resources::rfi::{
+    CustomerRfi, CustomerRfis, InstanceRfi, InstanceRfis, RfiAnswer, RfiAnswers, RfiField,
+    RfiFieldOption, RfiSection, RfiStatus, RfiSubmitFailureReason, RfiSubmitResponse,
+};
 pub use resources::transfers::{
     CreateTransferInput, CreateTransferQuoteInput, CreateTransferResponse, ListTransfersParams,
     Transfer, TransferQuote, TransferQuotes, TransferTrackingStep,
     TransferTrackingTransactionMonitoring, Transfers,
 };
-pub use resources::upload::{Upload, UploadBucket, UploadResponse};
+pub use resources::upload::{
+    AnalyzeDocumentType, AnalyzeResponse, ApprovalRate, PresignResponse, Upload, UploadBucket,
+    UploadFile, UploadResponse,
+};
 pub use resources::virtual_accounts::{
     BankingPartner, BreBGender, BreBInput, CoBreBDetails, CoVirtualAccountDetails,
     CreateVirtualAccountInput, MxSpeiDetails, MxVirtualAccountDetails, SoleProprietorDocType,
@@ -81,9 +95,13 @@ pub use resources::virtual_accounts::{
 pub use resources::wallets::{
     BlockchainWallet, BlockchainWalletMessage, BlockchainWallets, CreateAssetTrustlineResponse,
     CreateBlockchainWalletWithAddressInput, CreateBlockchainWalletWithHashInput,
-    CreateOfframpWalletInput, CreateWalletInput, CustodialWallets, MintUsdbSolanaInput,
-    MintUsdbSolanaResponse, MintUsdbStellarInput, OfframpWallet, OfframpWallets,
-    PrepareSolanaDelegationInput, PrepareSolanaDelegationResponse, Wallet, WalletBalance,
+    CreateOfframpWalletInput, CreateWalletInput, CustodialWallets, DepositsLimit,
+    ListWalletDepositsParams, MintUsdbSolanaInput, MintUsdbSolanaResponse, MintUsdbStellarInput,
+    OfframpWallet, OfframpWallets, PrepareSolanaDelegationInput, PrepareSolanaDelegationResponse,
+    UpdateOfframpWalletInput, Wallet, WalletBalance, WalletDeposit, WalletDepositStatus,
     WalletTokenBalance, Wallets,
 };
-pub use webhooks::{WebhookVerificationError, verify_webhook_signature};
+pub use webhooks::{
+    CustomerDeleteEvent, TosAcceptEvent, WalletInboundEvent, WebhookEventPayload,
+    WebhookVerificationError, construct_webhook_event, verify_webhook_signature,
+};

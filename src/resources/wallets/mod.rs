@@ -17,9 +17,10 @@ pub use offramp::OfframpWallets;
 pub use types::{
     BlockchainWallet, BlockchainWalletMessage, CreateAssetTrustlineResponse,
     CreateBlockchainWalletWithAddressInput, CreateBlockchainWalletWithHashInput,
-    CreateOfframpWalletInput, CreateWalletInput, MintUsdbSolanaInput, MintUsdbSolanaResponse,
-    MintUsdbStellarInput, OfframpWallet, PrepareSolanaDelegationInput,
-    PrepareSolanaDelegationResponse, Wallet, WalletBalance, WalletTokenBalance,
+    CreateOfframpWalletInput, CreateWalletInput, DepositsLimit, ListWalletDepositsParams,
+    MintUsdbSolanaInput, MintUsdbSolanaResponse, MintUsdbStellarInput, OfframpWallet,
+    PrepareSolanaDelegationInput, PrepareSolanaDelegationResponse, UpdateOfframpWalletInput,
+    Wallet, WalletBalance, WalletDeposit, WalletDepositStatus, WalletTokenBalance,
 };
 
 use std::sync::Arc;

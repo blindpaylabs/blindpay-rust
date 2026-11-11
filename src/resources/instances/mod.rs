@@ -1,15 +1,19 @@
 //! The `instances` resource: manage an instance, its members, ownership, terms
 //! of service, and webhook endpoints.
 
+mod onboarding;
 mod tos;
 mod types;
 mod webhook_endpoints;
 
+pub use onboarding::{
+    Onboarding, OnboardingBusinessDetails, OnboardingBusinessProfile, OnboardingOwnershipDocuments,
+};
 pub use tos::Tos;
 pub use types::{
     CreateWebhookEndpointInput, CreateWebhookEndpointResponse, InitiateTosInput,
-    InitiateTosResponse, Member, PortalAccess, UpdateInstanceInput, UserRole, WebhookEndpoint,
-    WebhookEndpointSecret,
+    InitiateTosResponse, Instance, InstanceType, Member, OnboardingStep, PortalAccess,
+    UpdateInstanceInput, UserRole, WebhookEndpoint, WebhookEndpointSecret,
 };
 pub use webhook_endpoints::WebhookEndpoints;
 
@@ -23,6 +27,7 @@ use crate::common::Success;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
+use crate::resources::rfi::InstanceRfis;
 
 /// Handle for the `instances` resource.
 ///
@@ -34,6 +39,10 @@ pub struct Instances {
     pub tos: Tos,
     /// Webhook-endpoints sub-resource.
     pub webhook_endpoints: WebhookEndpoints,
+    /// Onboarding (KYB) sub-resource.
+    pub onboarding: Onboarding,
+    /// Instance requests-for-information sub-resource.
+    pub rfi: InstanceRfis,
 }
 
 impl Instances {
@@ -41,8 +50,18 @@ impl Instances {
         Self {
             tos: Tos::new(Arc::clone(&client)),
             webhook_endpoints: WebhookEndpoints::new(Arc::clone(&client)),
+            onboarding: Onboarding::new(Arc::clone(&client)),
+            rfi: InstanceRfis::new(Arc::clone(&client)),
             client,
         }
+    }
+
+    /// Retrieves the client's instance.
+    ///
+    /// `GET /instances/{id}`
+    pub async fn get(&self) -> Result<Instance> {
+        let path = format!("/instances/{}", self.client.instance_id);
+        self.client.get(&path).await
     }
 
     /// Lists the members of the instance.

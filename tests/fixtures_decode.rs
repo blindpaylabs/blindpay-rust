@@ -25,9 +25,8 @@ fn decode_as<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
         .map_err(|e| e.to_string())
 }
 
-/// Decodes a list response. `ListResponse` is `#[serde(untagged)]`, whose
-/// error hides the real cause, so on failure re-decode each item as `T` to
-/// report the field that broke.
+/// Decodes a list response; on failure re-decode each item as `T` to report
+/// the item index and field that broke.
 fn decode_list_as<T: DeserializeOwned>(bytes: &[u8]) -> Outcome {
     let Err(outer) = serde_json::from_slice::<ListResponse<T>>(bytes) else {
         return Ok(());
@@ -345,30 +344,74 @@ const DECODERS: &[(&str, Decoder)] = &[
         "GET /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}",
         decode_as::<OfframpWallet>,
     ),
+    // M3: the 18 previously-missing ops
+    ("GET /v1/instances/{id}", decode_as::<Instance>),
+    (
+        "GET /v1/instances/{instance_id}/onboarding/business_details",
+        decode_as::<OnboardingBusinessDetails>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/onboarding/business_profile",
+        decode_as::<OnboardingBusinessProfile>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/onboarding/ownership_documents",
+        decode_as::<OnboardingOwnershipDocuments>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/rfi",
+        decode_as::<Option<InstanceRfi>>,
+    ),
+    (
+        "POST /v1/instances/{instance_id}/rfi",
+        decode_as::<RfiSubmitResponse>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/customers/{customer_id}/rfi",
+        decode_as::<Option<CustomerRfi>>,
+    ),
+    (
+        "POST /v1/instances/{instance_id}/customers/{customer_id}/rfi",
+        decode_as::<RfiSubmitResponse>,
+    ),
+    (
+        "POST /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/plaid",
+        decode_as::<PlaidLink>,
+    ),
+    (
+        "PATCH /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}",
+        decode_as::<BlockchainWallet>,
+    ),
+    (
+        "PUT /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}",
+        decode_as::<Success>,
+    ),
+    (
+        "POST /v1/instances/{instance_id}/payables",
+        decode_as::<Payable>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/payables",
+        decode_list_as::<Payable>,
+    ),
+    (
+        "GET /v1/instances/{instance_id}/payables/{id}",
+        decode_as::<Payable>,
+    ),
+    (
+        "DELETE /v1/instances/{instance_id}/payables/{id}",
+        decode_as::<Payable>,
+    ),
+    ("POST /v1/presign", decode_as::<PresignResponse>),
+    ("POST /v1/upload/analyze", decode_as::<AnalyzeResponse>),
+    (
+        "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}/deposits",
+        decode_list_as::<WalletDeposit>,
+    ),
 ];
 
-/// Surface ops the SDK doesn't implement yet (milestone M3). Each one moves
-/// into [`DECODERS`] when its method lands.
-const NOT_YET_IMPLEMENTED: &[&str] = &[
-    "GET /v1/instances/{id}",
-    "GET /v1/instances/{instance_id}/onboarding/business_details",
-    "GET /v1/instances/{instance_id}/onboarding/business_profile",
-    "GET /v1/instances/{instance_id}/onboarding/ownership_documents",
-    "GET /v1/instances/{instance_id}/rfi",
-    "POST /v1/instances/{instance_id}/rfi",
-    "GET /v1/instances/{instance_id}/customers/{customer_id}/rfi",
-    "POST /v1/instances/{instance_id}/customers/{customer_id}/rfi",
-    "POST /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/plaid",
-    "PATCH /v1/instances/{instance_id}/customers/{customer_id}/blockchain-wallets/{id}",
-    "PUT /v1/instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}",
-    "POST /v1/instances/{instance_id}/payables",
-    "GET /v1/instances/{instance_id}/payables",
-    "GET /v1/instances/{instance_id}/payables/{id}",
-    "DELETE /v1/instances/{instance_id}/payables/{id}",
-    "POST /v1/presign",
-    "POST /v1/upload/analyze",
-    "GET /v1/instances/{instance_id}/customers/{customer_id}/wallets/{id}/deposits",
-];
+/// Surface ops the SDK doesn't implement yet. Empty: coverage is 94/94.
+const NOT_YET_IMPLEMENTED: &[&str] = &[];
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")

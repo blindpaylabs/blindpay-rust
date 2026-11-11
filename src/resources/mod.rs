@@ -13,6 +13,7 @@ pub mod payables;
 pub mod payins;
 pub mod payouts;
 pub mod quotes;
+pub mod rfi;
 pub mod transfers;
 pub mod upload;
 pub mod virtual_accounts;

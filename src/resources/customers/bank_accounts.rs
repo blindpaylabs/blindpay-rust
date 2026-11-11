@@ -806,6 +806,36 @@ pub struct CreateFasterPaymentsInput {
     pub faster_payments_beneficiary_postal_code: Option<String>,
 }
 
+/// Body for [`BankAccounts::create_plaid_link`] (spec `CreatePlaidLinkIn`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[non_exhaustive]
+pub struct CreatePlaidLinkInput {
+    /// Where Plaid sends the customer when they finish.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redirect_url: Option<String>,
+}
+
+impl CreatePlaidLinkInput {
+    /// Creates an empty body.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the redirect URL.
+    pub fn redirect_url(mut self, redirect_url: impl Into<String>) -> Self {
+        self.redirect_url = Some(redirect_url.into());
+        self
+    }
+}
+
+/// A Plaid Link URL (spec `PlaidLinkOut`).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct PlaidLink {
+    /// Send the customer here to connect their bank account.
+    pub url: String,
+}
+
 /// Handle for the `bank-accounts` sub-resource (`customers.bank_accounts`).
 ///
 #[derive(Clone)]
@@ -1154,6 +1184,35 @@ impl BankAccounts {
         options: &RequestOptions,
     ) -> Result<BankAccount> {
         self.create(customer_id, "sepa", input, options).await
+    }
+
+    /// Creates a Plaid Link session for the customer to connect a US bank
+    /// account (ACH pull).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts/plaid`
+    pub async fn create_plaid_link(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreatePlaidLinkInput,
+    ) -> Result<PlaidLink> {
+        self.create_plaid_link_with_options(customer_id, input, &RequestOptions::default())
+            .await
+    }
+
+    /// Like [`Self::create_plaid_link`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `POST /instances/{instance_id}/customers/{customer_id}/bank-accounts/plaid`
+    pub async fn create_plaid_link_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        input: &CreatePlaidLinkInput,
+        options: &RequestOptions,
+    ) -> Result<PlaidLink> {
+        let path = format!("{}/plaid", self.collection_path(customer_id));
+        self.client
+            .request_with::<_, (), _>(Method::POST, &path, None, Some(input), options)
+            .await
     }
 
     /// Creates a UK Faster Payments (GBP) bank account.

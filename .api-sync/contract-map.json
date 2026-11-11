@@ -327,6 +327,115 @@
       "rust": "SwiftCodeBankDetail",
       "direction": "response",
       "schema": "SwiftCodeResponse"
+    },
+    {
+      "rust": "Instance",
+      "direction": "response",
+      "schema": "RetrieveInstanceOut"
+    },
+    {
+      "rust": "InstanceRfi",
+      "direction": "response",
+      "schema": "InstanceRfi"
+    },
+    {
+      "rust": "CustomerRfi",
+      "direction": "response",
+      "schema": "Rfi"
+    },
+    {
+      "rust": "RfiSection",
+      "direction": "response",
+      "schema": "RfiSection"
+    },
+    {
+      "rust": "RfiField",
+      "direction": "response",
+      "schema": "RfiField"
+    },
+    {
+      "rust": "PlaidLink",
+      "direction": "response",
+      "schema": "PlaidLinkOut"
+    },
+    {
+      "rust": "CreatePlaidLinkInput",
+      "direction": "request",
+      "schema": "CreatePlaidLinkIn"
+    },
+    {
+      "rust": "Payable",
+      "direction": "response",
+      "schema": "PayableOut"
+    },
+    {
+      "rust": "CreatePayableInput",
+      "direction": "request",
+      "schema": "CreatePayableIn"
+    },
+    {
+      "rust": "PayableParty",
+      "direction": "response",
+      "schema": "PayableParty"
+    },
+    {
+      "rust": "PayableLineItem",
+      "direction": "response",
+      "schema": "PayableLineItem"
+    },
+    {
+      "rust": "WalletDeposit",
+      "direction": "response",
+      "schema": "WalletDepositOut"
+    },
+    {
+      "rust": "PresignResponse",
+      "direction": "response",
+      "schema": "PresignOut"
+    },
+    {
+      "rust": "AnalyzeResponse",
+      "direction": "response",
+      "schema": "UploadAnalyzeOut"
+    },
+    {
+      "rust": "UpdateOfframpWalletInput",
+      "direction": "request",
+      "schema": "UpdateOfframpWalletIn"
+    },
+    {
+      "rust": "LimitIncreaseSupportingDocument",
+      "direction": "request",
+      "schema": "LimitIncreaseSupportingDocument"
+    },
+    {
+      "rust": "AdditionalInfoItem",
+      "direction": "request",
+      "schema": "AdditionalInfoItem"
+    },
+    {
+      "rust": "OnboardingBusinessDetails",
+      "direction": "response",
+      "op": "GET /v1/instances/{instance_id}/onboarding/business_details",
+      "part": "response"
+    },
+    {
+      "rust": "OnboardingBusinessProfile",
+      "direction": "response",
+      "op": "GET /v1/instances/{instance_id}/onboarding/business_profile",
+      "part": "response"
+    },
+    {
+      "rust": "OnboardingOwnershipDocuments",
+      "direction": "response",
+      "op": "GET /v1/instances/{instance_id}/onboarding/ownership_documents",
+      "part": "response"
+    },
+    {
+      "rust": "RfiSubmitResponse",
+      "direction": "response",
+      "op": "POST /v1/instances/{instance_id}/rfi",
+      "part": "response"
     }
   ]
 }

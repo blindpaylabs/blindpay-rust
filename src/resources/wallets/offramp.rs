@@ -10,11 +10,12 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::client::Inner;
+use crate::common::Success;
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
 
-use super::types::{CreateOfframpWalletInput, OfframpWallet};
+use super::types::{CreateOfframpWalletInput, OfframpWallet, UpdateOfframpWalletInput};
 
 /// Handle for the `wallets.offramp` sub-resource.
 ///
@@ -104,5 +105,50 @@ impl OfframpWallets {
             encode_path_segment(id.as_ref()),
         );
         self.client.get(&path).await
+    }
+
+    /// Updates an offramp wallet's partner fee (set, change or clear; see
+    /// [`UpdateOfframpWalletInput`]).
+    ///
+    /// `PUT /instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}`
+    pub async fn update(
+        &self,
+        customer_id: impl AsRef<str>,
+        bank_account_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        input: &UpdateOfframpWalletInput,
+    ) -> Result<Success> {
+        self.update_with_options(
+            customer_id,
+            bank_account_id,
+            id,
+            input,
+            &RequestOptions::default(),
+        )
+        .await
+    }
+
+    /// Like [`Self::update`], with per-request [`RequestOptions`]
+    /// (idempotency key, timeout, extra headers).
+    ///
+    /// `PUT /instances/{instance_id}/customers/{customer_id}/bank-accounts/{bank_account_id}/offramp-wallets/{id}`
+    pub async fn update_with_options(
+        &self,
+        customer_id: impl AsRef<str>,
+        bank_account_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        input: &UpdateOfframpWalletInput,
+        options: &RequestOptions,
+    ) -> Result<Success> {
+        let path = format!(
+            "/instances/{}/customers/{}/bank-accounts/{}/offramp-wallets/{}",
+            self.client.instance_id,
+            encode_path_segment(customer_id.as_ref()),
+            encode_path_segment(bank_account_id.as_ref()),
+            encode_path_segment(id.as_ref()),
+        );
+        self.client
+            .request_with::<_, (), _>(Method::PUT, &path, None, Some(input), options)
+            .await
     }
 }

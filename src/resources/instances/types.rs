@@ -26,6 +26,51 @@ open_enum! {
     }
 }
 
+open_enum! {
+    /// Whether an instance moves real funds.
+    pub enum InstanceType {
+        /// Real funds.
+        Production => "production",
+        /// Simulated settlement (test token USDB).
+        Development => "development",
+    }
+}
+
+open_enum! {
+    /// How far the instance's onboarding (KYB) has progressed.
+    pub enum OnboardingStep {
+        /// Not started.
+        Initial => "initial",
+        /// Business details.
+        BusinessDetails => "business_details",
+        /// Business profile.
+        BusinessProfile => "business_profile",
+        /// Documents.
+        Documents => "documents",
+        /// Applicant.
+        Applicant => "applicant",
+        /// Done.
+        Completed => "completed",
+        /// Blocked by compliance.
+        Blocked => "blocked",
+    }
+}
+
+/// The instance, returned by `Instances::get` (spec `RetrieveInstanceOut`).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[non_exhaustive]
+pub struct Instance {
+    /// Instance id (`in_…`).
+    pub id: String,
+    /// Display name.
+    pub name: String,
+    /// Production or development.
+    #[serde(rename = "type")]
+    pub instance_type: InstanceType,
+    /// Onboarding progress.
+    pub onboarding_step: OnboardingStep,
+}
+
 /// A member of an instance, returned by `Instances::get_members`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]

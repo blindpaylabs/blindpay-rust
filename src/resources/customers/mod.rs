@@ -9,9 +9,9 @@ mod types;
 pub use bank_accounts::{
     AchCopDocument, BankAccount, BankAccountStatus, BankAccounts, CreateAchCopBitsoInput,
     CreateAchInput, CreateFasterPaymentsInput, CreateInternationalSwiftInput, CreatePixInput,
-    CreatePixSafeInput, CreateRtpInput, CreateSepaInput, CreateSpeiBitsoInput, CreateTedInput,
-    CreateTransfersBitsoInput, CreateWireInput, ListBankAccountsParams, RecipientRelationship,
-    SpeiProtocol, SwiftPaymentCode,
+    CreatePixSafeInput, CreatePlaidLinkInput, CreateRtpInput, CreateSepaInput,
+    CreateSpeiBitsoInput, CreateTedInput, CreateTransfersBitsoInput, CreateWireInput,
+    ListBankAccountsParams, PlaidLink, RecipientRelationship, SpeiProtocol, SwiftPaymentCode,
 };
 pub use types::{
     AdditionalInfoItem, AdditionalInfoLabel, AmlHits, BusinessType,
@@ -34,6 +34,7 @@ use crate::common::{ListResponse, Pager, Success};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
+use crate::resources::rfi::CustomerRfis;
 
 /// Handle for the `customers` resource.
 ///
@@ -43,12 +44,15 @@ pub struct Customers {
     client: Arc<Inner>,
     /// Bank accounts nested under a customer.
     pub bank_accounts: BankAccounts,
+    /// Customer requests-for-information.
+    pub rfi: CustomerRfis,
 }
 
 impl Customers {
     pub(crate) fn new(client: Arc<Inner>) -> Self {
         Self {
             bank_accounts: BankAccounts::new(Arc::clone(&client)),
+            rfi: CustomerRfis::new(Arc::clone(&client)),
             client,
         }
     }

@@ -6,12 +6,14 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::client::Inner;
-use crate::common::Success;
+use crate::common::{ListResponse, Pager, Success};
 use crate::error::Result;
 use crate::internal::encode_path_segment;
 use crate::options::RequestOptions;
 
-use super::types::{CreateWalletInput, Wallet, WalletBalance};
+use super::types::{
+    CreateWalletInput, ListWalletDepositsParams, Wallet, WalletBalance, WalletDeposit,
+};
 
 /// Handle for the `wallets.custodial` sub-resource.
 ///
@@ -50,6 +52,43 @@ impl CustodialWallets {
             encode_path_segment(id.as_ref()),
         );
         self.client.get(&path).await
+    }
+
+    /// Lists a custodial wallet's deposits, newest first. Always paginated
+    /// (default page size 10).
+    ///
+    /// `GET /instances/{instance_id}/customers/{customer_id}/wallets/{id}/deposits`
+    pub async fn get_deposits(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        params: &ListWalletDepositsParams,
+    ) -> Result<ListResponse<WalletDeposit>> {
+        let path = self.deposits_path(customer_id.as_ref(), id.as_ref());
+        self.client.get_query(&path, params).await
+    }
+
+    /// Iterates every deposit of a custodial wallet, page by page (see
+    /// [`Pager`]).
+    ///
+    /// `GET /instances/{instance_id}/customers/{customer_id}/wallets/{id}/deposits`
+    pub fn get_deposits_auto_paging(
+        &self,
+        customer_id: impl AsRef<str>,
+        id: impl AsRef<str>,
+        params: &ListWalletDepositsParams,
+    ) -> Pager<WalletDeposit> {
+        let path = self.deposits_path(customer_id.as_ref(), id.as_ref());
+        Pager::new(Arc::clone(&self.client), path, params)
+    }
+
+    fn deposits_path(&self, customer_id: &str, id: &str) -> String {
+        format!(
+            "/instances/{}/customers/{}/wallets/{}/deposits",
+            self.client.instance_id,
+            encode_path_segment(customer_id),
+            encode_path_segment(id),
+        )
     }
 
     /// Retrieves the per-token balance of a custodial wallet.

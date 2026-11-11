@@ -13,6 +13,7 @@ use crate::resources::customers::Customers;
 use crate::resources::fees::Fees;
 use crate::resources::instances::Instances;
 use crate::resources::partner_fees::PartnerFees;
+use crate::resources::payables::Payables;
 use crate::resources::payins::Payins;
 use crate::resources::payouts::Payouts;
 use crate::resources::quotes::Quotes;
@@ -88,6 +89,8 @@ pub struct BlindPay {
     pub virtual_accounts: VirtualAccounts,
     /// The `quotes` resource: payout quotes and FX rates.
     pub quotes: Quotes,
+    /// The `payables` resource: bills a customer pays through a payout.
+    pub payables: Payables,
     /// The `payins` resource: pay-ins and their quotes.
     pub payins: Payins,
     /// The `payouts` resource: payouts and their tracking.
@@ -296,6 +299,7 @@ impl BlindPayBuilder {
         let wallets = Wallets::new(Arc::clone(&inner));
         let virtual_accounts = VirtualAccounts::new(Arc::clone(&inner));
         let quotes = Quotes::new(Arc::clone(&inner));
+        let payables = Payables::new(Arc::clone(&inner));
         let payins = Payins::new(Arc::clone(&inner));
         let payouts = Payouts::new(Arc::clone(&inner));
         let transfers = Transfers::new(Arc::clone(&inner));
@@ -311,6 +315,7 @@ impl BlindPayBuilder {
             wallets,
             virtual_accounts,
             quotes,
+            payables,
             payins,
             payouts,
             transfers,

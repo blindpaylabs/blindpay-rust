@@ -46,5 +46,6 @@
       "field": "updated_at",
       "reason": "Not in the partner-fee response; CreatePartnerFeeSchemaOut.parse strips it (partner-fees/endpoints/get.instances.[instance_id].partner-fees.[id].ts:54). Stale field (plan D13): not in the spec; kept as Option until the M3 drift cleanup decides removal."
     }
-  ]
+  ],
+  "unmodelled": []
 }
