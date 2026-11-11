@@ -374,9 +374,7 @@ pub struct Customer {
     pub selfie_file: Option<String>,
     /// Front image of the individual holding their document (enhanced KYC).
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub individual_holding_doc_front_file: Option<String>,
     /// Purpose of transactions.
     #[serde(default)]
@@ -425,9 +423,7 @@ pub struct Customer {
     pub tos_id: Option<String>,
     /// AiPrise validation key.
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub aiprise_validation_key: Option<String>,
     /// Anti-money-laundering screening status.
     #[serde(default)]

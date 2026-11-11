@@ -31,8 +31,10 @@ docker run --rm -v "$PWD":/src -w /src -v blindpay-cargo-registry:/usr/local/car
 ```
 src/
   lib.rs            crate docs (= README.md, so README snippets are doctests) and root re-exports
-  client.rs         BlindPay + BlindPayBuilder (base_url, timeout, max_retries, http_client, retry_sleep)
-  http.rs           the only transport: headers, idempotency keys, retry loop (Appendix A2), error parsing
+  client.rs         BlindPay + BlindPayBuilder (base_url, timeout, max_retries, http_client;
+                    retry_sleep is a hidden test seam) and BlindPay::with_timeout
+  http.rs           the only transport: /v1 prefix, instance_path helpers, headers, idempotency
+                    keys, retry loop, error parsing
   options.rs        RequestOptions (idempotency_key, timeout, headers)
   error.rs          Error { Config, Api(Box<ApiError>), Decode, Http }, ApiError
   internal.rs       encode_path_segment
@@ -41,14 +43,17 @@ src/
   webhooks/         native Svix verifier (verify, verify_at, construct_webhook_event[_at]),
                     events.rs (WebhookEventPayload, keyed on `webhook_event`, Unknown fallback)
   resources/<name>/ mod.rs (handle + methods) and types.rs (wire types); sub-resources are
-                    sibling files (instances/{tos,onboarding,webhook_endpoints}.rs, ...)
+                    sibling files (instances/{tos,onboarding,webhook_endpoints}.rs, ...). A small
+                    resource may keep its few types in mod.rs or the sub-resource file
+                    (resources/rfi/mod.rs, instances/onboarding.rs).
   resources/rfi/    RFI types and the InstanceRfis / CustomerRfis handles
 tests/
   <resource>.rs     wiremock tests per resource
   transport.rs      retry table, idempotency keys, error fixtures (tests/fixtures/errors)
   pagination.rs     auto-pager, Send + Sync, cancellation
   request_shapes.rs request bodies/queries for spec-driven inputs
-  new_ops.rs        every fixture variant served through the real method (A8)
+  new_ops.rs        every fixture variant served through the real method
+  common/mod.rs     shared test client helpers (client, client_for)
   webhooks.rs       the 14 shared Svix vectors + every webhook fixture
   fixtures_decode.rs every response variant of all 94 ops decodes with its SDK type
   contract.rs       serde types vs the spec (Directions A/B/C, below)
@@ -72,7 +77,10 @@ tests/
   `T` only for required, non-nullable fields (Direction C enforces this). Never
   `deny_unknown_fields`.
 - **Request structs**: `#[derive(Serialize)]`, `pub` fields, a `new(required…)` constructor and
-  chainable setters. Optional fields are `Option<T>` with
+  chainable setters. Every new input struct must follow this; a few older inputs (the per-rail
+  bank-account and customer-create inputs) are still built by struct literal and are tracked as
+  debt. Adding a field to an input struct is a breaking change (they aren't
+  `#[non_exhaustive]`), so it needs `feat!:`. Optional fields are `Option<T>` with
   `#[serde(skip_serializing_if = "Option::is_none")]`: absent, never `null`. Tri-state fields
   (`null` clears, e.g. offramp `partner_fee_id`) are `Option<Option<T>>`.
 - **Units**: payout/payin/quote/limit amounts are integer cents (`i64`); partner percentage fees are
@@ -81,32 +89,46 @@ tests/
 - **Wire names** follow the spec exactly; camelCase keys (`functionName`, `chainId`, …) use
   `#[serde(rename)]`. No new typed fields for provider-named spec properties (`aiprise_*`,
   `checkbook_*`, …): list them under `unmodelled` in the allowlist instead.
+- A field whose spec value set is closed is an `open_enum!` (or `Country`), not a `String`.
+- A field the API stopped returning stays a `#[deprecated]` `Option` with the note "not returned
+  by the API; removed in the next breaking release". Don't cite internal documents in docs or
+  deprecation notes; say the reason.
 - "Exactly one of" inputs (payout `sender_wallet_address` / `wallet_id`, quote `bank_account_id` /
   `payable_id`) are two `Option`s plus a constructor per case; never validate client-side.
 
 ### Methods
 - `snake_case` verbs mirroring the Node SDK names (`create_evm`, `get_track`, `list_auto_paging`).
-- Path ids are `impl AsRef<str>` and always go through `encode_path_segment`.
+- Path ids are `impl AsRef<str>` and always go through `encode_path_segment`. Instance-scoped
+  paths are built with `self.client.instance_path("/…")` (which encodes the instance id), never
+  `format!("/instances/{}…")`.
 - **Every method's doc comment has a backticked `METHOD /path` line** (e.g.
   ``/// `POST /instances/{instance_id}/payouts/evm` ``). The options guard test and the coverage
   script read it.
 - **Every mutating method** (POST/PUT/PATCH/DELETE) has a `<name>_with_options(.., options:
   &RequestOptions)` sibling that calls `request_with`/`post_multipart_with`, and the plain method
   delegates with `&RequestOptions::default()`. `tests/request_options_guard.rs` fails otherwise.
-- Lists return `ListResponse<T>` (envelope or bare array). Cursor-paginated lists (payouts, payins,
-  customers, transfers, payables, wallet deposits) also get `list_auto_paging` returning `Pager<T>`.
+- Lists return `ListResponse<T>` (envelope or bare array). Cursor-paginated lists get an
+  auto-pager named `<list method>_auto_paging` returning `Pager<T>`: `list_auto_paging` on
+  payouts, payins, customers, transfers and payables, `get_deposits_auto_paging` on custodial
+  wallets.
   Don't add `offset` to new params (the API ignores it).
 - Never hand-roll HTTP: everything goes through `Inner::{get, get_query, request_with,
   post_multipart_with}` so retries, keys and error parsing apply.
 
 ### Transport rules (don't regress)
-- Idempotency keys: caller key validated (1–255 chars) before sending; otherwise a UUIDv4 is minted
-  before the first attempt of every JSON mutation when retries are on. Multipart never gets one.
-- Retries follow the plan's Appendix A2 table: GETs on connection errors/timeouts/408/429/5xx;
-  mutations only on no-response, 429 and 409 `idempotency_key_in_flight`, **never on 5xx**.
-  `Retry-After` ≤ 60 s is honoured, otherwise jittered backoff. Tests use `retry_sleep`, never real
-  sleeps.
-- `BlindPay` is `Clone + Send + Sync` and immutable; per-request options never touch shared state.
+- `base_url` is scheme + host (default `https://api.blindpay.com`); the transport adds `/v1`.
+- Idempotency keys: a caller key must be 1–255 visible ASCII characters, checked before sending;
+  otherwise a UUIDv4 is minted before the first attempt of every JSON mutation when retries are on.
+  Multipart never gets one and is sent once.
+- "No response" means a connect failure or a timeout before any status line. Only that, 429 and
+  409 `idempotency_key_in_flight` are resent for mutations. If a status arrived, it decides, even
+  when the body read failed; a mutation with **any** 5xx is flagged retryable and never resent
+  (the API releases the key on 5xx). GETs are also resent on 408/500/502/503/504; 501/505/… and
+  other 4xx are final; a 5xx with a terminal error code is final for everyone.
+- `Retry-After` ≤ 60 s is honoured, otherwise backoff `min(8 s, 0.5 s × 2^attempt)` × [0.5, 1).
+  Tests use `retry_sleep` (or `tests/common`), never real sleeps.
+- `BlindPay` is `Clone + Send + Sync` and immutable; per-request options and `with_timeout` never
+  touch shared state.
 - Never put the API key, webhook secret or a request body into an error message or `Debug` output.
 
 ## Generate before you hand-write

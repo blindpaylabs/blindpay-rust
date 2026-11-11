@@ -318,9 +318,7 @@ pub struct Payout {
     pub tracking_complete: Option<PayoutTrackingComplete>,
     /// Partner-fee tracking leg.
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayoutTrackingPartnerFee>,
     /// Documents tracking leg.
     #[serde(default)]
@@ -605,9 +603,7 @@ pub struct CreatePayoutResponse {
     pub tracking_transaction: Option<PayoutTrackingTransaction>,
     /// Partner-fee tracking leg.
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayoutTrackingPartnerFee>,
     /// Liquidity tracking leg.
     #[serde(default)]

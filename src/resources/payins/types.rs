@@ -486,9 +486,7 @@ pub struct Payin {
     pub tracking_complete: PayinTrackingComplete,
     /// Partner-fee settlement tracking, when applicable.
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Creation timestamp.
     #[serde(default)]
@@ -624,9 +622,7 @@ pub struct CreatePayinResponse {
     pub tracking_transaction: PayinTrackingTransaction,
     /// Partner-fee settlement tracking, when applicable.
     #[serde(default)]
-    #[deprecated(
-        note = "not in the API spec (plan D13); kept for compatibility, removed in a later release"
-    )]
+    #[deprecated(note = "not returned by the API; removed in the next breaking release")]
     pub tracking_partner_fee: Option<PayinTrackingPartnerFee>,
     /// Billing fee amount in cents, if any.
     #[serde(default)]

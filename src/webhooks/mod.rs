@@ -87,14 +87,18 @@ pub fn verify_at(
 }
 
 /// Verifies `payload` (see [`verify`]) and decodes it into a typed event.
-/// Unknown event names decode to [`WebhookEventPayload::Unknown`].
+/// Unknown event names decode to [`WebhookEventPayload::Unknown`]; a known
+/// event whose payload doesn't match its type is a `Decode` error.
 ///
 /// # Errors
 ///
-/// [`WebhookVerificationError::Verification`] or
-/// [`WebhookVerificationError::InvalidSecret`] if verification fails;
-/// [`WebhookVerificationError::Decode`] if the verified body isn't a webhook
-/// event.
+/// - [`WebhookVerificationError::Verification`] or
+///   [`WebhookVerificationError::InvalidSecret`]: the delivery isn't
+///   authentic. Reject it (e.g. 400).
+/// - [`WebhookVerificationError::Decode`]: the signature **was valid** but the
+///   body didn't match the event's type. Log it and still acknowledge the
+///   delivery (2xx); rejecting it makes Svix redeliver the same body
+///   indefinitely.
 pub fn construct_webhook_event(
     payload: &[u8],
     headers: &http::HeaderMap,
@@ -165,7 +169,7 @@ fn header<'a>(headers: &'a http::HeaderMap, names: [&str; 2]) -> Option<&'a str>
         .find_map(|name| headers.get(*name).and_then(|v| v.to_str().ok()))
 }
 
-/// The Svix algorithm (plan Appendix A4).
+/// The Svix verification algorithm.
 fn check(
     payload: &[u8],
     headers: &http::HeaderMap,

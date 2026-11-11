@@ -71,8 +71,9 @@ let blindpay = BlindPay::builder("your-api-key-here", "your-instance-id-here")
 # Ok::<(), blindpay::Error>(())
 ```
 
-- `base_url(..)`: point the client at a proxy or a mock server (default
-  `https://api.blindpay.com/v1`). That URL receives your API key, so only use hosts you trust.
+- `base_url(..)`: point the client at a proxy or a mock server (scheme and host; default
+  `https://api.blindpay.com`, and requests go to `{base_url}/v1/...`). A URL ending in `/v1` also
+  works. That URL receives your API key, so only use hosts you trust.
 - `http_client(reqwest::Client)`: bring your own client (proxies, custom TLS). The per-attempt
   timeout still applies.
 - `retry_sleep(..)`: replace the backoff sleep (handy in tests).
@@ -140,16 +141,17 @@ let payout = blindpay
 # }
 ```
 
-- A key must be 1–255 characters; an empty or longer key is rejected before anything is sent
-  (the API silently ignores an empty key).
+- A key must be 1–255 visible ASCII characters (a UUID is ideal); anything else is rejected
+  before anything is sent (the API silently ignores an empty key).
 - With retries on (the default), the SDK generates a UUIDv4 key before the first attempt of every
   JSON mutation you don't give a key to, so a retry can never execute twice. File uploads
   (multipart) get no key and are never retried.
-- **What is retried:** `GET`s on connection errors, timeouts, 408, 429, 500, 502, 503 and 504.
-  Mutations only when no response arrived, on 429, and on `409 idempotency_key_in_flight`, always
-  with the same key and the same bytes. `Retry-After` up to 60 s is honoured; otherwise backoff is
+- **What is retried:** a request that got no response (it couldn't connect, or timed out before a
+  status arrived), and 429. `GET`s also on 408, 500, 502, 503 and 504. Mutations also on
+  `409 idempotency_key_in_flight`, always with the same key and the same bytes. Once a status
+  arrives it decides, even if reading the body then fails. `Retry-After` up to 60 s is honoured; otherwise backoff is
   `min(8 s, 0.5 s × 2^attempt)` with jitter.
-- **Mutations are never retried on a 5xx**: the API releases the key on a 5xx, so a resend would
+- **Mutations are never retried on any 5xx**: the API releases the key on a 5xx, so a resend would
   run the handler again. You get an error with `is_retryable() == true` and the key.
   **If a create or payout returns a 5xx, look the resource up (by quote, external id, or a list
   filter) before resending. Resend with the same `idempotency_key` from the error.**
@@ -223,6 +225,11 @@ fn handle(headers: &http::HeaderMap, raw_body: &[u8], secret: &str) -> Result<()
     Ok(())
 }
 ```
+
+If `construct_webhook_event` returns `WebhookVerificationError::Decode`, the signature was valid
+but the payload didn't match the event's type (for example a newer API shape): log it and still
+answer 2xx, otherwise Svix keeps redelivering the same body. Reject (4xx) only on
+`Verification`/`InvalidSecret`.
 
 `blindpay::webhooks::verify(raw_body, headers, secret)` returns a plain `bool` instead. Both
 check the HMAC-SHA256 signature in constant time and reject timestamps more than 5 minutes off
@@ -390,7 +397,9 @@ call that could not work against the live API or adds parity with the other Blin
 | `payins.get_track(id)` | `payins.get_track(id, checkout_token: Option<&str>)` |
 | `upload.upload(file_name, bytes, bucket)` | `upload.upload(UploadFile::new(file_name, bytes).content_type(..), bucket)` |
 | Stale response fields (`tracking_partner_fee` on payouts/payins, `PartnerFee.created_at`, …) | deprecated (not in the API spec); removed in a later release |
-| Any `instance_id` string | must be a plain path segment (`in_…`); others are rejected by `build()` |
+| `DEFAULT_BASE_URL` = `https://api.blindpay.com/v1` | `https://api.blindpay.com`; paths add `/v1`. `.base_url("…/v1")` still works |
+| `CreateIndividualWithStandardKycInput { .., ..Default::default() }` (and the enhanced-KYC / KYB inputs) | same, but they gained `latitude`, `longitude`, `additional_info` and no longer implement `Eq`: exhaustive struct literals must add the fields (or use `..Default::default()`), and `Eq` bounds become `PartialEq` |
+| `Payable.from` / `to`: `Option<serde_json::Value>`, `line_items: Option<Vec<serde_json::Value>>` | `Option<PayableParty>`, `Option<Vec<PayableLineItem>>` (`payable.from.and_then(\|p\| p.legal_name)`) |
 | `WebhookEvent::Receiver*` | removed (the API no longer sends them); new `payable.*`, `wallet.update`, `blockchainWallet.update` events |
 | `.offset(..)` on list params | deprecated: the API ignores it; use `starting_after` |
 
