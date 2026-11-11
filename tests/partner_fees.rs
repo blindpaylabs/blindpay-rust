@@ -1,3 +1,4 @@
+#![allow(deprecated)] // exercises the deprecated `virtual_account_set` field
 //! Integration tests for the `partner_fees` resource, backed by a mock HTTP server.
 
 use blindpay::{BlindPay, CreatePartnerFeeInput, Error};
