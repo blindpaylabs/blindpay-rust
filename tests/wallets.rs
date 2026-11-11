@@ -12,6 +12,8 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 async fn client(server: &MockServer) -> BlindPay {
     BlindPay::builder("test-api-key", "in_test")
         .base_url(format!("{}/v1", server.uri()))
+        // Retries back off instantly here; tests/transport.rs covers the delays.
+        .retry_sleep(std::sync::Arc::new(|_| Box::pin(async {})))
         .build()
         .expect("client should build")
 }
