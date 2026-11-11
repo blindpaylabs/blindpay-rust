@@ -581,7 +581,7 @@ pub struct CreateCustomerResponse {
 /// Input for [`super::Customers::create_individual_with_standard_kyc`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateIndividualWithStandardKycInput {
     /// Country.
     pub country: Country,
@@ -671,12 +671,21 @@ pub struct CreateIndividualWithStandardKycInput {
     /// Estimated annual revenue band.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_annual_revenue: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
 /// Input for [`super::Customers::create_individual_with_enhanced_kyc`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateIndividualWithEnhancedKycInput {
     /// Country.
     pub country: Country,
@@ -772,12 +781,21 @@ pub struct CreateIndividualWithEnhancedKycInput {
     /// Estimated annual revenue band.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub estimated_annual_revenue: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
 /// Input for [`super::Customers::create_business_with_standard_kyb`].
 ///
 /// The `type` and `kyc_type` discriminators are injected by the method.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize)]
 pub struct CreateBusinessWithStandardKybInput {
     /// Country.
     pub country: Country,
@@ -876,6 +894,15 @@ pub struct CreateBusinessWithStandardKybInput {
     /// Occupation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub occupation: Option<String>,
+    /// Latitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<f64>,
+    /// Longitude of the customer's address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<f64>,
+    /// Extra documents or notes; URLs are re-hosted by BlindPay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfoItem>>,
 }
 
 /// Input for [`super::Customers::update`]. `email` and `country` are
