@@ -65,7 +65,8 @@ impl Error {
     /// are **not** auto-retried, so look the resource up before resending.
     pub fn is_retryable(&self) -> bool {
         match self {
-            Error::Http { .. } => true,
+            // A request that couldn't even be built will fail the same way again.
+            Error::Http { source, .. } => !source.is_builder(),
             Error::Api(e) => e.retryable,
             _ => false,
         }

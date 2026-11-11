@@ -1,5 +1,5 @@
 //! Internal HTTP transport shared by all resources: headers, idempotency
-//! keys, the retry policy (plan Appendix A2) and error parsing.
+//! keys, the retry policy and error parsing.
 
 use std::time::Duration;
 
@@ -35,6 +35,17 @@ struct Raw {
     status: StatusCode,
     headers: HeaderMap,
     body: Vec<u8>,
+}
+
+/// The result of one attempt.
+enum Attempt {
+    /// A status line arrived and the body was read in full.
+    Received(Raw),
+    /// A status line arrived but reading the body failed (e.g. the per-attempt
+    /// timeout fired mid-body). The status still decides what happens next.
+    BodyFailed(Raw, reqwest::Error),
+    /// No status was received.
+    NoResponse(reqwest::Error),
 }
 
 impl Inner {
@@ -117,29 +128,43 @@ impl Inner {
             }
 
             let can_retry = attempt < self.max_retries && (!mutating || key.is_some());
-            match receive(req).await {
-                Err(_) if can_retry => self.sleep(backoff(attempt)).await,
-                Err(source) => {
+            let raw = match receive(req).await {
+                // Only a request that provably got no answer (it never
+                // connected, or timed out before a status line) is resent.
+                Attempt::NoResponse(e) if can_retry && (e.is_connect() || e.is_timeout()) => {
+                    self.sleep(backoff(attempt)).await;
+                    attempt += 1;
+                    continue;
+                }
+                Attempt::NoResponse(source) => {
                     return Err(Error::Http {
                         source,
                         idempotency_key: key,
                     });
                 }
-                Ok(raw) if raw.status.is_success() => return decode(raw),
-                Ok(raw) => {
-                    let mut err = parse_api_error(&raw, key.clone());
-                    let (retryable, auto_retry) = classify(mutating, &err);
-                    err.retryable = retryable;
-                    if !(auto_retry && can_retry) {
-                        return Err(err.into());
-                    }
-                    let delay = match err.retry_after {
-                        Some(d) if d <= MAX_RETRY_AFTER => d,
-                        _ => backoff(attempt),
-                    };
-                    self.sleep(delay).await;
+                // The request ran; the body was lost. Never resend it.
+                Attempt::BodyFailed(raw, source) if raw.status.is_success() => {
+                    return Err(Error::Http {
+                        source,
+                        idempotency_key: key,
+                    });
                 }
+                Attempt::BodyFailed(raw, _) | Attempt::Received(raw) => raw,
+            };
+            if raw.status.is_success() {
+                return decode(raw);
             }
+            let mut err = parse_api_error(&raw, key.clone());
+            let (retryable, auto_retry) = classify(mutating, &err);
+            err.retryable = retryable;
+            if !(auto_retry && can_retry) {
+                return Err(err.into());
+            }
+            let delay = match err.retry_after {
+                Some(d) if d <= MAX_RETRY_AFTER => d,
+                _ => backoff(attempt),
+            };
+            self.sleep(delay).await;
             attempt += 1;
         }
     }
@@ -162,10 +187,21 @@ impl Inner {
             .base_request(Method::POST, &url, options, timeout)
             .query(query)
             .multipart(form);
-        let raw = receive(req).await.map_err(|source| Error::Http {
-            source,
-            idempotency_key: None,
-        })?;
+        let raw = match receive(req).await {
+            Attempt::NoResponse(source) => {
+                return Err(Error::Http {
+                    source,
+                    idempotency_key: None,
+                });
+            }
+            Attempt::BodyFailed(raw, source) if raw.status.is_success() => {
+                return Err(Error::Http {
+                    source,
+                    idempotency_key: None,
+                });
+            }
+            Attempt::BodyFailed(raw, _) | Attempt::Received(raw) => raw,
+        };
         if raw.status.is_success() {
             return decode(raw);
         }
@@ -211,6 +247,11 @@ impl Inner {
             Some(key) if key.len() > MAX_IDEMPOTENCY_KEY_LEN => Err(Error::Config(format!(
                 "idempotency key must be at most {MAX_IDEMPOTENCY_KEY_LEN} characters"
             ))),
+            // Visible ASCII only: always a legal header value, and never
+            // altered by proxies (no whitespace, control or non-ASCII bytes).
+            Some(key) if !key.bytes().all(|b| b.is_ascii_graphic()) => Err(Error::Config(
+                "idempotency key must be visible ASCII (no spaces or control characters)".into(),
+            )),
             Some(key) => Ok(Some(key.clone())),
             None if self.max_retries > 0 => Ok(Some(uuid::Uuid::new_v4().to_string())),
             None => Ok(None),
@@ -223,16 +264,28 @@ impl Inner {
 }
 
 /// Sends `req` and reads the whole body.
-async fn receive(req: reqwest::RequestBuilder) -> std::result::Result<Raw, reqwest::Error> {
-    let response = req.send().await?;
+async fn receive(req: reqwest::RequestBuilder) -> Attempt {
+    let response = match req.send().await {
+        Ok(response) => response,
+        Err(e) => return Attempt::NoResponse(e),
+    };
     let status = response.status();
     let headers = response.headers().clone();
-    let body = response.bytes().await?.to_vec();
-    Ok(Raw {
-        status,
-        headers,
-        body,
-    })
+    match response.bytes().await {
+        Ok(body) => Attempt::Received(Raw {
+            status,
+            headers,
+            body: body.to_vec(),
+        }),
+        Err(e) => Attempt::BodyFailed(
+            Raw {
+                status,
+                headers,
+                body: Vec::new(),
+            },
+            e,
+        ),
+    }
 }
 
 /// Decodes a 2xx body. An empty body (e.g. 204) decodes as `null`, then `[]`,
@@ -252,10 +305,16 @@ fn decode<T: DeserializeOwned>(raw: Raw) -> Result<T> {
     })
 }
 
-/// Plan Appendix A2 for an HTTP error: `(retryable flag, auto-retry?)`.
+/// The retry decision for an HTTP error: `(retryable flag, auto-retry?)`.
 ///
-/// Mutations are never auto-retried on 5xx: the API releases the idempotency
-/// key on 5xx, so a same-key retry would re-execute the handler.
+/// - 429 and an in-flight idempotency 409: retried (the handler never ran or
+///   is still running under the same key).
+/// - A 5xx with a terminal error code: neither.
+/// - A mutation with any other 5xx: flagged retryable but **never** resent
+///   automatically, because the API releases the idempotency key on 5xx and a
+///   resend would run the handler again.
+/// - A `GET` with 500/502/503/504 or 408: retried. Other 5xx (501, 505, …)
+///   and other 4xx: neither.
 fn classify(mutating: bool, err: &ApiError) -> (bool, bool) {
     let terminal_code = err
         .code
@@ -265,7 +324,9 @@ fn classify(mutating: bool, err: &ApiError) -> (bool, bool) {
         409 if err.message == "idempotency_key_in_flight" => (true, true),
         429 => (true, true),
         500..=599 if terminal_code => (false, false),
-        408 | 500 | 502 | 503 | 504 => (true, !mutating),
+        500..=599 if mutating => (true, false),
+        408 if mutating => (true, false),
+        408 | 500 | 502 | 503 | 504 => (true, true),
         _ => (false, false),
     }
 }
@@ -364,16 +425,24 @@ mod tests {
         );
         assert_eq!(classify(true, &api_error(429, None, "x")), (true, true));
         assert_eq!(classify(false, &api_error(429, None, "x")), (true, true));
-        // Mutation 5xx: flagged retryable, never auto-retried.
-        for status in [500, 502, 503, 504] {
+        // Mutation 5xx (any): flagged retryable, never auto-retried.
+        for status in [500, 501, 502, 503, 504, 505, 507] {
             assert_eq!(classify(true, &api_error(status, None, "x")), (true, false));
+        }
+        for status in [500, 502, 503, 504] {
             assert_eq!(classify(false, &api_error(status, None, "x")), (true, true));
+        }
+        for status in [501, 505, 507] {
+            assert_eq!(
+                classify(false, &api_error(status, None, "x")),
+                (false, false)
+            );
         }
         let terminal = api_error(502, Some("PAYINS_CARD_PAYMENT_PENDING"), "x");
         assert_eq!(classify(false, &terminal), (false, false));
         assert_eq!(classify(false, &api_error(408, None, "x")), (true, true));
         assert_eq!(classify(true, &api_error(408, None, "x")), (true, false));
-        for status in [400, 401, 404, 422, 501] {
+        for status in [400, 401, 404, 422] {
             assert_eq!(
                 classify(false, &api_error(status, None, "x")),
                 (false, false)

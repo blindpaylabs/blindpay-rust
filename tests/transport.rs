@@ -594,3 +594,104 @@ async fn empty_204_is_success_with_no_data() {
     let (client, _) = client_with(&server, 0);
     assert!(client.available.get_rails().await.unwrap().is_empty());
 }
+
+// ---------------------------------------------------------------------------
+// A status line arrives but the body is cut off
+// ---------------------------------------------------------------------------
+
+/// A raw HTTP server that answers every request with `status` and a
+/// `Content-Length` it never fulfils, then hangs up. Returns its base URL and
+/// a connection counter.
+async fn truncated_body_server(status: &str) -> (String, Arc<std::sync::atomic::AtomicUsize>) {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let hits = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::clone(&hits);
+    let head = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{{\"mess"
+    );
+    tokio::spawn(async move {
+        loop {
+            let Ok((mut socket, _)) = listener.accept().await else {
+                return;
+            };
+            counter.fetch_add(1, Ordering::SeqCst);
+            let head = head.clone();
+            tokio::spawn(async move {
+                let mut buf = [0u8; 4096];
+                let _ = socket.read(&mut buf).await;
+                let _ = socket.write_all(head.as_bytes()).await;
+                let _ = socket.shutdown().await;
+            });
+        }
+    });
+    (format!("http://{addr}"), hits)
+}
+
+fn truncated_client(base: String) -> BlindPay {
+    let (sleep, _) = recorder();
+    BlindPay::builder("test_key", INSTANCE)
+        .base_url(base)
+        .retry_sleep(sleep)
+        .build()
+        .unwrap()
+}
+
+#[tokio::test]
+async fn a_mutation_whose_5xx_body_is_cut_off_is_not_resent() {
+    let (base, hits) = truncated_body_server("503 Service Unavailable").await;
+    let err = truncated_client(base)
+        .instances
+        .migrate_ownership("us_000000000000")
+        .await
+        .unwrap_err();
+    // Classified by the status: a 503 mutation error, retryable, carrying its key.
+    assert_eq!(err.status(), Some(503), "{err:?}");
+    assert!(err.is_retryable());
+    assert!(err.idempotency_key().is_some());
+    assert_eq!(hits.load(std::sync::atomic::Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn a_get_whose_5xx_body_is_cut_off_is_retried_by_status() {
+    let (base, hits) = truncated_body_server("503 Service Unavailable").await;
+    let err = truncated_client(base)
+        .available
+        .get_rails()
+        .await
+        .unwrap_err();
+    assert_eq!(err.status(), Some(503), "{err:?}");
+    assert_eq!(hits.load(std::sync::atomic::Ordering::SeqCst), 3);
+}
+
+#[tokio::test]
+async fn a_cut_off_2xx_body_is_a_transport_error_and_never_resent() {
+    let (base, hits) = truncated_body_server("200 OK").await;
+    let err = truncated_client(base)
+        .instances
+        .migrate_ownership("us_000000000000")
+        .await
+        .unwrap_err();
+    assert!(matches!(err, Error::Http { .. }), "{err:?}");
+    assert_eq!(hits.load(std::sync::atomic::Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn a_key_that_isnt_a_legal_header_value_is_never_sent() {
+    let server = MockServer::start().await;
+    let (client, _) = client_with(&server, 2);
+    for key in ["bad\nkey", "caf\u{e9}", "nul\u{0}"] {
+        let err = client
+            .instances
+            .migrate_ownership_with_options(
+                "us_000000000000",
+                &RequestOptions::new().idempotency_key(key),
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(err, Error::Config(_)), "{key:?}: {err:?}");
+    }
+    assert!(requests(&server).await.is_empty());
+}

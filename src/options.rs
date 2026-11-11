@@ -40,9 +40,10 @@ impl RequestOptions {
         Self::default()
     }
 
-    /// Sets the `Idempotency-Key` to send. An empty key, or one longer than
-    /// 255 characters, is rejected with [`Error::Config`](crate::Error::Config)
-    /// before anything is sent (the API silently ignores an empty key).
+    /// Sets the `Idempotency-Key` to send: 1–255 visible ASCII characters
+    /// (e.g. a UUID). Anything else is rejected with
+    /// [`Error::Config`](crate::Error::Config) before anything is sent (the API
+    /// silently ignores an empty key).
     pub fn idempotency_key(mut self, key: impl Into<String>) -> Self {
         self.idempotency_key = Some(key.into());
         self
