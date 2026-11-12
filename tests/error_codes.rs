@@ -211,6 +211,11 @@ fn generated_error_codes_match_the_spec_snapshot() {
 
 #[test]
 fn every_spec_code_round_trips_with_its_info() {
+    if std::env::var_os(UPDATE_ENV).is_some() {
+        // This binary was compiled from the file being regenerated; the next
+        // plain run checks the new one.
+        return;
+    }
     for row in spec_rows() {
         let code = ErrorCode::from(row.code.as_str());
         assert!(

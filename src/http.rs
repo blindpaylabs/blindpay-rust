@@ -324,7 +324,7 @@ async fn receive(req: reqwest::RequestBuilder) -> Attempt {
 
 /// Drops the query string (and fragment) from the URL a transport error
 /// carries, so its `Display`/`Debug` never echo list filters (names, ids) or
-/// a hosted-page `token`. The path stays for debugging.
+/// a `checkout_token`. The path stays for debugging.
 fn redact_url(mut e: reqwest::Error) -> reqwest::Error {
     if let Some(url) = e.url_mut() {
         url.set_query(None);
