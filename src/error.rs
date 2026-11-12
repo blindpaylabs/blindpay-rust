@@ -57,6 +57,16 @@ pub enum Error {
         /// auto-generated), if any.
         idempotency_key: Option<String>,
     },
+
+    /// An auto-pager ([`Pager`](crate::Pager)) stopped because a page said
+    /// `has_more` but returned the same `next_page` cursor it was requested
+    /// with, so the next request would repeat forever. Pages before it were
+    /// returned normally.
+    #[error("pagination did not advance: next_page is still {cursor:?} while has_more is true")]
+    Pagination {
+        /// The cursor the server repeated.
+        cursor: String,
+    },
 }
 
 impl From<ApiError> for Error {

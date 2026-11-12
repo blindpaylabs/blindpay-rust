@@ -220,7 +220,9 @@ while let Some(payout) = payouts.next().await {
 # }
 ```
 
-`Pager::next_page()` yields whole pages and `collect_all()` gathers everything.
+`Pager::next_page()` yields whole pages and `collect_all()` gathers everything. If a page says
+`has_more` but repeats the cursor it was requested with, the pager stops with
+`Error::Pagination` instead of requesting the same page forever.
 
 ## Webhooks
 
