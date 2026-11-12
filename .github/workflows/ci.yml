@@ -74,3 +74,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build without rustls
         run: cargo build --no-default-features --features native-tls
+      - name: No TLS feature is a compile error
+        run: |
+          if cargo check --no-default-features 2> no-tls.log; then
+            echo "::error::building without a TLS feature must fail"
+            exit 1
+          fi
+          grep -q "needs a TLS backend" no-tls.log

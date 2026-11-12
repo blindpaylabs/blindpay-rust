@@ -2,6 +2,12 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+// Without a TLS backend every https call would fail at runtime instead.
+#[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
+compile_error!(
+    "blindpay needs a TLS backend: enable the `rustls-tls` (default) or `native-tls` feature"
+);
+
 mod client;
 pub mod common;
 mod error;

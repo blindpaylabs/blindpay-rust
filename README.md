@@ -89,6 +89,9 @@ one connection pool.
 - `native-tls`: TLS via the platform's native library
   (`default-features = false, features = ["native-tls"]`).
 
+One of the two is required: building with `default-features = false` and neither feature is a
+compile error.
+
 ## Errors
 
 Every method returns `blindpay::Result<T>`. A `blindpay::Error` is one of:
