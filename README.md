@@ -450,7 +450,7 @@ SDKs.
 | `Payable.from` / `to`: `Option<serde_json::Value>`, `line_items: Option<Vec<serde_json::Value>>` | `Option<PayableParty>`, `Option<Vec<PayableLineItem>>` (`payable.from.and_then(\|p\| p.legal_name)`) |
 | `WebhookEvent::Receiver*` | removed (the API no longer sends them); new `payable.*`, `wallet.update`, `blockchainWallet.update` events |
 | `.offset(..)` on list params | deprecated: the API ignores it; use `starting_after` |
-| `CreateBlockchainWalletWithAddressInput { name, network, address, is_account_abstraction }` (and `…WithHashInput`) | also `is_self_custody: Option<bool>` (required by the API for `BR` customers); struct literals add `is_self_custody: None` or `Some(..)` |
+| `CreateBlockchainWalletWithAddressInput { name, network, address, is_account_abstraction }` (and `…WithHashInput`) | also `is_self_custody: Option<bool>` (the docs require it for `BR` customers since 2026-10-10); struct literals add `is_self_custody: None` or `Some(..)` |
 
 Before / after, for the most common change:
 
