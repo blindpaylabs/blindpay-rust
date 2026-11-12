@@ -48,6 +48,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Contract (Directions A/B/C)
         run: cargo test --all-features --test contract -- --nocapture
+      - name: Error codes match the spec's error table
+        run: cargo test --all-features --test error_codes
       - name: Spec fixtures decode (all 94 ops)
         run: cargo test --all-features --test fixtures_decode --test new_ops --test webhooks
 

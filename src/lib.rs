@@ -5,6 +5,7 @@
 mod client;
 pub mod common;
 mod error;
+mod error_code;
 mod http;
 mod internal;
 mod options;
@@ -21,7 +22,7 @@ pub use common::{
     Network, Offset, Pager, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail,
     Success, Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
-pub use error::{ApiError, Error, Result};
+pub use error::{ApiError, Error, ErrorCode, ErrorCodeInfo, Result, RetryClass};
 pub use options::RequestOptions;
 pub use resources::available::{
     Available, BankDetail, BankDetailItem, BankDetailKey, NaicsCode, RailEntry, RequiredWhen,

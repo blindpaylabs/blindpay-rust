@@ -103,15 +103,27 @@ Every method returns `blindpay::Result<T>`. A `blindpay::Error` is one of:
 - `Error::Decode`: a 2xx body didn't match the expected type.
 - `Error::Config`: invalid configuration or argument; nothing was sent.
 
-```rust,no_run
-use blindpay::{BlindPay, Error};
+`err.error_code()` returns the code as a typed `ErrorCode`, one variant per code in the API's error
+table. A code this version doesn't know is `ErrorCode::Unknown(String)`, and `None` means the body
+had no `code` (idempotency errors and some legacy paths; match on `message` there). `code.info()`
+gives the documented HTTP status and `RetryClass` (`Retryable`, `Terminal`, `Actionable`), and
+`err.retry_class()` returns it directly (`RetryClass::Unknown` without a known code). The retry
+class is guidance for your own handling; the SDK's automatic retries don't depend on it.
 
-# async fn run(blindpay: BlindPay) {
-match blindpay.available.get_rails().await {
-    Ok(rails) => println!("{} rails", rails.len()),
+```rust,no_run
+use blindpay::{BlindPay, CreateTransferQuoteInput, Error, ErrorCode, RetryClass};
+
+# async fn run(blindpay: BlindPay, input: CreateTransferQuoteInput) {
+match blindpay.transfers.quotes.create(&input).await {
+    Ok(quote) => println!("quote {}", quote.id),
+    // Swaps between different tokens need at least 100 USDC, measured on the USDC side.
+    Err(err) if err.error_code() == Some(ErrorCode::TransfersSwapAmountBelowMinimum) => {
+        eprintln!("raise the amount: {err}");
+    }
     Err(Error::Api(err)) if err.code.as_deref() == Some("AUTH_RATE_LIMITED") => {
         eprintln!("slow down; retry after {:?}", err.retry_after);
     }
+    Err(err) if err.retry_class() == RetryClass::Actionable => eprintln!("fix and resend: {err}"),
     Err(Error::Api(err)) => eprintln!("API error {}: {} (trace {:?})", err.status, err.message, err.trace_id),
     Err(err) => eprintln!("error: {err}"),
 }
