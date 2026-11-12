@@ -64,6 +64,8 @@ tests/
   fixtures_decode.rs every response variant of all 94 ops decodes with its SDK type
   contract.rs       serde types vs the spec (Directions A/B/C, below)
   error_codes.rs    generates/checks src/error_code.rs from the spec's `Errors` tag table
+  readme.rs         every crate a README snippet names is listed in the README's toml blocks
+                    (the snippets themselves compile as doctests via lib.rs include_str!)
   request_options_guard.rs  every mutating method forwards RequestOptions
   fixtures/         verbatim copy of sdk-parity/reference/fixtures (+ webhook-vectors.json); never hand-edit
 .api-sync/

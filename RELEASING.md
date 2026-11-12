@@ -45,6 +45,19 @@ Until one of them is in place, the `release` job skips publishing with a warning
 3. A crate owner sets up trusted publishing or the token (above).
 4. Dispatch `release-plz.yml` on `main`, or push any commit (next section).
 
+## Until 0.2.0 is on crates.io
+
+`cargo add blindpay` resolves the 0.1.0 placeholder until 0.2.0 is published, so early users depend
+on a pinned commit of this repository (there are no tags before the first publish). Use the latest
+`main` commit, for example the 0.2.0 release commit:
+
+```toml
+blindpay = { git = "https://github.com/blindpaylabs/blindpay-rust", rev = "de57cdd9c4b27b28a7b821eb95061b533e605904" }
+```
+
+This note lives here, not in the README: the README is packaged into the crate and is the crates.io
+and docs.rs page of the published version, so it already describes the published state.
+
 ## Re-running a stuck release
 
 Dispatch the workflow on `main` (both jobs run; dispatching another ref runs nothing):
@@ -61,12 +74,22 @@ curl -s -A blindpay-release-check https://crates.io/api/v1/crates/blindpay | jq 
 cargo info blindpay@0.2.0
 ```
 
-Then check that <https://docs.rs/blindpay> built, and that `cargo add blindpay@0.2` builds in a
-scratch crate. Afterwards, drop the "Publication pending" note from the README.
+Then check that:
+
+- <https://docs.rs/blindpay> built (Linux, all features; `[package.metadata.docs.rs]` in
+  `Cargo.toml`) and its front page is the README;
+- the crates.io page shows the README with `cargo add blindpay` as the install step;
+- `cargo add blindpay` in a scratch crate resolves 0.2.0 and the README quick start builds;
+- the `v0.2.0` tag and GitHub release exist.
+
+Then tell git-dependency users (the section above) to switch to `blindpay = "0.2"`, and consider
+yanking the 0.1.0 placeholder (`cargo yank --version 0.1.0 blindpay`).
 
 ## Known traps
 
 - Publishing credentials before the code and the release PR land publishes an incomplete 0.2.0.
+- A published version's README and docs can't be changed. The README must never carry pre-publish
+  wording ("not on crates.io yet"); interim instructions go in this file.
 - `cargo publish --dry-run` (CI) only warns when the version already exists on crates.io, so it
   stays green after a release.
 - `cargo-semver-checks` runs in `release-pr` and can force a minor bump on an API break.
