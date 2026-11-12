@@ -135,6 +135,90 @@ async fn an_error_page_stops_the_pager() {
     assert!(pager.next().await.is_none());
 }
 
+/// A server that keeps answering `has_more` with the cursor it was asked for
+/// (like a static mock) must not make the pager loop forever.
+#[tokio::test]
+async fn a_repeated_cursor_stops_the_pager_with_an_error() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param_is_missing("starting_after"))
+        .respond_with(page(&["po_1"], Some("po_1")))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param("starting_after", "po_1"))
+        .respond_with(page(&["po_2"], Some("po_1")))
+        // Once per pager below: never re-requested after the repeat.
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let mut pager = client(&server)
+        .payouts
+        .list_auto_paging(&ListPayoutsParams::new());
+    assert_eq!(pager.next().await.unwrap().unwrap().id, "po_1");
+    assert_eq!(pager.next().await.unwrap().unwrap().id, "po_2");
+    match pager.next().await {
+        Some(Err(Error::Pagination { cursor })) => assert_eq!(cursor, "po_1"),
+        other => panic!("expected Error::Pagination, got {other:?}"),
+    }
+    assert!(pager.next().await.is_none());
+
+    let err = client(&server)
+        .payouts
+        .list_auto_paging(&ListPayoutsParams::new())
+        .collect_all()
+        .await
+        .unwrap_err();
+    assert!(err.to_string().contains("did not advance"), "{err}");
+}
+
+/// A cycle (A -> B -> A) is caught too, not only an immediate repeat.
+#[tokio::test]
+async fn a_cursor_cycle_stops_the_pager_with_an_error() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param_is_missing("starting_after"))
+        .respond_with(page(&["po_0"], Some("A")))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param("starting_after", "A"))
+        .respond_with(page(&["po_a"], Some("B")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param("starting_after", "B"))
+        .respond_with(page(&["po_b"], Some("A")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let mut pager = client(&server)
+        .payouts
+        .list_auto_paging(&ListPayoutsParams::new());
+    let mut ids = Vec::new();
+    let err = loop {
+        match pager.next().await {
+            Some(Ok(p)) => ids.push(p.id),
+            Some(Err(e)) => break e,
+            None => panic!("pager ended without detecting the cycle"),
+        }
+    };
+    assert_eq!(ids, ["po_0", "po_a", "po_b"]);
+    match err {
+        Error::Pagination { cursor } => assert_eq!(cursor, "A"),
+        other => panic!("expected Error::Pagination, got {other:?}"),
+    }
+    assert!(pager.next().await.is_none());
+}
+
 #[tokio::test]
 async fn a_list_item_decode_error_names_the_field() {
     let server = MockServer::start().await;
