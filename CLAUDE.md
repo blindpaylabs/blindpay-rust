@@ -64,7 +64,8 @@ tests/
   fixtures/         verbatim copy of sdk-parity/reference/fixtures (+ webhook-vectors.json); never hand-edit
 .api-sync/
   spec-snapshot.json       the public spec this SDK targets
-  contract-map.json        Rust type -> spec schema (or op request/response)
+  contract-map.json        Rust type -> spec schema (or op request/response); webhook payload types
+                           are also mapped to their `*WebhookOut` schemas
   contract-allowlist.json  `direction_a` (Rust fields not in the spec) and `unmodelled`
                            (spec fields left out on purpose), each with a reason
 ```
@@ -147,8 +148,9 @@ There is no Rust api-sync generator yet (a follow-up). Until then:
 1. Read the schema in `.api-sync/spec-snapshot.json` (use `jq`/`python3`; it's 2.5 MB).
 2. Hand-write the type following the conventions above, and map it in
    `.api-sync/contract-map.json` (`schema`, or `op` + `part`).
-3. Run `cargo test --test contract -- --nocapture`: zero violations, zero warnings (or an
-   `unmodelled` entry with a reason).
+3. Run `cargo test --test contract -- --nocapture`: zero violations, zero warnings. A spec
+   property missing from a mapped response type (webhook payloads included) is a violation, so
+   model it or add an `unmodelled` entry with a reason.
 
 When the spec changes: replace `.api-sync/spec-snapshot.json` and `tests/fixtures/` with the new
 reference copies, run `BLINDPAY_UPDATE_ERROR_CODES=1 cargo test --test error_codes` to regenerate

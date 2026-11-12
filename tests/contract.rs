@@ -16,10 +16,15 @@
 //!   spec, or a real response can fail to decode. This is the check that would
 //!   have caught `receiver_id`.
 //!
-//! Request-side required-ness and unmodelled spec properties are reported as
-//! warnings (run with `--nocapture` to see them). Properties deliberately left
-//! out (provider-named fields) are listed with a reason under
-//! `unmodelled` in the allowlist, which silences them.
+//! - **Unmodelled response properties (hard):** every property of a mapped
+//!   *response* schema (including the `*WebhookOut` webhook payloads) is a
+//!   field of its Rust type, so a new response field in the spec fails CI.
+//!   Properties deliberately left out (provider-named fields) are listed with a
+//!   reason under `unmodelled` in the allowlist. `webhook_event` on a
+//!   `*WebhookOut` schema is exempt: `WebhookEventPayload` consumes it.
+//!
+//! Request-side required-ness and unmodelled request properties are reported
+//! as warnings (run with `--nocapture` to see them).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -434,6 +439,8 @@ struct Mapping {
     response: bool,
     props: BTreeMap<String, SpecProp>,
     source: String,
+    /// A `*WebhookOut` schema, whose `webhook_event` the event enum consumes.
+    webhook: bool,
 }
 
 fn load_json(rel: &str) -> Value {
@@ -459,11 +466,15 @@ fn load_mappings(spec: &Spec) -> Vec<Mapping> {
                 let part = e["part"].as_str().unwrap();
                 (spec.op_body(op, part), format!("{op} {part}"))
             };
+            let webhook = e["schema"]
+                .as_str()
+                .is_some_and(|n| n.ends_with("WebhookOut"));
             Mapping {
                 rust,
                 response,
                 props: spec.props(schema),
                 source,
+                webhook,
             }
         })
         .collect()
@@ -569,6 +580,7 @@ fn contract_check() {
                 .keys()
                 .map(String::as_str)
                 .filter(|k| !modelled.contains(k))
+                .filter(|k| !(m.webhook && *k == "webhook_event"))
                 .filter(|k| {
                     let key = (s.name.clone(), (*k).to_string());
                     let known = unmodelled.contains_key(&key);
@@ -579,12 +591,18 @@ fn contract_check() {
                 })
                 .collect();
             if !missing.is_empty() {
-                warnings.push(format!(
+                let line = format!(
                     "unmodelled in {} ({}): {}",
                     s.name,
                     m.source,
                     missing.join(", ")
-                ));
+                );
+                if m.response {
+                    // Model them, or list them under `unmodelled` with a reason.
+                    errors.push(line);
+                } else {
+                    warnings.push(line);
+                }
             }
         }
     }
