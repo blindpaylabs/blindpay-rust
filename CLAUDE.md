@@ -195,7 +195,9 @@ Don't edit `CHANGELOG.md` or the version by hand, and never publish locally.
 from main): `release-pr` opens or updates the release PR (no registry token), and `release`
 publishes a version crates.io doesn't have yet. `release`
 passes `CARGO_REGISTRY_TOKEN` only when that secret is set; otherwise the variable is left
-undefined so release-plz uses crates.io trusted publishing (OIDC, `id-token: write`). An empty
+undefined so release-plz uses crates.io trusted publishing (OIDC, `id-token: write`), but only when
+the repository variable `CRATES_IO_TRUSTED_PUBLISHING` is `true`; with neither configured the job
+skips publishing with a warning. An empty
 token variable would disable trusted publishing, so never add it back unconditionally. Merging the
 release PR is how you release. The User-Agent (`blindpay-rust/<version>`) comes from
 `CARGO_PKG_VERSION`. CI runs `cargo publish --dry-run` and an MSRV test build (`wiremock` stays

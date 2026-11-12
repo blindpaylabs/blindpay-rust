@@ -28,12 +28,14 @@ The `release` job supports two paths and picks one per run:
    Settings → Trusted Publishing and adds repository `blindpaylabs/blindpay-rust`, workflow
    `release-plz.yml`, no environment. The job has `id-token: write`; release-plz exchanges the OIDC
    token for a short-lived crates.io token. This only happens when `CARGO_REGISTRY_TOKEN` is not set
-   at all, so the job leaves it undefined when the secret is missing.
+   at all, so the job leaves it undefined when the secret is missing. After adding the publisher, an
+   admin sets the repository variable `CRATES_IO_TRUSTED_PUBLISHING` to `true`
+   (`gh variable set CRATES_IO_TRUSTED_PUBLISHING --body true -R blindpaylabs/blindpay-rust`).
 2. **Token.** A crate owner creates a crates.io API token scoped to `publish-update` for `blindpay`;
    an admin stores it as the `CARGO_REGISTRY_TOKEN` repository secret. When it exists, the job passes it.
 
-Until one of them is in place, the `release` job fails on every push ("please provide a non-empty
-token" before this setup, or a crates.io authentication error). That is expected. Adding co-owners
+Until one of them is in place, the `release` job skips publishing with a warning annotation
+("crates.io publishing not configured") and stays green, so `main` isn't red on every push. Adding co-owners
 (`cargo owner --add github:blindpaylabs:<team>`) removes the single-owner dependency.
 
 ## Getting 0.2.0 out (order matters)
