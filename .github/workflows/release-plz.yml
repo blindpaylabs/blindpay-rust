@@ -2,13 +2,18 @@ name: release-plz
 
 # Two jobs, as release-plz recommends. `release` publishes to crates.io and tags
 # when Cargo.toml carries a version crates.io doesn't have. `release-pr` opens
-# or updates the release PR from Conventional Commits. They are separate so a
-# failed publish (today: the crates.io `blindpay` name and its token are
-# outside this repo) no longer stops release PRs from being opened.
+# or updates the release PR from Conventional Commits.
 #
-# Publishing uses crates.io trusted publishing (OIDC, `id-token: write`) when a
-# crate owner has configured this repository on crates.io, and falls back to
-# the CARGO_REGISTRY_TOKEN secret otherwise.
+# `release` supports both crates.io publishing paths (see RELEASING.md):
+# - Token: when the CARGO_REGISTRY_TOKEN secret is set, it is passed to
+#   release-plz.
+# - Trusted publishing (OIDC, `id-token: write`): when the secret is not set,
+#   CARGO_REGISTRY_TOKEN is not defined at all, because release-plz only
+#   exchanges the OIDC token for a crates.io token when the variable is absent
+#   ("if you already use CARGO_REGISTRY_TOKEN, remove it from your workflow file
+#   entirely", https://release-plz.dev/docs/github/quickstart). An empty value
+#   fails with "please provide a non-empty token". A crate owner must add this
+#   repository and workflow as a trusted publisher on crates.io first.
 
 on:
   push:
@@ -24,18 +29,30 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      # 'true' or 'false'; secrets can't be read in a step `if:`.
+      HAS_CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
-      - uses: release-plz/action@v0.5
+      - name: Publish with the CARGO_REGISTRY_TOKEN secret
+        if: env.HAS_CARGO_REGISTRY_TOKEN == 'true'
+        uses: release-plz/action@v0.5
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish with crates.io trusted publishing
+        if: env.HAS_CARGO_REGISTRY_TOKEN != 'true'
+        uses: release-plz/action@v0.5
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-pr:
     name: Open or update the release PR
