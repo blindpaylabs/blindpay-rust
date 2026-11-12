@@ -16,6 +16,8 @@ cargo test --all-features                     # unit, integration, contract, doc
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 cargo check --no-default-features --features native-tls
 cargo +1.85 check --all-features              # MSRV (rust-version in Cargo.toml)
+cargo +1.85 test --all-features --no-run      # dev-dependencies build on the MSRV too
+cargo publish --dry-run                       # package + verify build, as the release does
 cargo test --test contract -- --nocapture     # contract check + its warnings
 cargo package --list                          # must list no tests/ or fixtures
 ```
@@ -183,13 +185,18 @@ to `BlindPay` and construct it in `BlindPayBuilder::build` (`src/client.rs`), re
 
 ## Releases
 
+See [`RELEASING.md`](RELEASING.md) for the runbook (credentials, merge order, re-runs, verification).
 release-plz computes the version from **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`,
 `build:`, `ci:`; `!` for breaking changes; the crate is 0.x, so breaking changes bump the minor).
 Don't edit `CHANGELOG.md` or the version by hand, and never publish locally.
 `.github/workflows/release-plz.yml` runs two jobs on every push to main: `release-pr` opens or
-updates the release PR, and `release` publishes a version crates.io doesn't have yet (trusted
-publishing, or the `CARGO_REGISTRY_TOKEN` secret). Merging the release PR is how you release. The User-Agent
-(`blindpay-rust/<version>`) comes from `CARGO_PKG_VERSION`.
+updates the release PR, and `release` publishes a version crates.io doesn't have yet. `release`
+passes `CARGO_REGISTRY_TOKEN` only when that secret is set; otherwise the variable is left
+undefined so release-plz uses crates.io trusted publishing (OIDC, `id-token: write`). An empty
+token variable would disable trusted publishing, so never add it back unconditionally. Merging the
+release PR is how you release. The User-Agent (`blindpay-rust/<version>`) comes from
+`CARGO_PKG_VERSION`. CI runs `cargo publish --dry-run` and an MSRV test build (`wiremock` stays
+below 0.6.5 for 1.85).
 
 Rule of thumb for floors: MSRV is 1.85 (edition 2024). Don't raise it, and don't add runtime
 dependencies without a reason in the PR (current: reqwest, serde, serde_json, thiserror, http,

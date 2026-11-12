@@ -471,6 +471,7 @@ BlindPay's own web and iOS apps: server-side calls get 401 in production. Use `g
 
 - [BlindPay API documentation](https://blindpay.com/docs/introduction)
 - [API reference](https://api.blindpay.com/reference)
+- [Release process](https://github.com/blindpaylabs/blindpay-rust/blob/main/RELEASING.md) (maintainers)
 
 ## Support
 
