@@ -21,7 +21,7 @@ const UPDATE_ENV: &str = "BLINDPAY_UPDATE_ERROR_CODES";
 struct Row {
     code: String,
     status: u16,
-    retry: String,
+    retry: RetryClass,
     description: String,
 }
 
@@ -29,7 +29,49 @@ fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// Parses the `Errors` tag's table rows. Panics on a malformed row or none.
+/// Parses one table row: `` | `CODE` | 400 | actionable | Description. | ``.
+fn parse_row(line: &str) -> Result<Row, String> {
+    let inner = line
+        .strip_prefix("| ")
+        .and_then(|l| l.strip_suffix(" |"))
+        .ok_or("row doesn't start with `| ` and end with ` |`")?;
+    let cells: Vec<&str> = inner.splitn(4, " | ").map(str::trim).collect();
+    let [code, status, retry, description] = cells[..] else {
+        return Err(format!("expected 4 cells, got {}", cells.len()));
+    };
+    let code = code
+        .strip_prefix('`')
+        .and_then(|c| c.strip_suffix('`'))
+        .filter(|c| {
+            !c.is_empty()
+                && c.chars()
+                    .all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == '_')
+        })
+        .ok_or_else(|| format!("bad code cell {code:?}"))?;
+    let status: u16 = status
+        .parse()
+        .ok()
+        .filter(|s| (100..600).contains(s))
+        .ok_or_else(|| format!("bad status cell {status:?}"))?;
+    let retry = match retry {
+        "retryable" => RetryClass::Retryable,
+        "terminal" => RetryClass::Terminal,
+        "actionable" => RetryClass::Actionable,
+        other => return Err(format!("bad retry cell {other:?}")),
+    };
+    if description.is_empty() {
+        return Err("empty description".into());
+    }
+    Ok(Row {
+        code: code.to_string(),
+        status,
+        retry,
+        description: description.to_string(),
+    })
+}
+
+/// Parses the `Errors` tag's table. Every line that starts with `` | ` `` must
+/// parse, and there must be at least one.
 fn spec_rows() -> Vec<Row> {
     let path = manifest_dir().join(".api-sync/spec-snapshot.json");
     let spec: Value = serde_json::from_slice(&std::fs::read(path).expect("read spec snapshot"))
@@ -41,41 +83,30 @@ fn spec_rows() -> Vec<Row> {
         .find(|t| t["name"] == "Errors")
         .and_then(|t| t["description"].as_str())
         .expect("spec has an `Errors` tag with a description");
-    let rows: Vec<Row> = description
+    let candidates: Vec<&str> = description
         .lines()
         .filter(|l| l.starts_with("| `"))
-        .map(|line| {
-            let cells: Vec<&str> = line
-                .trim_matches('|')
-                .splitn(4, " | ")
-                .map(str::trim)
-                .collect();
-            let [code, status, retry, description] = cells[..] else {
-                panic!("malformed error-table row: {line}");
-            };
-            let code = code.trim_matches('`');
-            assert!(
-                !code.is_empty()
-                    && code
-                        .chars()
-                        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_'),
-                "bad code in row: {line}"
-            );
-            assert!(
-                matches!(retry, "retryable" | "terminal" | "actionable"),
-                "bad retry class in row: {line}"
-            );
-            Row {
-                code: code.to_string(),
-                status: status
-                    .parse()
-                    .unwrap_or_else(|_| panic!("bad status in row: {line}")),
-                retry: retry.to_string(),
-                description: description.to_string(),
-            }
-        })
         .collect();
-    assert!(!rows.is_empty(), "no rows in the spec's error-code table");
+    assert!(
+        !candidates.is_empty(),
+        "no rows in the spec's error-code table"
+    );
+    let mut rows = Vec::new();
+    let mut bad = Vec::new();
+    for line in &candidates {
+        match parse_row(line) {
+            Ok(row) => rows.push(row),
+            Err(why) => bad.push(format!("{why}: {line}")),
+        }
+    }
+    assert!(
+        bad.is_empty(),
+        "{} of {} error-table rows don't parse:\n{}",
+        bad.len(),
+        candidates.len(),
+        bad.join("\n")
+    );
+    assert_eq!(rows.len(), candidates.len());
     rows
 }
 
@@ -92,12 +123,12 @@ fn variant(code: &str) -> String {
         .collect()
 }
 
-fn retry_variant(retry: &str) -> &'static str {
+fn retry_variant(retry: RetryClass) -> &'static str {
     match retry {
-        "retryable" => "Retryable",
-        "terminal" => "Terminal",
-        "actionable" => "Actionable",
-        other => panic!("unknown retry class {other}"),
+        RetryClass::Retryable => "Retryable",
+        RetryClass::Terminal => "Terminal",
+        RetryClass::Actionable => "Actionable",
+        other => panic!("no table value for {other}"),
     }
 }
 
@@ -144,7 +175,7 @@ fn render(rows: &[Row]) -> String {
             "        /// `{}` ({}, {}): {}\n        {} => \"{}\",\n",
             row.code,
             row.status,
-            row.retry,
+            row.retry.as_str(),
             doc_text(&row.description),
             variant(&row.code),
             row.code
@@ -166,7 +197,7 @@ fn render(rows: &[Row]) -> String {
             "            Self::{} => ({}, {}),\n",
             variant(&row.code),
             row.status,
-            retry_variant(&row.retry)
+            retry_variant(row.retry)
         ));
     }
     out.push_str(
@@ -226,7 +257,7 @@ fn every_spec_code_round_trips_with_its_info() {
         assert_eq!(code.as_str(), row.code);
         let info = code.info().expect("known code has info");
         assert_eq!(info.status, row.status, "{}", row.code);
-        assert_eq!(info.retry.as_str(), row.retry, "{}", row.code);
+        assert_eq!(info.retry, row.retry, "{}", row.code);
     }
 }
 
