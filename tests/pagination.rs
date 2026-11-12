@@ -175,6 +175,50 @@ async fn a_repeated_cursor_stops_the_pager_with_an_error() {
     assert!(err.to_string().contains("did not advance"), "{err}");
 }
 
+/// A cycle (A -> B -> A) is caught too, not only an immediate repeat.
+#[tokio::test]
+async fn a_cursor_cycle_stops_the_pager_with_an_error() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param_is_missing("starting_after"))
+        .respond_with(page(&["po_0"], Some("A")))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param("starting_after", "A"))
+        .respond_with(page(&["po_a"], Some("B")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path(PAYOUTS))
+        .and(query_param("starting_after", "B"))
+        .respond_with(page(&["po_b"], Some("A")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let mut pager = client(&server)
+        .payouts
+        .list_auto_paging(&ListPayoutsParams::new());
+    let mut ids = Vec::new();
+    let err = loop {
+        match pager.next().await {
+            Some(Ok(p)) => ids.push(p.id),
+            Some(Err(e)) => break e,
+            None => panic!("pager ended without detecting the cycle"),
+        }
+    };
+    assert_eq!(ids, ["po_0", "po_a", "po_b"]);
+    match err {
+        Error::Pagination { cursor } => assert_eq!(cursor, "A"),
+        other => panic!("expected Error::Pagination, got {other:?}"),
+    }
+    assert!(pager.next().await.is_none());
+}
+
 #[tokio::test]
 async fn a_list_item_decode_error_names_the_field() {
     let server = MockServer::start().await;

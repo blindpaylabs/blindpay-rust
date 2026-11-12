@@ -59,10 +59,12 @@ pub enum Error {
     },
 
     /// An auto-pager ([`Pager`](crate::Pager)) stopped because a page said
-    /// `has_more` but returned the same `next_page` cursor it was requested
-    /// with, so the next request would repeat forever. Pages before it were
-    /// returned normally.
-    #[error("pagination did not advance: next_page is still {cursor:?} while has_more is true")]
+    /// `has_more` but its `next_page` was a cursor the pager had already
+    /// requested (the same one again, or a cycle), so following it would
+    /// repeat forever. Pages before it were returned normally.
+    #[error(
+        "pagination did not advance: next_page {cursor:?} was already requested while has_more is true"
+    )]
     Pagination {
         /// The cursor the server repeated.
         cursor: String,
