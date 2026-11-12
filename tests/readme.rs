@@ -1,8 +1,19 @@
 //! The README is the crate docs, so its snippets compile as doctests (`cargo
-//! test --doc`). Doctests see this crate's own dependencies, though, which a
-//! user's project doesn't have. This checks that every crate a README snippet
-//! names (other than `blindpay` and `std`) is listed in one of the README's
-//! `toml` blocks, so copying a snippet never fails with "undeclared crate".
+//! test --doc`). Doctests link against this crate's own dependencies, though,
+//! and `http` and `serde_json` are among them, so a snippet that uses them
+//! compiles as a doctest even when the README never tells users to add them.
+//!
+//! What this proves: every crate a README snippet names as a path root
+//! (`http::HeaderMap`, `use serde_json::…`, `#[tokio::main]`), other than
+//! `blindpay`, `std` and primitives, appears as a key in one of the README's
+//! `toml` blocks.
+//!
+//! What it can't prove: that the listed version or features are right, or that
+//! a snippet compiles against only those dependencies. It is a name scan, not
+//! a parse: a crate reached only through a macro body or a `use` alias, or a
+//! lower-case local module path, isn't told apart from a crate. The consumer
+//! test (README snippets built in a crate with exactly the listed
+//! dependencies) covers the rest.
 
 use std::collections::BTreeSet;
 
