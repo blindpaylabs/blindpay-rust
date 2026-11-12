@@ -176,7 +176,10 @@ to `BlindPay` and construct it in `BlindPayBuilder::build` (`src/client.rs`), re
 
 release-plz computes the version from **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`,
 `build:`, `ci:`; `!` for breaking changes; the crate is 0.x, so breaking changes bump the minor).
-Don't edit `CHANGELOG.md` or the version by hand, and never publish locally. The User-Agent
+Don't edit `CHANGELOG.md` or the version by hand, and never publish locally.
+`.github/workflows/release-plz.yml` runs two jobs on every push to main: `release-pr` opens or
+updates the release PR, and `release` publishes a version crates.io doesn't have yet (trusted
+publishing, or the `CARGO_REGISTRY_TOKEN` secret). Merging the release PR is how you release. The User-Agent
 (`blindpay-rust/<version>`) comes from `CARGO_PKG_VERSION`.
 
 Rule of thumb for floors: MSRV is 1.85 (edition 2024). Don't raise it, and don't add runtime
