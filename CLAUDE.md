@@ -191,8 +191,9 @@ See [`RELEASING.md`](RELEASING.md) for the runbook (credentials, merge order, re
 release-plz computes the version from **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`,
 `build:`, `ci:`; `!` for breaking changes; the crate is 0.x, so breaking changes bump the minor).
 Don't edit `CHANGELOG.md` or the version by hand, and never publish locally.
-`.github/workflows/release-plz.yml` runs two jobs on every push to main: `release-pr` opens or
-updates the release PR, and `release` publishes a version crates.io doesn't have yet. `release`
+`.github/workflows/release-plz.yml` runs two jobs on every push to main (and on `workflow_dispatch`
+from main): `release-pr` opens or updates the release PR (no registry token), and `release`
+publishes a version crates.io doesn't have yet. `release`
 passes `CARGO_REGISTRY_TOKEN` only when that secret is set; otherwise the variable is left
 undefined so release-plz uses crates.io trusted publishing (OIDC, `id-token: write`). An empty
 token variable would disable trusted publishing, so never add it back unconditionally. Merging the

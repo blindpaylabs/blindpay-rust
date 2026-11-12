@@ -41,15 +41,15 @@ token" before this setup, or a crates.io authentication error). That is expected
 1. Merge the feature PRs that belong in 0.2.0.
 2. `release-pr` refreshes the release PR. Approve its CI, review `CHANGELOG.md`, merge it.
 3. A crate owner sets up trusted publishing or the token (above).
-4. Re-run the latest failed `release-plz` run, or push any commit (next section).
+4. Dispatch `release-plz.yml` on `main`, or push any commit (next section).
 
 ## Re-running a stuck release
 
-The workflow has no manual trigger. Re-run the failed job of the latest run on `main`:
+Dispatch the workflow on `main` (both jobs run; dispatching another ref runs nothing):
 
 ```sh
-gh run list --workflow release-plz.yml --branch main --limit 1
-gh run rerun <run-id> --failed
+gh workflow run release-plz.yml --ref main
+gh run list --workflow release-plz.yml --branch main --limit 1   # then: gh run watch <run-id>
 ```
 
 ## Verifying the published crate
