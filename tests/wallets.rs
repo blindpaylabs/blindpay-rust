@@ -132,7 +132,8 @@ async fn blockchain_create_with_address_sends_true_discriminator() {
             "name": "My Wallet",
             "network": "polygon",
             "address": "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C",
-            "is_account_abstraction": true
+            "is_account_abstraction": true,
+            "is_self_custody": true
         })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "bw_000000000000",
@@ -150,6 +151,7 @@ async fn blockchain_create_with_address_sends_true_discriminator() {
         network: Network::Polygon,
         address: "0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C".to_string(),
         is_account_abstraction: true,
+        is_self_custody: Some(true),
     };
     let wallet = client(&server)
         .await
@@ -192,6 +194,7 @@ async fn blockchain_create_with_hash_sends_false_discriminator() {
         network: Network::Base,
         signature_tx_hash: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359".to_string(),
         is_account_abstraction: false,
+        is_self_custody: None,
     };
     let wallet = client(&server)
         .await
