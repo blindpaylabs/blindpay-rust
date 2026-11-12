@@ -47,12 +47,16 @@ Until one of them is in place, the `release` job skips publishing with a warning
 
 ## Until 0.2.0 is on crates.io
 
-`cargo add blindpay` resolves the 0.1.0 placeholder until 0.2.0 is published, so early users depend
-on a pinned commit of this repository (there are no tags before the first publish). Use the latest
-`main` commit, for example the 0.2.0 release commit:
+`cargo add blindpay` resolves the 0.1.0 placeholder until 0.2.0 is published, so early users pin a
+commit of this repository (there are no tags before the first publish). Use the current `main`
+commit, which carries 0.2.0 and every fix since the release PR:
+
+```sh
+git ls-remote https://github.com/blindpaylabs/blindpay-rust refs/heads/main   # prints <sha>
+```
 
 ```toml
-blindpay = { git = "https://github.com/blindpaylabs/blindpay-rust", rev = "de57cdd9c4b27b28a7b821eb95061b533e605904" }
+blindpay = { git = "https://github.com/blindpaylabs/blindpay-rust", rev = "<sha>" }
 ```
 
 This note lives here, not in the README: the README is packaged into the crate and is the crates.io
@@ -82,8 +86,8 @@ Then check that:
 - `cargo add blindpay` in a scratch crate resolves 0.2.0 and the README quick start builds;
 - the `v0.2.0` tag and GitHub release exist.
 
-Then tell git-dependency users (the section above) to switch to `blindpay = "0.2"`, and consider
-yanking the 0.1.0 placeholder (`cargo yank --version 0.1.0 blindpay`).
+Then tell git-dependency users (the section above) to switch to `blindpay = "0.2"`. Optionally
+yank the 0.1.0 placeholder: `cargo yank --version 0.1.0 blindpay`.
 
 ## Known traps
 
