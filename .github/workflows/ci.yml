@@ -27,6 +27,9 @@ jobs:
         run: cargo test --all-features
       - name: Docs
         run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+      - name: Publish dry run (package + verify build, as the release does)
+        # Runs on the clean checkout, before anything writes into the tree.
+        run: cargo publish --dry-run --locked
       - name: Package contents (no tests or fixtures)
         run: |
           cargo package --list --allow-dirty > package.txt
@@ -48,6 +51,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Contract (Directions A/B/C)
         run: cargo test --all-features --test contract -- --nocapture
+      - name: Error codes match the spec's error table
+        run: cargo test --all-features --test error_codes
       - name: Spec fixtures decode (all 94 ops)
         run: cargo test --all-features --test fixtures_decode --test new_ops --test webhooks
 
@@ -62,6 +67,8 @@ jobs:
         run: cargo check --all-features --locked
       - name: Check (native-tls)
         run: cargo check --no-default-features --features native-tls --locked
+      - name: Test build (dev-dependencies must build on the MSRV too)
+        run: cargo test --all-features --locked --no-run
 
   native-tls:
     name: native-tls build
@@ -72,3 +79,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build without rustls
         run: cargo build --no-default-features --features native-tls
+      - name: No TLS feature is a compile error
+        run: |
+          if cargo check --no-default-features 2> no-tls.log; then
+            echo "::error::building without a TLS feature must fail"
+            exit 1
+          fi
+          grep -q "needs a TLS backend" no-tls.log

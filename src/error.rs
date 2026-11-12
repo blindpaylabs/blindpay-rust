@@ -3,6 +3,8 @@
 use std::fmt;
 use std::time::Duration;
 
+pub use crate::error_code::ErrorCode;
+
 /// A specialized [`Result`](std::result::Result) for fallible BlindPay operations.
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -100,6 +102,24 @@ impl Error {
             _ => None,
         }
     }
+
+    /// The typed error code of an [`Error::Api`] (see
+    /// [`ApiError::error_code`]); `None` for other variants.
+    pub fn error_code(&self) -> Option<ErrorCode> {
+        match self {
+            Error::Api(e) => e.error_code(),
+            _ => None,
+        }
+    }
+
+    /// The documented retry class of an [`Error::Api`]'s code (see
+    /// [`ApiError::retry_class`]); [`RetryClass::Unknown`] for other variants.
+    pub fn retry_class(&self) -> RetryClass {
+        match self {
+            Error::Api(e) => e.retry_class(),
+            _ => RetryClass::Unknown,
+        }
+    }
 }
 
 /// A structured error returned by the BlindPay API on a non-2xx response.
@@ -142,6 +162,83 @@ pub struct ApiError {
     pub retry_after: Option<Duration>,
     /// The raw, unparsed response body. Useful for debugging schema drift.
     pub raw_body: String,
+}
+
+impl ApiError {
+    /// The body's `code` as an [`ErrorCode`], or `None` when the body has no
+    /// `code` (idempotency errors, some legacy paths: match on
+    /// [`message`](Self::message) there). A code this SDK version doesn't
+    /// know is [`ErrorCode::Unknown`] with the raw string.
+    ///
+    /// ```
+    /// # fn handle(err: &blindpay::ApiError) {
+    /// use blindpay::ErrorCode;
+    /// if err.error_code() == Some(ErrorCode::TransfersSwapAmountBelowMinimum) {
+    ///     // Swaps between different tokens need at least 100 USDC.
+    /// }
+    /// # }
+    /// ```
+    pub fn error_code(&self) -> Option<ErrorCode> {
+        self.code.as_deref().map(ErrorCode::from)
+    }
+
+    /// What the API documents about retrying this error's code:
+    /// [`RetryClass::Unknown`] when there is no code or the code is unknown.
+    ///
+    /// This is catalogue metadata for your own handling. It doesn't change
+    /// what the SDK resends, and it can differ from
+    /// [`retryable`](Self::retryable), which describes this request (method,
+    /// idempotency key, status).
+    pub fn retry_class(&self) -> RetryClass {
+        self.error_code()
+            .and_then(|code| code.info())
+            .map_or(RetryClass::Unknown, |info| info.retry)
+    }
+}
+
+/// How the API documents retrying an error code (its error table's "Retry"
+/// column).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum RetryClass {
+    /// The same request can be retried as is.
+    Retryable,
+    /// Don't retry.
+    Terminal,
+    /// The request succeeds only after you fix something (fund a balance,
+    /// correct bank details, ...).
+    Actionable,
+    /// No code, or a code this SDK version doesn't know.
+    Unknown,
+}
+
+impl RetryClass {
+    /// The table's value: `retryable`, `terminal`, `actionable` or `unknown`.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RetryClass::Retryable => "retryable",
+            RetryClass::Terminal => "terminal",
+            RetryClass::Actionable => "actionable",
+            RetryClass::Unknown => "unknown",
+        }
+    }
+}
+
+impl fmt::Display for RetryClass {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// What the API documents about an [`ErrorCode`]; see [`ErrorCode::info`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub struct ErrorCodeInfo {
+    /// The HTTP status the code typically comes with (an endpoint may use
+    /// another).
+    pub status: u16,
+    /// How to retry it.
+    pub retry: RetryClass,
 }
 
 impl fmt::Display for ApiError {

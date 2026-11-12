@@ -595,3 +595,32 @@ fn payout_fx_rates_keep_their_fraction() {
     assert_eq!(payout.commercial_quotation, Some(1234.56));
     assert_eq!(payout.blindpay_quotation, Some(1234.56));
 }
+
+/// `review_reason` (round-2 spec) is populated on the limit-increase GET and
+/// both `limitIncrease.*` webhooks, and `None` when the API sends `null`.
+#[test]
+fn limit_increase_review_reason_decodes() {
+    let op = "GET /v1/instances/{instance_id}/customers/{customer_id}/limit-increase";
+    let full: LimitIncrease = variant(op, "full");
+    assert!(full.review_reason.as_deref().is_some_and(|r| !r.is_empty()));
+    let null: LimitIncrease = variant(op, "nullables_null");
+    assert_eq!(null.review_reason, None);
+
+    for (file, event) in [
+        ("webhooks/limitIncrease.new.json", "limitIncrease.new"),
+        ("webhooks/limitIncrease.update.json", "limitIncrease.update"),
+    ] {
+        let fixture = read_json(file);
+        for (name, want) in [("full", true), ("nullables_null", false)] {
+            let body = fixture["variants"][name].clone();
+            let request = match serde_json::from_value::<WebhookEventPayload>(body)
+                .unwrap_or_else(|e| panic!("{event} {name}: {e}"))
+            {
+                WebhookEventPayload::LimitIncreaseNew(r)
+                | WebhookEventPayload::LimitIncreaseUpdate(r) => r,
+                other => panic!("{event} {name}: decoded as {other:?}"),
+            };
+            assert_eq!(request.review_reason.is_some(), want, "{event} {name}");
+        }
+    }
+}

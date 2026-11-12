@@ -133,6 +133,10 @@ pub struct CreateBlockchainWalletWithAddressInput {
     pub address: String,
     /// Always `true` for this constructor.
     pub is_account_abstraction: bool,
+    /// Whether the customer holds this wallet's private keys. Required when the
+    /// customer's country is `BR`; omitted when `None`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_self_custody: Option<bool>,
 }
 
 /// Request body for registering a blockchain wallet by signature
@@ -147,6 +151,10 @@ pub struct CreateBlockchainWalletWithHashInput {
     pub signature_tx_hash: String,
     /// Always `false` for this constructor.
     pub is_account_abstraction: bool,
+    /// Whether the customer holds this wallet's private keys. Required when the
+    /// customer's country is `BR`; omitted when `None`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_self_custody: Option<bool>,
 }
 
 /// A BlindPay-custodied (Circle) wallet, returned by the `wallets.custodial`
@@ -309,6 +317,7 @@ mod tests {
             network: Network::Base,
             signature_tx_hash: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359".to_string(),
             is_account_abstraction: false,
+            is_self_custody: None,
         };
         let json = serde_json::to_value(&input).unwrap();
         assert_eq!(

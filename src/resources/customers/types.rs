@@ -1186,6 +1186,12 @@ pub struct LimitIncrease {
     /// Supporting documents.
     #[serde(default)]
     pub supporting_documents: Option<Vec<LimitIncreaseSupportingDocument>>,
+    /// Why compliance rejected the request or approved lower limits than
+    /// requested, and what to send to get the full amount. Set when `status`
+    /// is rejected or approved below the requested limits; otherwise `None`.
+    /// At most 2000 characters.
+    #[serde(default)]
+    pub review_reason: Option<String>,
     /// Creation timestamp.
     #[serde(default)]
     pub created_at: Option<String>,

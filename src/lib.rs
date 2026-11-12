@@ -2,9 +2,16 @@
 #![warn(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+// Without a TLS backend every https call would fail at runtime instead.
+#[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
+compile_error!(
+    "blindpay needs a TLS backend: enable the `rustls-tls` (default) or `native-tls` feature"
+);
+
 mod client;
 pub mod common;
 mod error;
+mod error_code;
 mod http;
 mod internal;
 mod options;
@@ -21,7 +28,7 @@ pub use common::{
     Network, Offset, Pager, Pagination, PaginationParams, PaymentMethod, ProviderName, Rail,
     Success, Token, TrackingStatus, TransactionStatus, TransfersType, WebhookEvent,
 };
-pub use error::{ApiError, Error, Result};
+pub use error::{ApiError, Error, ErrorCode, ErrorCodeInfo, Result, RetryClass};
 pub use options::RequestOptions;
 pub use resources::available::{
     Available, BankDetail, BankDetailItem, BankDetailKey, NaicsCode, RailEntry, RequiredWhen,

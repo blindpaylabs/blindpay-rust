@@ -10,7 +10,7 @@ homepage = "https://www.blindpay.com"
 documentation = "https://docs.rs/blindpay"
 readme = "README.md"
 # Tests and their shared spec fixtures (1.2 MB) stay out of the published crate.
-exclude = ["tests/", ".api-sync/", ".github/", "CLAUDE.md"]
+exclude = ["tests/", ".api-sync/", ".github/", "CLAUDE.md", "RELEASING.md"]
 keywords = ["blindpay", "payments", "stablecoin", "api", "sdk"]
 categories = ["api-bindings", "finance"]
 
@@ -35,7 +35,8 @@ uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "net", "io-util"] }
-wiremock = "0.6"
+# 0.6.5 uses let-chains, which need Rust 1.88; keep the test suite building on the MSRV.
+wiremock = ">=0.6, <0.6.5"
 # tests/contract.rs parses src/ to check serde types against the spec.
 syn = { version = "2", features = ["full"] }
 quote = "1"

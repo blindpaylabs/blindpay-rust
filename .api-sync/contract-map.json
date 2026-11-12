@@ -436,6 +436,146 @@
       "direction": "response",
       "op": "POST /v1/instances/{instance_id}/rfi",
       "part": "response"
+    },
+    {
+      "rust": "Customer",
+      "direction": "response",
+      "schema": "CustomerNewWebhookOut"
+    },
+    {
+      "rust": "Customer",
+      "direction": "response",
+      "schema": "CustomerUpdateWebhookOut"
+    },
+    {
+      "rust": "CustomerDeleteEvent",
+      "direction": "response",
+      "schema": "CustomerDeleteWebhookOut"
+    },
+    {
+      "rust": "BankAccount",
+      "direction": "response",
+      "schema": "BankAccountWebhookOut"
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "direction": "response",
+      "schema": "PayoutNewWebhookOut"
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "direction": "response",
+      "schema": "PayoutUpdateWebhookOut"
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "direction": "response",
+      "schema": "PayoutCompleteWebhookOut"
+    },
+    {
+      "rust": "CreatePayoutResponse",
+      "direction": "response",
+      "schema": "PayoutPartnerFeeWebhookOut"
+    },
+    {
+      "rust": "BlockchainWallet",
+      "direction": "response",
+      "schema": "BlockchainWalletWebhookOut"
+    },
+    {
+      "rust": "BlockchainWallet",
+      "direction": "response",
+      "schema": "BlockchainWalletUpdateWebhookOut"
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "direction": "response",
+      "schema": "PayinNewWebhookOut"
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "direction": "response",
+      "schema": "PayinUpdateWebhookOut"
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "direction": "response",
+      "schema": "PayinCompleteWebhookOut"
+    },
+    {
+      "rust": "CreatePayinResponse",
+      "direction": "response",
+      "schema": "PayinPartnerFeeWebhookOut"
+    },
+    {
+      "rust": "TosAcceptEvent",
+      "direction": "response",
+      "schema": "TosAcceptWebhookOut"
+    },
+    {
+      "rust": "LimitIncrease",
+      "direction": "response",
+      "schema": "LimitIncreaseNewWebhookOut"
+    },
+    {
+      "rust": "LimitIncrease",
+      "direction": "response",
+      "schema": "LimitIncreaseUpdateWebhookOut"
+    },
+    {
+      "rust": "VirtualAccount",
+      "direction": "response",
+      "schema": "VirtualAccountNewWebhookOut"
+    },
+    {
+      "rust": "VirtualAccount",
+      "direction": "response",
+      "schema": "VirtualAccountCompleteWebhookOut"
+    },
+    {
+      "rust": "CreateTransferResponse",
+      "direction": "response",
+      "schema": "TransferNewWebhookOut"
+    },
+    {
+      "rust": "CreateTransferResponse",
+      "direction": "response",
+      "schema": "TransferUpdateWebhookOut"
+    },
+    {
+      "rust": "CreateTransferResponse",
+      "direction": "response",
+      "schema": "TransferCompleteWebhookOut"
+    },
+    {
+      "rust": "Wallet",
+      "direction": "response",
+      "schema": "WalletNewWebhookOut"
+    },
+    {
+      "rust": "Wallet",
+      "direction": "response",
+      "schema": "WalletUpdateWebhookOut"
+    },
+    {
+      "rust": "WalletInboundEvent",
+      "direction": "response",
+      "schema": "WalletInboundWebhookOut"
+    },
+    {
+      "rust": "Payable",
+      "direction": "response",
+      "schema": "PayableNewWebhookOut"
+    },
+    {
+      "rust": "Payable",
+      "direction": "response",
+      "schema": "PayableUpdateWebhookOut"
+    },
+    {
+      "rust": "Payable",
+      "direction": "response",
+      "schema": "PayableCompleteWebhookOut"
     }
   ]
 }

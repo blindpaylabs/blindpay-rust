@@ -301,7 +301,7 @@ fn effective_timeout(options: &RequestOptions, client: Duration) -> Result<Durat
 async fn receive(req: reqwest::RequestBuilder) -> Attempt {
     let response = match req.send().await {
         Ok(response) => response,
-        Err(e) => return Attempt::NoResponse(e),
+        Err(e) => return Attempt::NoResponse(redact_url(e)),
     };
     let status = response.status();
     let headers = response.headers().clone();
@@ -317,9 +317,20 @@ async fn receive(req: reqwest::RequestBuilder) -> Attempt {
                 headers,
                 body: Vec::new(),
             },
-            e,
+            redact_url(e),
         ),
     }
+}
+
+/// Drops the query string (and fragment) from the URL a transport error
+/// carries, so its `Display`/`Debug` never echo list filters (names, ids) or
+/// a `checkout_token`. The path stays for debugging.
+fn redact_url(mut e: reqwest::Error) -> reqwest::Error {
+    if let Some(url) = e.url_mut() {
+        url.set_query(None);
+        url.set_fragment(None);
+    }
+    e
 }
 
 /// Decodes a 2xx body. An empty body (e.g. 204) decodes as `null`, then `[]`,

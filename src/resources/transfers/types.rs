@@ -156,6 +156,10 @@ pub struct CreateTransferResponse {
 }
 
 /// Input for `TransferQuotes::create`.
+///
+/// A swap between different tokens needs at least 100 USDC, measured on the
+/// USDC side; a smaller amount fails with 400
+/// [`ErrorCode::TransfersSwapAmountBelowMinimum`](crate::ErrorCode::TransfersSwapAmountBelowMinimum).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct CreateTransferQuoteInput {
     /// The sending wallet's identifier.
@@ -163,7 +167,8 @@ pub struct CreateTransferQuoteInput {
     /// Whether `request_amount` is denominated in the sender's or receiver's
     /// currency.
     pub amount_reference: CurrencyType,
-    /// The requested amount, in the smallest unit (cents).
+    /// The requested amount, in the smallest unit (cents). Swaps between
+    /// different tokens need at least 100 USDC (`10000`) on the USDC side.
     pub request_amount: i64,
     /// The token to send.
     pub sender_token: crate::common::Token,
