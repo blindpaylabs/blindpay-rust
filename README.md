@@ -299,6 +299,11 @@ which the SDK honours when it retries.
 
 ## Workflows
 
+Two of them are also complete programs in
+[`examples/`](https://github.com/blindpaylabs/blindpay-rust/tree/main/examples):
+`webhook_receiver.rs` (verify the raw body, dispatch on the event, dedupe on `svix-id`) and
+`managed_wallet_payout.rs` (fund a managed wallet with a payin, then pay out with `wallet_id`).
+
 ### Webhook endpoint setup
 
 ```rust,no_run

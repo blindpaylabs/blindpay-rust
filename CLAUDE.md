@@ -51,6 +51,8 @@ src/
                     resource may keep its few types in mod.rs or the sub-resource file
                     (resources/rfi/mod.rs, instances/onboarding.rs).
   resources/rfi/    RFI types and the InstanceRfis / CustomerRfis handles
+examples/           get_rails, webhook_receiver (E1), managed_wallet_payout (E2); compiled by clippy
+                    --all-targets and the MSRV test build, never run in CI
 tests/
   <resource>.rs     wiremock tests per resource
   transport.rs      retry table, idempotency keys, error fixtures (tests/fixtures/errors)
