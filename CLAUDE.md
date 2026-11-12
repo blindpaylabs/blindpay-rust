@@ -135,6 +135,8 @@ tests/
 - `BlindPay` is `Clone + Send + Sync` and immutable; per-request options and `with_timeout` never
   touch shared state.
 - Never put the API key, webhook secret or a request body into an error message or `Debug` output.
+  Transport errors drop the URL's query string (`redact_url` in `http.rs`; list filters carry PII).
+  `tests/secret_hygiene.rs` guards both.
 
 ## Generate before you hand-write
 
