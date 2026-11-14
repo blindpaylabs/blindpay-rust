@@ -4,25 +4,36 @@ The official Rust SDK for [BlindPay](https://blindpay.com): stablecoin API for g
 
 ## Installation
 
+```sh
+cargo add blindpay
+```
+
+or in `Cargo.toml`:
+
 ```toml
 [dependencies]
 blindpay = "0.2"
 ```
 
-> **Publication pending.** Version 0.2 isn't on crates.io yet. The `blindpay` crate there is
-> BlindPay's own 0.1.0 name placeholder (a "Hello, world!" binary, not this SDK), so
-> `cargo add blindpay` installs the placeholder until 0.2.0 is published. Until then, depend on this
-> repository: `blindpay = { git = "https://github.com/blindpaylabs/blindpay-rust" }`.
+(Version 0.1.0 of the `blindpay` crate was a name placeholder, not this SDK.)
 
 The SDK is async and uses [Tokio](https://tokio.rs) (reqwest's runtime, also used for retry
-backoff). The examples use:
+backoff). The examples below also use `http` (webhook verification takes an `http::HeaderMap`, and
+`RequestOptions::header` takes `http` header types) and `serde_json` (the upload-analysis example):
 
 ```toml
 [dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+http = "1"
+serde_json = "1"
 ```
 
-Minimum supported Rust version: **1.85**.
+Minimum supported Rust version: **1.85**. On Rust 1.85, Cargo must pick dependency versions that
+still support 1.85, which only the MSRV-aware resolver does. Use edition 2024, or set
+`resolver = "3"` under `[package]` (or `[workspace]`) on edition 2021, or build with
+`CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback`. Otherwise Cargo can select newer transitive
+dependencies (for example the `icu_*` crates behind `url`) that need a newer compiler. Newer
+toolchains need none of this.
 
 ## Authentication
 
@@ -220,7 +231,9 @@ while let Some(payout) = payouts.next().await {
 # }
 ```
 
-`Pager::next_page()` yields whole pages and `collect_all()` gathers everything.
+`Pager::next_page()` yields whole pages and `collect_all()` gathers everything. If a page says
+`has_more` but points at a cursor the pager already requested (a repeat or a cycle), the pager
+stops with `Error::Pagination` instead of requesting pages forever.
 
 ## Webhooks
 
@@ -229,6 +242,7 @@ secret (`whsec_…`, from `instances.webhook_endpoints.get_secret`). Always pass
 bytes (axum `Bytes`, actix `web::Bytes`, hyper `body::to_bytes`), never re-serialized JSON.
 
 ```rust,no_run
+// Needs `http = "1"` (see Installation).
 use blindpay::{TransactionStatus, WebhookEventPayload, construct_webhook_event};
 
 fn handle(headers: &http::HeaderMap, raw_body: &[u8], secret: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -261,6 +275,7 @@ version doesn't know decode to `WebhookEventPayload::Unknown` with the raw JSON.
 ## Uploads
 
 ```rust,no_run
+// Needs `serde_json = "1"` (see Installation).
 use blindpay::{AnalyzeDocumentType, BlindPay, UploadBucket, UploadFile};
 
 # async fn run(blindpay: BlindPay, pdf: Vec<u8>) -> blindpay::Result<()> {

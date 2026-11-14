@@ -1,6 +1,6 @@
 //! A forward-only auto-pager over cursor-paginated list endpoints.
 
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -23,7 +23,10 @@ const DEFAULT_PAGE_SIZE: &str = "100";
 /// paginated envelope), and keeps requesting the next page with
 /// `starting_after = pagination.next_page` while `pagination.has_more` is
 /// true. Each page goes through the normal retry policy. Forward only: setting
-/// `ending_before` is an error.
+/// `ending_before` is an error. If a page says `has_more` but its `next_page`
+/// is a cursor this pager already requested (the same cursor again, or a
+/// cycle such as A → B → A), the pager returns that page, then stops with
+/// [`Error::Pagination`] instead of requesting pages forever.
 ///
 /// ```no_run
 /// # async fn run(client: blindpay::BlindPay) -> blindpay::Result<()> {
@@ -44,6 +47,10 @@ pub struct Pager<T> {
     buffer: VecDeque<T>,
     next_cursor: Option<String>,
     done: bool,
+    /// Every cursor this pager has sent as `starting_after`.
+    sent: HashSet<String>,
+    /// Returned (once) by the call after the page whose cursor was revisited.
+    stalled: Option<String>,
     _item: PhantomData<fn() -> T>,
 }
 
@@ -71,6 +78,8 @@ impl<T: DeserializeOwned> Pager<T> {
             buffer: VecDeque::new(),
             next_cursor: None,
             done: false,
+            sent: HashSet::new(),
+            stalled: None,
             _item: PhantomData,
         }
     }
@@ -95,6 +104,9 @@ impl<T: DeserializeOwned> Pager<T> {
         if !self.buffer.is_empty() {
             return Some(Ok(self.buffer.drain(..).collect()));
         }
+        if let Some(cursor) = self.stalled.take() {
+            return Some(Err(Error::Pagination { cursor }));
+        }
         if self.done {
             return None;
         }
@@ -105,8 +117,9 @@ impl<T: DeserializeOwned> Pager<T> {
                 return Some(Err(Error::Config(err.clone())));
             }
         };
-        if let Some(cursor) = &self.next_cursor {
+        if let Some(cursor) = self.next_cursor.take() {
             query.insert("starting_after".into(), Value::String(cursor.clone()));
+            self.sent.insert(cursor);
         }
         let page = self
             .client
@@ -118,8 +131,16 @@ impl<T: DeserializeOwned> Pager<T> {
                 Some(Err(err))
             }
             Ok(ListResponse::Paginated { data, pagination }) => {
-                self.next_cursor = pagination.next_page.filter(|_| pagination.has_more);
-                self.done = self.next_cursor.is_none();
+                let next = pagination.next_page.filter(|_| pagination.has_more);
+                if next.as_ref().is_some_and(|c| self.sent.contains(c)) {
+                    // A cursor we already requested: following it again
+                    // would loop forever.
+                    self.stalled = next;
+                    self.done = true;
+                } else {
+                    self.done = next.is_none();
+                    self.next_cursor = next;
+                }
                 Some(Ok(data))
             }
             Ok(ListResponse::Bare(data)) => {
